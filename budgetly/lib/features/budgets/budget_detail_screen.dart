@@ -133,7 +133,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 );
                 _load();
               } else if (v == 'delete') {
-                final ok = await showDialog<bool>(
+                  final nav = Navigator.of(context);
+                  final ok = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: const Text('Delete budget?'),
@@ -155,16 +156,16 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   final repo =
                       ref.read(budgetRepositoryProvider);
                   await repo.delete(budget.id);
-                  if (mounted) context.pop();
+                  nav.pop();
                 }
               }
             },
             itemBuilder: (_) => [
-              PopupMenuItem(
+              const PopupMenuItem(
                   value: 'edit',
                   child: ListTile(
-                      leading: const Icon(Icons.edit),
-                      title: const Text('Edit'),
+                      leading: Icon(Icons.edit),
+                      title: Text('Edit'),
                       contentPadding: EdgeInsets.zero)),
               PopupMenuItem(
                   value: 'pin',
@@ -175,12 +176,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       title: Text(
                           budget.pinned ? 'Unpin' : 'Pin to dashboard'),
                       contentPadding: EdgeInsets.zero)),
-              PopupMenuItem(
+              const PopupMenuItem(
                   value: 'delete',
                   child: ListTile(
-                      leading: const Icon(Icons.delete,
+                      leading: Icon(Icons.delete,
                           color: AppColors.expense),
-                      title: const Text('Delete',
+                      title: Text('Delete',
                           style: TextStyle(
                               color: AppColors.expense)),
                       contentPadding: EdgeInsets.zero)),
@@ -545,7 +546,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader(
+            const SectionHeader(
               title: 'Transactions',
               actionLabel: null,
               onAction: null,
@@ -709,7 +710,7 @@ class _LimitDialogState extends State<_LimitDialog> {
         FilledButton(
           onPressed: () {
             if (_selectedCatId == null ||
-                _amountController.text.isEmpty) return;
+                _amountController.text.isEmpty) { return; }
             final amt =
                 (double.tryParse(_amountController.text) ?? 0) * 100;
             Navigator.pop(context, {
