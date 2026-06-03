@@ -22,12 +22,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (m) => m.createAll(),
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          // Schema v1 -> v2: tags column already existed in v1,
+          // this is a placeholder for future v2 migrations.
+        }
+      },
     );
   }
 }
