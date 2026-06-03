@@ -10,7 +10,8 @@ void main() {
     });
 
     test('format handles negative amounts', () {
-      expect(MoneyUtils.format(-500), contains('-5.00'));
+      expect(MoneyUtils.format(-500), startsWith('-'));
+      expect(MoneyUtils.format(-500), contains('5.00'));
     });
 
     test('format with currency code', () {

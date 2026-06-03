@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/database/app_database.dart';
 import 'core/database/repositories/settings_repository.dart';
+import 'core/providers/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/notification_service.dart';
@@ -16,14 +17,6 @@ void main() async {
   final db = AppDatabase();
   final settingsRepo = SettingsRepository(db);
   final onboarded = await settingsRepo.isOnboardingComplete();
-  final appLock = await settingsRepo.get('app_lock');
-
-  if (appLock == 'true' && onboarded) {
-    final authed = await AuthService.authenticate();
-    if (!authed) {
-      return;
-    }
-  }
 
   await db.close();
 
@@ -36,7 +29,7 @@ void main() async {
   );
 }
 
-class BudgetlyApp extends ConsumerWidget {
+class BudgetlyApp extends ConsumerStatefulWidget {
   final String initialRoute;
 
   const BudgetlyApp({
@@ -45,15 +38,71 @@ class BudgetlyApp extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BudgetlyApp> createState() => _BudgetlyAppState();
+}
+
+class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
+    with WidgetsBindingObserver {
+  AppLifecycleListener? _lifecycleListener;
+  bool _locked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lifecycleListener = AppLifecycleListener(onResume: _onResume);
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _onResume() async {
+    if (_locked) return;
+    final repo = ref.read(settingsRepositoryProvider);
+    final appLock = await repo.get('app_lock');
+    if (appLock == 'true') {
+      _locked = true;
+      final authed = await AuthService.authenticate();
+      _locked = false;
+      if (!authed && mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
-    return MaterialApp.router(
-      title: 'Budgetly',
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    final themeAsync = ref.watch(themeConfigProvider);
+    return themeAsync.when(
+      data: (config) => MaterialApp.router(
+        title: 'Budgetly',
+        theme: AppTheme.light(seedOverride: config.seedColor),
+        darkTheme: AppTheme.dark(seedOverride: config.seedColor),
+        themeMode: config.themeMode,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
+      error: (_, _) => MaterialApp.router(
+        title: 'Budgetly',
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.system,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
+      loading: () => MaterialApp.router(
+        title: 'Budgetly',
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.system,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }
