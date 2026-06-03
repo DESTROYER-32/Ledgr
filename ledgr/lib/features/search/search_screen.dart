@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,23 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
+
+class Debouncer {
+  final Duration delay;
+  Timer? _timer;
+  Debouncer({this.delay = const Duration(milliseconds: 500)});
+
+  void run(VoidCallback action) {
+    _timer?.cancel();
+    _timer = Timer(delay, action);
+  }
+
+  void cancel() => _timer?.cancel();
+
+  void dispose() {
+    _timer?.cancel();
+  }
+}
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -16,20 +35,57 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _queryController = TextEditingController();
+  final _debouncer = Debouncer(delay: const Duration(milliseconds: 400));
+
   String? _type;
   int? _walletId;
   int? _categoryId;
   DateTime? _startDate;
   DateTime? _endDate;
-  String? _minAmount;
-  String? _maxAmount;
+  int? _minAmountMinor;
+  int? _maxAmountMinor;
   List<Transaction>? _results;
-  bool _isSearching = false;
+  StreamSubscription? _resultSubscription;
+
+  bool get _hasFilters =>
+      _type != null || _walletId != null || _categoryId != null ||
+      _startDate != null || _endDate != null ||
+      _minAmountMinor != null || _maxAmountMinor != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _queryController.addListener(_onQueryChanged);
+  }
 
   @override
   void dispose() {
+    _queryController.removeListener(_onQueryChanged);
     _queryController.dispose();
+    _debouncer.dispose();
+    _resultSubscription?.cancel();
     super.dispose();
+  }
+
+  void _onQueryChanged() {
+    _debouncer.run(_runSearch);
+  }
+
+  Future<void> _runSearch() async {
+    final query = _queryController.text;
+    final results = await ref
+        .read(transactionRepositoryProvider)
+        .search(
+          query: query,
+          type: _type,
+          walletId: _walletId,
+          categoryId: _categoryId,
+          startDate: _startDate,
+          endDate: _endDate,
+          minAmount: _minAmountMinor,
+          maxAmount: _maxAmountMinor,
+        );
+    if (mounted) setState(() => _results = results);
   }
 
   void _clearAll() {
@@ -40,353 +96,512 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _categoryId = null;
       _startDate = null;
       _endDate = null;
-      _minAmount = null;
-      _maxAmount = null;
+      _minAmountMinor = null;
+      _maxAmountMinor = null;
       _results = null;
     });
+    _debouncer.cancel();
   }
 
-  Future<void> _search() async {
-    setState(() => _isSearching = true);
-    try {
-      final minAmt = _minAmount != null && _minAmount!.isNotEmpty
-          ? (double.tryParse(_minAmount!) ?? 0) * 100
-          : null;
-      final maxAmt = _maxAmount != null && _maxAmount!.isNotEmpty
-          ? (double.tryParse(_maxAmount!) ?? 0) * 100
-          : null;
-
-      final results = await ref
-          .read(transactionRepositoryProvider)
-          .search(
-            query: _queryController.text,
-            type: _type,
-            walletId: _walletId,
-            categoryId: _categoryId,
-            startDate: _startDate,
-            endDate: _endDate,
-            minAmount: minAmt?.round(),
-            maxAmount: maxAmt?.round(),
-          );
-      setState(() => _results = results);
-    } finally {
-      setState(() => _isSearching = false);
-    }
+  String _formatAmount(int amount, {String? currencyCode}) {
+    return MoneyUtils.format(amount, currencyCode: currencyCode);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final walletsAsync = ref.watch(activeWalletsProvider);
-    final catsAsync = ref.watch(activeCategoriesProvider);
+    final cs = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Search'),
         actions: [
-          if (_results != null ||
-              _type != null ||
-              _startDate != null ||
-              _endDate != null ||
-              _walletId != null ||
-              _categoryId != null)
-            TextButton(
-              onPressed: _clearAll,
-              child: const Text('Clear All'),
-            ),
+          if (_hasFilters || _results != null)
+            TextButton(onPressed: _clearAll, child: const Text('Clear All')),
         ],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: TextField(
+              controller: _queryController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search transactions...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _queryController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _queryController.clear();
+                          _runSearch();
+                        },
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          if (_hasFilters)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    if (_type != null)
+                      _filterChip(
+                        label: _type == 'expense'
+                            ? 'Expense'
+                            : _type == 'income'
+                                ? 'Income'
+                                : 'Transfer',
+                        onRemove: () => setState(() {
+                          _type = null;
+                          _runSearch();
+                        }),
+                      ),
+                    if (_walletId != null) _buildWalletChip(onRemove: () {
+                      setState(() {
+                        _walletId = null;
+                        _runSearch();
+                      });
+                    }),
+                    if (_categoryId != null) _buildCategoryChip(onRemove: () {
+                      setState(() {
+                        _categoryId = null;
+                        _runSearch();
+                      });
+                    }),
+                    if (_startDate != null)
+                      _filterChip(
+                        label: 'From ${MoneyUtils.formatDateShort(_startDate!)}',
+                        onRemove: () => setState(() {
+                          _startDate = null;
+                          _runSearch();
+                        }),
+                      ),
+                    if (_endDate != null)
+                      _filterChip(
+                        label: 'To ${MoneyUtils.formatDateShort(_endDate!)}',
+                        onRemove: () => setState(() {
+                          _endDate = null;
+                          _runSearch();
+                        }),
+                      ),
+                    if (_minAmountMinor != null)
+                      _filterChip(
+                        label: 'Min ${_formatAmount(_minAmountMinor!)}',
+                        onRemove: () => setState(() {
+                          _minAmountMinor = null;
+                          _runSearch();
+                        }),
+                      ),
+                    if (_maxAmountMinor != null)
+                      _filterChip(
+                        label: 'Max ${_formatAmount(_maxAmountMinor!)}',
+                        onRemove: () => setState(() {
+                          _maxAmountMinor = null;
+                          _runSearch();
+                        }),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
               children: [
-                TextField(
-                  controller: _queryController,
-                  decoration: InputDecoration(
-                    hintText: 'Search transactions...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon:
-                        _queryController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _queryController.clear();
-                                },
-                              )
-                            : null,
+                OutlinedButton.icon(
+                  onPressed: _showFilterSheet,
+                  icon: const Icon(Icons.tune, size: 16),
+                  label: const Text('Filters',
+                      style: TextStyle(fontSize: 13)),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      initialDateRange: _startDate != null && _endDate != null
+                          ? DateTimeRange(start: _startDate!, end: _endDate!)
+                          : null,
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _startDate = picked.start;
+                        _endDate = picked.end;
+                      });
+                      _runSearch();
+                    }
+                  },
+                  icon: const Icon(Icons.date_range, size: 16),
+                  label: Text(
+                    _startDate != null && _endDate != null
+                        ? '${MoneyUtils.formatDateShort(_startDate!)} - ${MoneyUtils.formatDateShort(_endDate!)}'
+                        : 'Date range',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: _startDate != null
+                            ? null
+                            : cs.onSurfaceVariant),
                   ),
-                  onSubmitted: (_) => _search(),
-                ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      FilterChip(
-                        label: const Text('All'),
-                        selected: _type == null,
-                        onSelected: (_) =>
-                            setState(() => _type = null),
-                      ),
-                      const SizedBox(width: 8),
-                      FilterChip(
-                        label: const Text('Expense'),
-                        selected: _type == 'expense',
-                        onSelected: (_) => setState(
-                            () => _type = 'expense'),
-                      ),
-                      FilterChip(
-                        label: const Text('Income'),
-                        selected: _type == 'income',
-                        onSelected: (_) => setState(
-                            () => _type = 'income'),
-                      ),
-                      const SizedBox(width: 8),
-                      FilterChip(
-                        label: const Text('Transfer'),
-                        selected: _type == 'transfer',
-                        onSelected: (_) => setState(
-                            () => _type = 'transfer'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate:
-                                _startDate ?? DateTime.now(),
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime.now(),
-                          );
-                          if (picked != null) {
-                            setState(
-                                () => _startDate = picked);
-                          }
-                        },
-                        child: Text(
-                          _startDate != null
-                              ? MoneyUtils.formatDateShort(
-                                  _startDate!)
-                              : 'From date',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _startDate != null
-                                ? null
-                                : theme
-                                    .colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate:
-                                _endDate ?? DateTime.now(),
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime.now(),
-                          );
-                          if (picked != null) {
-                            setState(
-                                () => _endDate = picked);
-                          }
-                        },
-                        child: Text(
-                          _endDate != null
-                              ? MoneyUtils.formatDateShort(
-                                  _endDate!)
-                              : 'To date',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _endDate != null
-                                ? null
-                                : theme
-                                    .colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          labelText: 'Min \$',
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                        ),
-                        keyboardType: const TextInputType
-                            .numberWithOptions(decimal: true),
-                        onChanged: (v) =>
-                            setState(() => _minAmount = v),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          labelText: 'Max \$',
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                        ),
-                        keyboardType: const TextInputType
-                            .numberWithOptions(decimal: true),
-                        onChanged: (v) =>
-                            setState(() => _maxAmount = v),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _dropdown(
-                      value: _walletId,
-                      label: 'Account',
-                      items: walletsAsync,
-                      toText: (w) => w.name,
-                      toValue: (w) => w.id,
-                      onChanged: (v) =>
-                          setState(() => _walletId = v),
-                    )),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: _dropdown(
-                      value: _categoryId,
-                      label: 'Category',
-                      items: catsAsync,
-                      toText: (c) => c.name,
-                      toValue: (c) => c.id,
-                      onChanged: (v) =>
-                          setState(() => _categoryId = v),
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: _search,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Search'),
                 ),
               ],
             ),
           ),
           const Divider(height: 1),
-          Expanded(
-            child: _isSearching
-                ? const Center(
-                    child: CircularProgressIndicator())
-                : _results == null
-                    ? Center(
-                        child: Text('Enter search criteria',
-                            style: theme.textTheme.bodyLarge
-                                ?.copyWith(
-                              color: theme
-                                  .colorScheme.onSurfaceVariant,
-                            )),
-                      )
-                    : _results!.isEmpty
-                        ? Center(
-                            child: Text('No results',
-                                style:
-                                    theme.textTheme.bodyLarge))
-                        : ListView.builder(
-                            itemCount: _results!.length,
-                            itemBuilder: (_, i) {
-                              final t = _results![i];
-                              final isExpense =
-                                  t.type == 'expense';
-                              final isIncome =
-                                  t.type == 'income';
-                              final color = isExpense
-                                  ? AppColors.expense
-                                  : (isIncome
-                                      ? AppColors.income
-                                      : AppColors.transfer);
-                              return ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor:
-                                      color.withValues(
-                                          alpha: 0.15),
-                                  child: Icon(
-                                    isExpense
-                                        ? Icons.arrow_upward
-                                        : (isIncome
-                                            ? Icons
-                                                .arrow_downward
-                                            : Icons
-                                                .swap_horiz),
-                                    color: color,
-                                    size: 20,
-                                  ),
-                                ),
-                                title: Text(t.title ?? t.type),
-                                subtitle: Text(
-                                    MoneyUtils.formatDateShort(
-                                        t.date)),
-                                trailing: Text(
-                                  '${isExpense ? '-' : (isIncome ? '+' : '')}${MoneyUtils.format(t.amountMinor)}',
-                                  style: TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
-                                      color: color),
-                                ),
-                                onTap: () => context.push(
-                                    '/transactions/${t.id}'),
-                              );
-                            },
-                          ),
-          ),
+          if (_results == null)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.search, size: 48,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                    const SizedBox(height: 12),
+                    Text('Start typing to search',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        )),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(child: _buildResultsList(theme, cs)),
         ],
       ),
     );
   }
 
-  Widget _dropdown<T>({
-    required T? value,
+  Widget _filterChip({
     required String label,
-    required AsyncValue<List<dynamic>> items,
-    required String Function(dynamic) toText,
-    required T Function(dynamic) toValue,
-    required void Function(T?) onChanged,
+    required VoidCallback onRemove,
   }) {
-    return items.when(
-      data: (data) => DropdownButtonFormField<T>(
-        initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 8),
-        ),
-        isExpanded: true,
-        items: [
-          DropdownMenuItem<T>(
-              value: null, child: const Text('All')),
-          ...data.map((item) => DropdownMenuItem<T>(
-                value: toValue(item),
-                child: Text(toText(item)),
-              )),
-        ],
-        onChanged: onChanged,
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InputChip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        deleteIcon: const Icon(Icons.close, size: 14),
+        onDeleted: onRemove,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      error: (e, _) => const SizedBox(),
-      loading: () => const SizedBox(
-          height: 40, child: LinearProgressIndicator()),
+    );
+  }
+
+  Widget _buildWalletChip({required VoidCallback onRemove}) {
+    final wallets = ref.watch(activeWalletsProvider).valueOrNull ?? [];
+    final wallet = wallets.where((w) => w.id == _walletId).firstOrNull;
+    return _filterChip(
+      label: wallet?.name ?? 'Account #$_walletId',
+      onRemove: onRemove,
+    );
+  }
+
+  Widget _buildCategoryChip({required VoidCallback onRemove}) {
+    final cats = ref.watch(activeCategoriesProvider).valueOrNull ?? [];
+    final cat = cats.where((c) => c.id == _categoryId).firstOrNull;
+    return _filterChip(
+      label: cat?.name ?? 'Category #$_categoryId',
+      onRemove: onRemove,
+    );
+  }
+
+  void _showFilterSheet() {
+    final wallets = ref.read(activeWalletsProvider).valueOrNull ?? [];
+    final cats = ref.read(activeCategoriesProvider).valueOrNull ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) {
+        String? localType = _type;
+        int? localWalletId = _walletId;
+        int? localCategoryId = _categoryId;
+        int? localMinAmount;
+        int? localMaxAmount;
+        final minController = TextEditingController(
+          text: _minAmountMinor != null
+              ? (_minAmountMinor! / 100).toStringAsFixed(0)
+              : '',
+        );
+        final maxController = TextEditingController(
+          text: _maxAmountMinor != null
+              ? (_maxAmountMinor! / 100).toStringAsFixed(0)
+              : '',
+        );
+
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) => Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 8,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8),
+                  Text('Filters',
+                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          )),
+                  const SizedBox(height: 20),
+                  Text('Type',
+                      style: Theme.of(ctx).textTheme.labelMedium),
+                  const SizedBox(height: 8),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'expense', label: Text('Expense')),
+                      ButtonSegment(value: 'income', label: Text('Income')),
+                      ButtonSegment(value: 'transfer', label: Text('Transfer')),
+                    ],
+                    selected: localType != null ? {localType!} : <String>{},
+                    onSelectionChanged: (v) =>
+                        setLocalState(() => localType = v.isEmpty ? null : v.first),
+                    emptySelectionAllowed: true,
+                    showSelectedIcon: false,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int?>(
+                    initialValue: localWalletId,
+                    decoration: const InputDecoration(
+                        labelText: 'Account',
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8)),
+                    isExpanded: true,
+                    items: [
+                      const DropdownMenuItem<int?>(
+                          value: null, child: Text('All accounts')),
+                      ...wallets.map((w) => DropdownMenuItem<int?>(
+                          value: w.id, child: Text(w.name))),
+                    ],
+                    onChanged: (v) =>
+                        setLocalState(() => localWalletId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int?>(
+                    initialValue: localCategoryId,
+                    decoration: const InputDecoration(
+                        labelText: 'Category',
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8)),
+                    isExpanded: true,
+                    items: [
+                      const DropdownMenuItem<int?>(
+                          value: null, child: Text('All categories')),
+                      ...cats.map((c) => DropdownMenuItem<int?>(
+                          value: c.id, child: Text(c.name))),
+                    ],
+                    onChanged: (v) =>
+                        setLocalState(() => localCategoryId = v),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: minController,
+                          decoration: const InputDecoration(
+                            labelText: 'Min amount',
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                          ),
+                          keyboardType: const TextInputType
+                              .numberWithOptions(decimal: true),
+                          onChanged: (v) {
+                            final parsed = double.tryParse(v);
+                            setLocalState(() =>
+                                localMinAmount = parsed != null
+                                    ? (parsed * 100).round()
+                                    : null);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: maxController,
+                          decoration: const InputDecoration(
+                            labelText: 'Max amount',
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                          ),
+                          keyboardType: const TextInputType
+                              .numberWithOptions(decimal: true),
+                          onChanged: (v) {
+                            final parsed = double.tryParse(v);
+                            setLocalState(() =>
+                                localMaxAmount = parsed != null
+                                    ? (parsed * 100).round()
+                                    : null);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: () {
+                      setState(() {
+                        _type = localType;
+                        _walletId = localWalletId;
+                        _categoryId = localCategoryId;
+                        _minAmountMinor = localMinAmount;
+                        _maxAmountMinor = localMaxAmount;
+                      });
+                      _runSearch();
+                      Navigator.pop(ctx);
+                    },
+                    child: const Text('Apply Filters'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildResultsList(ThemeData theme, ColorScheme cs) {
+    if (_results!.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off, size: 48,
+                color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+            const SizedBox(height: 12),
+            Text('No results found',
+                style: theme.textTheme.bodyLarge),
+          ],
+        ),
+      );
+    }
+
+    final totalIncome = _results!
+        .where((t) => t.type == 'income')
+        .fold<int>(0, (s, t) => s + t.amountMinor);
+    final totalExpenses = _results!
+        .where((t) => t.type == 'expense')
+        .fold<int>(0, (s, t) => s + t.amountMinor);
+
+    final grouped = <String, List<Transaction>>{};
+    for (final t in _results!) {
+      final key = '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}-${t.date.day.toString().padLeft(2, '0')}';
+      grouped.putIfAbsent(key, () => []).add(t);
+    }
+    final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${_results!.length} transaction${_results!.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                      fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+              ),
+              if (totalExpenses > 0)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Text(
+                    'Exp: ${_formatAmount(totalExpenses)}',
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.expense),
+                  ),
+                ),
+              if (totalIncome > 0)
+                Text(
+                  'Inc: ${_formatAmount(totalIncome)}',
+                  style: TextStyle(
+                      fontSize: 12, color: AppColors.income),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: sortedKeys.length,
+            itemBuilder: (_, sectionIndex) {
+              final dateKey = sortedKeys[sectionIndex];
+              final dayTransactions = grouped[dateKey]!;
+              final parts = dateKey.split('-');
+              final date = DateTime(
+                  int.parse(parts[0]),
+                  int.parse(parts[1]),
+                  int.parse(parts[2]));
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Text(
+                      MoneyUtils.formatDateShort(date),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  ...dayTransactions.map((t) {
+                    final isExpense = t.type == 'expense';
+                    final isIncome = t.type == 'income';
+                    final color = isExpense
+                        ? AppColors.expense
+                        : (isIncome
+                            ? AppColors.income
+                            : AppColors.transfer);
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: color.withValues(alpha: 0.15),
+                        radius: 18,
+                        child: Icon(
+                          isExpense
+                              ? Icons.arrow_upward
+                              : (isIncome
+                                  ? Icons.arrow_downward
+                                  : Icons.swap_horiz),
+                          color: color,
+                          size: 18,
+                        ),
+                      ),
+                      title: Text(t.title ?? t.type,
+                          style: const TextStyle(fontSize: 14)),
+                      trailing: Text(
+                        '${isExpense ? '-' : (isIncome ? '+' : '')}${_formatAmount(t.amountMinor)}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: color),
+                      ),
+                      onTap: () =>
+                          context.push('/transactions/${t.id}'),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 0),
+                    );
+                  }),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

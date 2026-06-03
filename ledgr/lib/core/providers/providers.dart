@@ -61,6 +61,12 @@ final expenseCategoriesProvider =
 final allBudgetsProvider =
     StreamProvider<List<Budget>>((ref) => ref.watch(budgetRepositoryProvider).watchAll());
 
+final pinnedBudgetsProvider = Provider<List<Budget>>((ref) {
+  final budgets = ref.watch(allBudgetsProvider).valueOrNull ?? [];
+  final now = DateTime.now();
+  return budgets.where((b) => b.pinned && b.periodEnd.isAfter(now)).toList();
+});
+
 final activeRecurringProvider = StreamProvider<List<RecurringTransaction>>(
     (ref) => ref.watch(recurringRepositoryProvider).watchActive());
 
@@ -93,6 +99,18 @@ final totalBalanceProvider = FutureProvider<int>((ref) async {
   ref.watch(allTransactionsProvider);
   final repo = ref.watch(walletRepositoryProvider);
   return repo.totalBalance();
+});
+
+final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
+  ref.watch(activeWalletsProvider);
+  ref.watch(allTransactionsProvider);
+  final repo = ref.watch(walletRepositoryProvider);
+  final wallets = await repo.getAll();
+  final map = <int, int>{};
+  for (final w in wallets) {
+    map[w.id] = await repo.balanceForWallet(w.id);
+  }
+  return map;
 });
 
 final budgetLimitsProvider =

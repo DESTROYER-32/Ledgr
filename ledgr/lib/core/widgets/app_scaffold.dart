@@ -27,9 +27,29 @@ class AppScaffold extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final index = _currentIndex(context);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      body: child,
+      body: Stack(
+        children: [
+          child,
+          Positioned(
+            right: 16,
+            bottom: 68 + bottomPadding + 16,
+            child: SizedBox(
+              width: 60,
+              height: 60,
+              child: FloatingActionButton(
+                heroTag: 'shell_fab',
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                onPressed: () => _showQuickEntry(context),
+                child: const Icon(Icons.add, size: 30),
+              ),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) => _onTap(context, i),
@@ -57,15 +77,6 @@ class AppScaffold extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: SizedBox(
-        width: 52,
-        height: 52,
-        child: FloatingActionButton(
-          onPressed: () => _showQuickEntry(context),
-          child: const Icon(Icons.add, size: 28),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
