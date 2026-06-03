@@ -85,10 +85,6 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
         loading: () =>
             const Center(child: CircularProgressIndicator()),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/wallets/new'),
-        child: const Icon(Icons.add),
-      ),
     );
   }
 

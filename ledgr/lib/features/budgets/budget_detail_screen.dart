@@ -45,8 +45,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     _currentStart ??= budget.periodStart;
     final limits = await repo.watchLimits(budget.id).first;
     final txRepo = ref.read(transactionRepositoryProvider);
-    final totalPlanned =
-        limits.fold<int>(0, (s, l) => s + l.plannedAmountMinor);
+    final totalPlanned = limits.isNotEmpty
+        ? limits.fold<int>(0, (s, l) => s + l.plannedAmountMinor)
+        : budget.plannedAmountMinor;
 
     Map<int, int> byCategory;
     int totalSpent;

@@ -1946,6 +1946,17 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _plannedAmountMinorMeta =
+      const VerificationMeta('plannedAmountMinor');
+  @override
+  late final GeneratedColumn<int> plannedAmountMinor = GeneratedColumn<int>(
+    'planned_amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1980,6 +1991,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     isIncome,
     pinned,
     color,
+    plannedAmountMinor,
     createdAt,
     updatedAt,
   ];
@@ -2054,6 +2066,15 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         color.isAcceptableOrUnknown(data['color']!, _colorMeta),
       );
     }
+    if (data.containsKey('planned_amount_minor')) {
+      context.handle(
+        _plannedAmountMinorMeta,
+        plannedAmountMinor.isAcceptableOrUnknown(
+          data['planned_amount_minor']!,
+          _plannedAmountMinorMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2107,6 +2128,10 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         DriftSqlType.int,
         data['${effectivePrefix}color'],
       ),
+      plannedAmountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}planned_amount_minor'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2133,6 +2158,7 @@ class Budget extends DataClass implements Insertable<Budget> {
   final bool isIncome;
   final bool pinned;
   final int? color;
+  final int plannedAmountMinor;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Budget({
@@ -2144,6 +2170,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     required this.isIncome,
     required this.pinned,
     this.color,
+    required this.plannedAmountMinor,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -2160,6 +2187,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     if (!nullToAbsent || color != null) {
       map['color'] = Variable<int>(color);
     }
+    map['planned_amount_minor'] = Variable<int>(plannedAmountMinor);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2177,6 +2205,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       color: color == null && nullToAbsent
           ? const Value.absent()
           : Value(color),
+      plannedAmountMinor: Value(plannedAmountMinor),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2196,6 +2225,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       isIncome: serializer.fromJson<bool>(json['isIncome']),
       pinned: serializer.fromJson<bool>(json['pinned']),
       color: serializer.fromJson<int?>(json['color']),
+      plannedAmountMinor: serializer.fromJson<int>(json['plannedAmountMinor']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2212,6 +2242,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       'isIncome': serializer.toJson<bool>(isIncome),
       'pinned': serializer.toJson<bool>(pinned),
       'color': serializer.toJson<int?>(color),
+      'plannedAmountMinor': serializer.toJson<int>(plannedAmountMinor),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2226,6 +2257,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     bool? isIncome,
     bool? pinned,
     Value<int?> color = const Value.absent(),
+    int? plannedAmountMinor,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Budget(
@@ -2237,6 +2269,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     isIncome: isIncome ?? this.isIncome,
     pinned: pinned ?? this.pinned,
     color: color.present ? color.value : this.color,
+    plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2254,6 +2287,9 @@ class Budget extends DataClass implements Insertable<Budget> {
       isIncome: data.isIncome.present ? data.isIncome.value : this.isIncome,
       pinned: data.pinned.present ? data.pinned.value : this.pinned,
       color: data.color.present ? data.color.value : this.color,
+      plannedAmountMinor: data.plannedAmountMinor.present
+          ? data.plannedAmountMinor.value
+          : this.plannedAmountMinor,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2270,6 +2306,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           ..write('isIncome: $isIncome, ')
           ..write('pinned: $pinned, ')
           ..write('color: $color, ')
+          ..write('plannedAmountMinor: $plannedAmountMinor, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2286,6 +2323,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     isIncome,
     pinned,
     color,
+    plannedAmountMinor,
     createdAt,
     updatedAt,
   );
@@ -2301,6 +2339,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           other.isIncome == this.isIncome &&
           other.pinned == this.pinned &&
           other.color == this.color &&
+          other.plannedAmountMinor == this.plannedAmountMinor &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2314,6 +2353,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   final Value<bool> isIncome;
   final Value<bool> pinned;
   final Value<int?> color;
+  final Value<int> plannedAmountMinor;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const BudgetsCompanion({
@@ -2325,6 +2365,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.isIncome = const Value.absent(),
     this.pinned = const Value.absent(),
     this.color = const Value.absent(),
+    this.plannedAmountMinor = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -2337,6 +2378,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.isIncome = const Value.absent(),
     this.pinned = const Value.absent(),
     this.color = const Value.absent(),
+    this.plannedAmountMinor = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : name = Value(name),
@@ -2352,6 +2394,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Expression<bool>? isIncome,
     Expression<bool>? pinned,
     Expression<int>? color,
+    Expression<int>? plannedAmountMinor,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -2364,6 +2407,8 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       if (isIncome != null) 'is_income': isIncome,
       if (pinned != null) 'pinned': pinned,
       if (color != null) 'color': color,
+      if (plannedAmountMinor != null)
+        'planned_amount_minor': plannedAmountMinor,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -2378,6 +2423,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Value<bool>? isIncome,
     Value<bool>? pinned,
     Value<int?>? color,
+    Value<int>? plannedAmountMinor,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -2390,6 +2436,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       isIncome: isIncome ?? this.isIncome,
       pinned: pinned ?? this.pinned,
       color: color ?? this.color,
+      plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -2422,6 +2469,9 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     if (color.present) {
       map['color'] = Variable<int>(color.value);
     }
+    if (plannedAmountMinor.present) {
+      map['planned_amount_minor'] = Variable<int>(plannedAmountMinor.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2442,6 +2492,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
           ..write('isIncome: $isIncome, ')
           ..write('pinned: $pinned, ')
           ..write('color: $color, ')
+          ..write('plannedAmountMinor: $plannedAmountMinor, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5791,6 +5842,7 @@ typedef $$BudgetsTableCreateCompanionBuilder =
       Value<bool> isIncome,
       Value<bool> pinned,
       Value<int?> color,
+      Value<int> plannedAmountMinor,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -5804,6 +5856,7 @@ typedef $$BudgetsTableUpdateCompanionBuilder =
       Value<bool> isIncome,
       Value<bool> pinned,
       Value<int?> color,
+      Value<int> plannedAmountMinor,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -5887,6 +5940,11 @@ class $$BudgetsTableFilterComposer
 
   ColumnFilters<int> get color => $composableBuilder(
     column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get plannedAmountMinor => $composableBuilder(
+    column: $table.plannedAmountMinor,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5975,6 +6033,11 @@ class $$BudgetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get plannedAmountMinor => $composableBuilder(
+    column: $table.plannedAmountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6022,6 +6085,11 @@ class $$BudgetsTableAnnotationComposer
 
   GeneratedColumn<int> get color =>
       $composableBuilder(column: $table.color, builder: (column) => column);
+
+  GeneratedColumn<int> get plannedAmountMinor => $composableBuilder(
+    column: $table.plannedAmountMinor,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6092,6 +6160,7 @@ class $$BudgetsTableTableManager
                 Value<bool> isIncome = const Value.absent(),
                 Value<bool> pinned = const Value.absent(),
                 Value<int?> color = const Value.absent(),
+                Value<int> plannedAmountMinor = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => BudgetsCompanion(
@@ -6103,6 +6172,7 @@ class $$BudgetsTableTableManager
                 isIncome: isIncome,
                 pinned: pinned,
                 color: color,
+                plannedAmountMinor: plannedAmountMinor,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -6116,6 +6186,7 @@ class $$BudgetsTableTableManager
                 Value<bool> isIncome = const Value.absent(),
                 Value<bool> pinned = const Value.absent(),
                 Value<int?> color = const Value.absent(),
+                Value<int> plannedAmountMinor = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => BudgetsCompanion.insert(
@@ -6127,6 +6198,7 @@ class $$BudgetsTableTableManager
                 isIncome: isIncome,
                 pinned: pinned,
                 color: color,
+                plannedAmountMinor: plannedAmountMinor,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

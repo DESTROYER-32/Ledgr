@@ -56,6 +56,7 @@ class Budgets extends Table {
   BoolColumn get isIncome => boolean().withDefault(const Constant(false))();
   BoolColumn get pinned => boolean().withDefault(const Constant(false))();
   IntColumn get color => integer().nullable()();
+  IntColumn get plannedAmountMinor => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
