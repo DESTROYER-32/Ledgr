@@ -19,7 +19,6 @@ class BudgetFormScreen extends ConsumerStatefulWidget {
 class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _amountController = TextEditingController();
 
   bool _isIncome = false;
   int _color = AppColors.categoryColors[0].toARGB32();
@@ -40,7 +39,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _amountController.dispose();
     super.dispose();
   }
 
@@ -71,6 +69,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(budgetRepositoryProvider);
+    final currencyCode = ref.read(currencyCodeProvider).valueOrNull ?? 'USD';
 
     final companion = BudgetsCompanion(
       name: Value(_nameController.text.trim()),
@@ -78,7 +77,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       color: Value(_color),
       periodStart: Value(_startDate),
       periodEnd: Value(_endDate),
-      currencyCode: const Value('USD'),
+      currencyCode: Value(currencyCode),
     );
 
     if (_isEditing) {
@@ -90,7 +89,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           name: _nameController.text.trim(),
           periodStart: _startDate,
           periodEnd: _endDate,
-          currencyCode: 'USD',
+          currencyCode: currencyCode,
           isIncome: Value(_isIncome),
           color: Value(_color),
         ),
@@ -141,16 +140,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               selected: {_isIncome},
               onSelectionChanged: (v) =>
                   setState(() => _isIncome = v.first),
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _amountController,
-              decoration: InputDecoration(
-                labelText: _isIncome ? 'Savings goal' : 'Budget amount',
-                hintText: '0.00',
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: 24),
             Text('Period', style: theme.textTheme.titleSmall),

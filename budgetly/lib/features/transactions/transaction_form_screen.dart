@@ -88,11 +88,13 @@ class _TransactionFormScreenState
 
     final repo = ref.read(transactionRepositoryProvider);
     final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
+    final wallet = await ref.read(walletRepositoryProvider).getById(_walletId!);
+    final currencyCode = wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
 
     final companion = TransactionsCompanion(
       type: Value(_type),
       amountMinor: Value(amount.round()),
-      currencyCode: Value(MoneyUtils.defaultCurrencyCode),
+      currencyCode: Value(currencyCode),
       date: Value(_date),
       walletId: Value(_walletId!),
       transferWalletId: Value(_transferWalletId),
@@ -114,7 +116,7 @@ class _TransactionFormScreenState
       await repo.insert(TransactionsCompanion.insert(
         type: _type,
         amountMinor: amount.round(),
-        currencyCode: MoneyUtils.defaultCurrencyCode,
+        currencyCode: currencyCode,
         date: _date,
         walletId: _walletId!,
         transferWalletId: Value(_transferWalletId),
@@ -138,7 +140,9 @@ class _TransactionFormScreenState
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
-    final currencyCode = MoneyUtils.defaultCurrencyCode;
+    final wallets = walletsAsync.valueOrNull ?? [];
+    final selectedWallet = wallets.where((w) => w.id == _walletId).firstOrNull;
+    final displayCurrency = selectedWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
 
     return Scaffold(
       appBar: AppBar(
@@ -180,11 +184,13 @@ class _TransactionFormScreenState
                     icon: Icon(Icons.swap_horiz)),
               ],
               selected: {_type},
-              onSelectionChanged: (v) =>
-                  setState(() => _type = v.first),
+              onSelectionChanged: (v) => setState(() {
+                _type = v.first;
+                if (_type == 'transfer') _categoryId = null;
+              }),
             ),
             const SizedBox(height: 20),
-            AmountField(controller: _amountController, currencySymbol: currencyCode),
+            AmountField(controller: _amountController, currencySymbol: displayCurrency),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -228,6 +234,7 @@ class _TransactionFormScreenState
             const SizedBox(height: 16),
             walletsAsync.when(
                 data: (wallets) => DropdownButtonFormField<int>(
+                isExpanded: true,
                 initialValue: _walletId,
                 decoration:
                     const InputDecoration(labelText: 'Account'),
@@ -245,6 +252,7 @@ class _TransactionFormScreenState
             if (_type == 'expense' || _type == 'income')
               catsAsync.when(
                 data: (cats) => DropdownButtonFormField<int>(
+                  isExpanded: true,
                   initialValue: _categoryId,
                   decoration:
                       const InputDecoration(labelText: 'Category'),
@@ -263,6 +271,7 @@ class _TransactionFormScreenState
             if (_type == 'transfer')
               walletsAsync.when(
                 data: (wallets) => DropdownButtonFormField<int>(
+                  isExpanded: true,
                   initialValue: _transferWalletId,
                   decoration:
                       const InputDecoration(labelText: 'Transfer to'),

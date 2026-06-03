@@ -41,7 +41,14 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {},
+        onRefresh: () async {
+          ref.invalidate(totalBalanceProvider);
+          ref.invalidate(recentTransactionsProvider);
+          ref.invalidate(allBudgetsProvider);
+          ref.invalidate(activeWalletsProvider);
+          ref.invalidate(activeRecurringProvider);
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [

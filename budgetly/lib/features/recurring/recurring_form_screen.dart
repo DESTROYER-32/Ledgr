@@ -143,14 +143,17 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     icon: Icon(Icons.swap_horiz)),
               ],
               selected: {_type},
-              onSelectionChanged: (v) => setState(() => _type = v.first),
+              onSelectionChanged: (v) => setState(() {
+                _type = v.first;
+                if (_type == 'transfer') _categoryId = null;
+              }),
             ),
             const SizedBox(height: 20),
             TextFormField(
               controller: _amountController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Amount',
-                prefixText: '\$ ',
+                prefixText: '${MoneyUtils.defaultCurrencyCode} ',
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -186,6 +189,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             walletsAsync.when(
               data: (wallets) => DropdownButtonFormField<int>(
                 initialValue: _walletId,
+                isExpanded: true,
                 decoration:
                     const InputDecoration(labelText: 'Account'),
                 items: wallets
@@ -203,6 +207,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
               catsAsync.when(
                 data: (cats) => DropdownButtonFormField<int>(
                   initialValue: _categoryId,
+                  isExpanded: true,
                   decoration:
                       const InputDecoration(labelText: 'Category'),
                   items: [

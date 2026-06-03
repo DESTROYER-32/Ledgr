@@ -10,6 +10,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/money_utils.dart';
 
 class BackupScreen extends ConsumerWidget {
   const BackupScreen({super.key});
@@ -160,7 +161,7 @@ class BackupScreen extends ConsumerWidget {
           await repo.insert(TransactionsCompanion.insert(
             type: type,
             amountMinor: amount.round(),
-            currencyCode: 'USD',
+            currencyCode: MoneyUtils.defaultCurrencyCode,
             date: date,
             walletId: wallets.first.id,
             title: Value(title),

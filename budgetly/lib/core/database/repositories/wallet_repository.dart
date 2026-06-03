@@ -47,42 +47,21 @@ class WalletRepository {
     final wallet = await (_db.wallets.select()
           ..where((w) => w.id.equals(walletId)))
         .getSingle();
-    var balance = wallet.initialBalanceMinor;
 
-    final expenses = await (_db.transactions.select()
-          ..where((t) => t.walletId.equals(walletId) & t.type.equals('expense')))
-        .map((t) => t.amountMinor)
-        .get();
-    for (final amt in expenses) {
-      balance -= amt;
-    }
+    final result = await _db.customSelect(
+      'SELECT '
+      "COALESCE(SUM(CASE WHEN type='expense' AND wallet_id=?1 THEN amount_minor END),0) AS expense_sum, "
+      "COALESCE(SUM(CASE WHEN type='income' AND wallet_id=?1 THEN amount_minor END),0) AS income_sum, "
+      "COALESCE(SUM(CASE WHEN type='transfer' AND transfer_wallet_id=?1 THEN amount_minor END),0) AS transfer_in_sum, "
+      "COALESCE(SUM(CASE WHEN type='transfer' AND wallet_id=?1 THEN amount_minor END),0) AS transfer_out_sum "
+      'FROM transactions WHERE wallet_id=?1 OR transfer_wallet_id=?1',
+      variables: [Variable(walletId)],
+    ).getSingle();
 
-    final income = await (_db.transactions.select()
-          ..where((t) => t.walletId.equals(walletId) & t.type.equals('income')))
-        .map((t) => t.amountMinor)
-        .get();
-    for (final amt in income) {
-      balance += amt;
-    }
-
-    final transfersIn = await (_db.transactions.select()
-          ..where((t) =>
-              t.transferWalletId.equals(walletId) & t.type.equals('transfer')))
-        .map((t) => t.amountMinor)
-        .get();
-    for (final amt in transfersIn) {
-      balance += amt;
-    }
-
-    final transfersOut = await (_db.transactions.select()
-          ..where((t) =>
-              t.walletId.equals(walletId) & t.type.equals('transfer')))
-        .map((t) => t.amountMinor)
-        .get();
-    for (final amt in transfersOut) {
-      balance -= amt;
-    }
-
-    return balance;
+    return wallet.initialBalanceMinor
+        - (result.data['expense_sum'] as int)
+        + (result.data['income_sum'] as int)
+        + (result.data['transfer_in_sum'] as int)
+        - (result.data['transfer_out_sum'] as int);
   }
 }

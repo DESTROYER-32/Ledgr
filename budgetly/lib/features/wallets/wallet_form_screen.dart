@@ -112,9 +112,9 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _balanceController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Current balance',
-                prefixText: '\$ ',
+                prefixText: '$_currencyCode ',
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),

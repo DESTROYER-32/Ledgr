@@ -10,7 +10,7 @@ class AmountField extends StatelessWidget {
     super.key,
     required this.controller,
     this.label = 'Amount',
-    this.currencySymbol = '\$',
+    this.currencySymbol = 'USD',
     this.autofocus = false,
   });
 

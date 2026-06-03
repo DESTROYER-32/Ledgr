@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -36,6 +36,15 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(budgets, budgets.isIncome);
           await m.addColumn(budgets, budgets.pinned);
           await m.addColumn(budgets, budgets.color);
+        }
+        if (from < 4) {
+          await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id)');
+          await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id)');
+          await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)');
+          await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
+          await customStatement('CREATE INDEX IF NOT EXISTS idx_budget_limits_budget_id ON budget_category_limits(budget_id)');
+          await customStatement('CREATE INDEX IF NOT EXISTS idx_budget_limits_category_id ON budget_category_limits(category_id)');
+          await customStatement('CREATE INDEX IF NOT EXISTS idx_recurring_wallet_id ON recurring_transactions(wallet_id)');
         }
       },
     );

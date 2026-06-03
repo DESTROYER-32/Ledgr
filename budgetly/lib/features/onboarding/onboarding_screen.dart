@@ -195,10 +195,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 16),
           TextField(
             controller: _balanceController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Current balance',
               hintText: '0.00',
-              prefixText: '\$ ',
+              prefixText: '$_selectedCurrency ',
             ),
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),

@@ -94,6 +94,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           children: [
             ...monthBudgets.map((b) =>
                 _buildBudgetCard(theme, cs, b)),
+            _buildAddBudgetCard(theme, cs),
           ],
         );
       },
@@ -252,6 +253,42 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     );
   }
 
+  Widget _buildAddBudgetCard(ThemeData theme, ColorScheme cs) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: cs.outline.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      color: cs.surfaceContainerLow,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/budgets/new'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, color: cs.primary),
+                const SizedBox(width: 8),
+                Text('Create Budget',
+                    style: TextStyle(
+                      color: cs.primary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    )),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   String _monthName(int month) {
     const names = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -261,9 +298,4 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 }
 
-class AppDateUtils {
-  static DateTime previousMonth(DateTime d) =>
-      DateTime(d.year, d.month - 1, 1);
-  static DateTime nextMonth(DateTime d) =>
-      DateTime(d.year, d.month + 1, 1);
-}
+
