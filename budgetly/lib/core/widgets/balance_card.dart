@@ -59,13 +59,13 @@ class BalanceCard extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 )),
                 const Spacer(),
-                if (actions != null) ...actions!,
+                ...?actions,
               ],
             ),
             const SizedBox(height: 16),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 300),
-              style: theme.textTheme.headlineLarge?.copyWith(
+              style: (theme.textTheme.headlineLarge ?? theme.textTheme.headlineMedium ?? const TextStyle()).copyWith(
                 fontWeight: FontWeight.bold,
                 color: cs.onSurface,
                 height: 1.1,

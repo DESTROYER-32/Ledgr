@@ -138,7 +138,6 @@ class _TransactionFormScreenState
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
