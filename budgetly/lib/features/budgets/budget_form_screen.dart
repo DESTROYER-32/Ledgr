@@ -19,6 +19,7 @@ class BudgetFormScreen extends ConsumerStatefulWidget {
 class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _amountController = TextEditingController();
 
   bool _isIncome = false;
   int _color = AppColors.categoryColors[0].toARGB32();
@@ -39,6 +40,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
@@ -58,6 +60,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         _startDate = budget.periodStart;
         _endDate = budget.periodEnd;
         _periodDays = days > 0 ? days : 30;
+        _amountController.text = (budget.plannedAmountMinor / 100).toStringAsFixed(2);
       });
       final limits = await repo.watchLimits(budget.id).first;
       setState(() {
@@ -70,6 +73,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(budgetRepositoryProvider);
     final currencyCode = ref.read(currencyCodeProvider).valueOrNull ?? 'USD';
+    final plannedAmountMinor = ((double.tryParse(_amountController.text) ?? 0) * 100).round();
 
     final companion = BudgetsCompanion(
       name: Value(_nameController.text.trim()),
@@ -78,6 +82,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       periodStart: Value(_startDate),
       periodEnd: Value(_endDate),
       currencyCode: Value(currencyCode),
+      plannedAmountMinor: Value(plannedAmountMinor),
     );
 
     if (_isEditing) {
@@ -92,6 +97,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           currencyCode: currencyCode,
           isIncome: Value(_isIncome),
           color: Value(_color),
+          plannedAmountMinor: Value(plannedAmountMinor),
         ),
       );
       if (mounted) context.pop();
@@ -140,6 +146,16 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               selected: {_isIncome},
               onSelectionChanged: (v) =>
                   setState(() => _isIncome = v.first),
+            ),
+            const SizedBox(height: 24),
+            TextFormField(
+              controller: _amountController,
+              decoration: InputDecoration(
+                labelText: _isIncome ? 'Savings goal' : 'Budget amount',
+                hintText: '0.00',
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: 24),
             Text('Period', style: theme.textTheme.titleSmall),
