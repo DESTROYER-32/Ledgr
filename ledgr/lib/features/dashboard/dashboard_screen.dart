@@ -180,22 +180,23 @@ class DashboardScreen extends ConsumerWidget {
             padding: EdgeInsets.all(20),
             child: Text('Error loading expenses'),
           )),
-          loading: () => Card(child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          )),
+          loading: () => _loadingCard,
         );
       },
       error: (_, _) => const Card(child: Padding(
         padding: EdgeInsets.all(20),
         child: Text('Error loading income'),
       )),
-      loading: () => Card(child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      )),
+      loading: () => _loadingCard,
     );
   }
+
+  static const _loadingCard = Card(
+    child: Padding(
+      padding: EdgeInsets.all(20),
+      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+    ),
+  );
 
   Widget _buildQuickActions(BuildContext context, ColorScheme cs) {
     return Row(
