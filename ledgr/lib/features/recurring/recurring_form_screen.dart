@@ -1,0 +1,247 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:drift/drift.dart' show Value;
+
+import '../../core/database/app_database.dart';
+import '../../core/providers/providers.dart';
+import '../../core/utils/money_utils.dart';
+
+class RecurringFormScreen extends ConsumerStatefulWidget {
+  final int? recurringId;
+  const RecurringFormScreen({super.key, this.recurringId});
+
+  @override
+  ConsumerState<RecurringFormScreen> createState() =>
+      _RecurringFormScreenState();
+}
+
+class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _noteController = TextEditingController();
+  String _type = 'expense';
+  String _schedule = 'monthly';
+  int? _walletId;
+  int? _categoryId;
+  DateTime _startDate = DateTime.now();
+  DateTime? _endDate;
+  bool _isLoading = false;
+  bool _isEditing = false;
+
+  final _schedules = [
+    ('daily', 'Daily'),
+    ('weekly', 'Weekly'),
+    ('monthly', 'Monthly'),
+    ('yearly', 'Yearly'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.recurringId != null) {
+      _isEditing = true;
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final r = await ref
+        .read(recurringRepositoryProvider)
+        .getById(widget.recurringId!);
+    if (r != null && mounted) {
+      setState(() {
+        _type = r.transactionType;
+        _schedule = r.scheduleRule;
+        _walletId = r.walletId;
+        _categoryId = r.categoryId;
+        _startDate = r.startDate;
+        _endDate = r.endDate;
+        _titleController.text = r.title ?? '';
+        _noteController.text = r.note ?? '';
+        _amountController.text =
+            (r.amountMinor / 100).toStringAsFixed(2);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _titleController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_walletId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an account')),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+
+    final repo = ref.read(recurringRepositoryProvider);
+    final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
+
+    final companion = RecurringTransactionsCompanion(
+      transactionType: Value(_type),
+      amountMinor: Value(amount.round()),
+      walletId: Value(_walletId!),
+      transferWalletId: const Value(null),
+      categoryId: Value(_categoryId),
+      title: Value(_titleController.text.isEmpty
+          ? null
+          : _titleController.text),
+      note: Value(
+          _noteController.text.isEmpty ? null : _noteController.text),
+      scheduleRule: Value(_schedule),
+      startDate: Value(_startDate),
+      endDate: Value(_endDate),
+      nextDueDate: Value(_startDate),
+    );
+
+    if (_isEditing) {
+      await repo.update(widget.recurringId!, companion);
+    } else {
+      await repo.insert(companion);
+    }
+
+    if (mounted) context.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final walletsAsync = ref.watch(activeWalletsProvider);
+    final catsAsync = ref.watch(expenseCategoriesProvider);
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+          title: Text(_isEditing ? 'Edit Recurring' : 'New Recurring')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(
+                    value: 'expense',
+                    label: Text('Expense'),
+                    icon: Icon(Icons.arrow_upward)),
+                ButtonSegment(
+                    value: 'income',
+                    label: Text('Income'),
+                    icon: Icon(Icons.arrow_downward)),
+                ButtonSegment(
+                    value: 'transfer',
+                    label: Text('Transfer'),
+                    icon: Icon(Icons.swap_horiz)),
+              ],
+              selected: {_type},
+              onSelectionChanged: (v) => setState(() => _type = v.first),
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _amountController,
+              decoration: const InputDecoration(
+                labelText: 'Amount',
+                prefixText: '\$ ',
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Title / Payee',
+                hintText: 'e.g. Netflix, Rent, Salary',
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            Text('Schedule', style: theme.textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: _schedules.map((s) {
+                final sel = _schedule == s.$1;
+                return ChoiceChip(
+                  label: Text(s.$2),
+                  selected: sel,
+                  onSelected: (_) =>
+                      setState(() => _schedule = s.$1),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+            walletsAsync.when(
+              data: (wallets) => DropdownButtonFormField<int>(
+                initialValue: _walletId,
+                decoration:
+                    const InputDecoration(labelText: 'Account'),
+                items: wallets
+                    .map((w) => DropdownMenuItem(
+                        value: w.id, child: Text(w.name)))
+                    .toList(),
+                onChanged: (v) => setState(() => _walletId = v),
+                validator: (v) => v == null ? 'Required' : null,
+              ),
+              error: (e, _) => Text('$e'),
+              loading: () => const LinearProgressIndicator(),
+            ),
+            const SizedBox(height: 16),
+            if (_type == 'expense' || _type == 'income')
+              catsAsync.when(
+                data: (cats) => DropdownButtonFormField<int>(
+                  initialValue: _categoryId,
+                  decoration:
+                      const InputDecoration(labelText: 'Category'),
+                  items: [
+                    const DropdownMenuItem(
+                        value: null, child: Text('None')),
+                    ...cats.map((c) => DropdownMenuItem(
+                        value: c.id, child: Text(c.name))),
+                  ],
+                  onChanged: (v) =>
+                      setState(() => _categoryId = v),
+                ),
+                error: (e, _) => Text('$e'),
+                loading: () => const LinearProgressIndicator(),
+              ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.calendar_today),
+              title: Text('Start: ${AppDateUtils.formatDate(_startDate)}'),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _startDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2035),
+                );
+                if (picked != null) {
+                  setState(() => _startDate = picked);
+                }
+              },
+            ),
+            const SizedBox(height: 32),
+            FilledButton(
+              onPressed: _isLoading ? null : _save,
+              child: Text(_isEditing ? 'Update' : 'Create'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

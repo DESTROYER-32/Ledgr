@@ -6,23 +6,31 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/amount_field.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   final int? transactionId;
   final int? preselectedWalletId;
-  const TransactionFormScreen(
-      {super.key, this.transactionId, this.preselectedWalletId});
+  final String? preselectedType;
+  const TransactionFormScreen({
+    super.key,
+    this.transactionId,
+    this.preselectedWalletId,
+    this.preselectedType,
+  });
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
       _TransactionFormScreenState();
 }
 
-class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
+class _TransactionFormScreenState
+    extends ConsumerState<TransactionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
+  final _tagsController = TextEditingController();
   String _type = 'expense';
   int? _walletId;
   int? _transferWalletId;
@@ -35,6 +43,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   void initState() {
     super.initState();
     _walletId = widget.preselectedWalletId;
+    if (widget.preselectedType != null) {
+      _type = widget.preselectedType!;
+    }
     _isEditing = widget.transactionId != null;
     if (_isEditing) _loadTransaction();
   }
@@ -43,14 +54,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final repo = ref.read(transactionRepositoryProvider);
     final t = await repo.getById(widget.transactionId!);
     if (t != null && mounted) {
-      _type = t.type;
-      _walletId = t.walletId;
-      _transferWalletId = t.transferWalletId;
-      _categoryId = t.categoryId;
-      _date = t.date;
-      _titleController.text = t.title ?? '';
-      _noteController.text = t.note ?? '';
-      _amountController.text = (t.amountMinor / 100).toStringAsFixed(2);
+      setState(() {
+        _type = t.type;
+        _walletId = t.walletId;
+        _transferWalletId = t.transferWalletId;
+        _categoryId = t.categoryId;
+        _date = t.date;
+        _titleController.text = t.title ?? '';
+        _noteController.text = t.note ?? '';
+        _amountController.text =
+            (t.amountMinor / 100).toStringAsFixed(2);
+      });
     }
   }
 
@@ -59,7 +73,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _amountController.dispose();
     _titleController.dispose();
     _noteController.dispose();
+    _tagsController.dispose();
     super.dispose();
+  }
+
+  void _duplicate(Map<String, dynamic> extra) {
+    context.pushReplacement('/transactions/new', extra: extra);
   }
 
   Future<void> _save() async {
@@ -70,24 +89,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final repo = ref.read(transactionRepositoryProvider);
     final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
 
+    final companion = TransactionsCompanion(
+      type: Value(_type),
+      amountMinor: Value(amount.round()),
+      currencyCode: const Value('USD'),
+      date: Value(_date),
+      walletId: Value(_walletId!),
+      transferWalletId: Value(_transferWalletId),
+      categoryId: Value(_categoryId),
+      title: Value(_titleController.text.isEmpty
+          ? null
+          : _titleController.text),
+      note: Value(_noteController.text.isEmpty
+          ? null
+          : _noteController.text),
+      tags: Value(_tagsController.text.isEmpty
+          ? null
+          : _tagsController.text),
+    );
+
     if (_isEditing) {
-      await repo.update(
-        widget.transactionId!,
-        TransactionsCompanion(
-          type: Value(_type),
-          amountMinor: Value(amount.round()),
-          currencyCode: const Value('USD'),
-          date: Value(_date),
-          walletId: Value(_walletId!),
-          transferWalletId: Value(_transferWalletId),
-          categoryId: Value(_categoryId),
-          title: Value(_titleController.text.isEmpty
-              ? null
-              : _titleController.text),
-          note: Value(
-              _noteController.text.isEmpty ? null : _noteController.text),
-        ),
-      );
+      await repo.update(widget.transactionId!, companion);
     } else {
       await repo.insert(TransactionsCompanion.insert(
         type: _type,
@@ -97,8 +119,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         walletId: _walletId!,
         transferWalletId: Value(_transferWalletId),
         categoryId: Value(_categoryId),
-        title: Value(_titleController.text.isEmpty ? null : _titleController.text),
-        note: Value(_noteController.text.isEmpty ? null : _noteController.text),
+        title: Value(_titleController.text.isEmpty
+            ? null
+            : _titleController.text),
+        note: Value(_noteController.text.isEmpty
+            ? null
+            : _noteController.text),
+        tags: Value(_tagsController.text.isEmpty
+            ? null
+            : _tagsController.text),
       ));
     }
 
@@ -109,10 +138,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isEditing ? 'Edit Transaction' : 'New Transaction')),
+        title:
+            Text(_isEditing ? 'Edit Transaction' : 'New Transaction'),
+        actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.copy),
+              tooltip: 'Duplicate',
+              onPressed: () {
+                final extra = <String, dynamic>{
+                  'type': _type,
+                  'walletId': _walletId,
+                };
+                _duplicate(extra);
+              },
+            ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -134,19 +180,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     icon: Icon(Icons.swap_horiz)),
               ],
               selected: {_type},
-              onSelectionChanged: (v) => setState(() => _type = v.first),
+              onSelectionChanged: (v) =>
+                  setState(() => _type = v.first),
             ),
             const SizedBox(height: 20),
-            TextFormField(
-              controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: 'Amount',
-                prefixText: '\$ ',
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-            ),
+            AmountField(controller: _amountController),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -163,10 +201,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               maxLines: 2,
             ),
             const SizedBox(height: 16),
+            TextFormField(
+              controller: _tagsController,
+              decoration: const InputDecoration(
+                labelText: 'Tags',
+                hintText: 'Comma-separated (e.g. food, work)',
+              ),
+            ),
+            const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.calendar_today),
-              title: Text(MoneyUtils.formatDate(_date)),
+              title: Text(AppDateUtils.formatDate(_date)),
               onTap: () async {
                 final picked = await showDatePicker(
                   context: context,
@@ -174,17 +220,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   firstDate: DateTime(2020),
                   lastDate: DateTime(2030),
                 );
-                if (picked != null) setState(() => _date = picked);
+                if (picked != null) {
+                  setState(() => _date = picked);
+                }
               },
             ),
             const SizedBox(height: 16),
             walletsAsync.when(
               data: (wallets) => DropdownButtonFormField<int>(
                 initialValue: _walletId,
-                decoration: const InputDecoration(labelText: 'Account'),
+                decoration:
+                    const InputDecoration(labelText: 'Account'),
                 items: wallets
-                    .map((w) =>
-                        DropdownMenuItem(value: w.id, child: Text(w.name)))
+                    .map((w) => DropdownMenuItem(
+                        value: w.id, child: Text(w.name)))
                     .toList(),
                 onChanged: (v) => setState(() => _walletId = v),
                 validator: (v) => v == null ? 'Required' : null,
@@ -199,11 +248,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   decoration:
                       const InputDecoration(labelText: 'Category'),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('None')),
+                    const DropdownMenuItem(
+                        value: null, child: Text('None')),
                     ...cats.map((c) => DropdownMenuItem(
                         value: c.id, child: Text(c.name))),
                   ],
-                  onChanged: (v) => setState(() => _categoryId = v),
+                  onChanged: (v) =>
+                      setState(() => _categoryId = v),
                 ),
                 error: (e, _) => Text('$e'),
                 loading: () => const LinearProgressIndicator(),
@@ -219,7 +270,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       .map((w) => DropdownMenuItem(
                           value: w.id, child: Text(w.name)))
                       .toList(),
-                  onChanged: (v) => setState(() => _transferWalletId = v),
+                  onChanged: (v) =>
+                      setState(() => _transferWalletId = v),
                 ),
                 error: (e, _) => Text('$e'),
                 loading: () => const LinearProgressIndicator(),
@@ -227,8 +279,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             const SizedBox(height: 32),
             FilledButton(
               onPressed: _isLoading ? null : _save,
-              child:
-                  Text(_isEditing ? 'Update' : 'Add Transaction'),
+              child: Text(_isEditing ? 'Update' : 'Add Transaction'),
             ),
           ],
         ),

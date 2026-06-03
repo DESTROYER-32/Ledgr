@@ -52,3 +52,17 @@ final expenseCategoriesProvider =
 
 final allBudgetsProvider =
     StreamProvider<List<Budget>>((ref) => ref.watch(budgetRepositoryProvider).watchAll());
+
+final activeRecurringProvider = StreamProvider<List<RecurringTransaction>>(
+    (ref) => ref.watch(recurringRepositoryProvider).watchActive());
+
+final currencyCodeProvider = FutureProvider<String>((ref) async {
+  final repo = ref.watch(settingsRepositoryProvider);
+  final currency = await repo.get('currency');
+  return currency ?? 'USD';
+});
+
+final totalBalanceProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(walletRepositoryProvider);
+  return repo.totalBalance();
+});

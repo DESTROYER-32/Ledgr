@@ -7,11 +7,16 @@ import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 
-class WalletsScreen extends ConsumerWidget {
+class WalletsScreen extends ConsumerStatefulWidget {
   const WalletsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WalletsScreen> createState() => _WalletsScreenState();
+}
+
+class _WalletsScreenState extends ConsumerState<WalletsScreen> {
+  @override
+  Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final theme = Theme.of(context);
 
@@ -27,7 +32,8 @@ class WalletsScreen extends ConsumerWidget {
                   Icon(Icons.account_balance_wallet,
                       size: 64, color: theme.colorScheme.outline),
                   const SizedBox(height: 16),
-                  Text('No accounts yet', style: theme.textTheme.titleMedium),
+                  Text('No accounts yet',
+                      style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   FilledButton(
                     onPressed: () => context.push('/wallets/new'),
@@ -37,18 +43,36 @@ class WalletsScreen extends ConsumerWidget {
               ),
             );
           }
-          return ListView.builder(
+          return ReorderableListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: wallets.length + 1,
+            onReorder: (oldIndex, newIndex) async {
+              final repo = ref.read(walletRepositoryProvider);
+              final items = [...wallets];
+              if (oldIndex < newIndex) newIndex--;
+              final item = items.removeAt(oldIndex);
+              items.insert(newIndex, item);
+              for (var i = 0; i < items.length; i++) {
+                await repo.update(
+                  items[i].id,
+                  WalletsCompanion(sortOrder: Value(i)),
+                );
+              }
+            },
             itemBuilder: (context, index) {
-              if (index == 0) return _buildNetWorthCard(context, wallets, theme);
+              if (index == 0) {
+                return _buildNetWorthCard(
+                    Key('networth'), context, wallets, theme);
+              }
               final wallet = wallets[index - 1];
-              return _buildWalletCard(context, wallet, theme);
+              return _buildWalletCard(
+                  Key('wallet_${wallet.id}'), context, wallet, theme);
             },
           );
         },
         error: (e, _) => Center(child: Text('Error: $e')),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () =>
+            const Center(child: CircularProgressIndicator()),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/wallets/new'),
@@ -57,9 +81,12 @@ class WalletsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNetWorthCard(BuildContext context, List<Wallet> wallets, ThemeData theme) {
-    final total = wallets.fold<int>(0, (sum, w) => sum + w.initialBalanceMinor);
+  Widget _buildNetWorthCard(
+      Key key, BuildContext context, List<Wallet> wallets, ThemeData theme) {
+    final total = wallets.fold<int>(
+        0, (sum, w) => sum + w.initialBalanceMinor);
     return Card(
+      key: key,
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -67,14 +94,16 @@ class WalletsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Net Worth',
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            )),
             const SizedBox(height: 4),
             Text(MoneyUtils.format(total),
                 style: theme.textTheme.headlineMedium
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('${wallets.length} account${wallets.length == 1 ? '' : 's'}',
+            Text(
+                '${wallets.length} account${wallets.length == 1 ? '' : 's'}',
                 style: theme.textTheme.bodySmall),
           ],
         ),
@@ -82,18 +111,35 @@ class WalletsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWalletCard(BuildContext context, Wallet wallet, ThemeData theme) {
+  Widget _buildWalletCard(
+      Key key, BuildContext context, Wallet wallet, ThemeData theme) {
     return Card(
+      key: key,
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: _walletColor(wallet.type).withValues(alpha: 0.15),
-          child: Icon(_walletIcon(wallet.type), color: _walletColor(wallet.type)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ReorderableDragStartListener(
+              index: wallets.indexOf(wallet) + 1,
+              child: const Icon(Icons.drag_handle,
+                  color: Colors.grey),
+            ),
+            const SizedBox(width: 4),
+            CircleAvatar(
+              backgroundColor:
+                  _walletColor(wallet.type).withValues(alpha: 0.15),
+              child: Icon(_walletIcon(wallet.type),
+                  color: _walletColor(wallet.type)),
+            ),
+          ],
         ),
         title: Text(wallet.name,
             style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(wallet.type.replaceAll('_', ' ').toUpperCase()),
+        subtitle: Text(
+            wallet.type.replaceAll('_', ' ').toUpperCase()),
         trailing: Text(
           MoneyUtils.format(wallet.initialBalanceMinor),
           style: TextStyle(
@@ -111,23 +157,35 @@ class WalletsScreen extends ConsumerWidget {
 
   Color _walletColor(String type) {
     switch (type) {
-      case 'checking': return AppColors.transfer;
-      case 'savings': return AppColors.income;
-      case 'cash': return AppColors.income;
-      case 'credit_card': return AppColors.expense;
-      case 'loan': return AppColors.expense;
-      default: return AppColors.transfer;
+      case 'checking':
+        return AppColors.transfer;
+      case 'savings':
+        return AppColors.income;
+      case 'cash':
+        return AppColors.income;
+      case 'credit_card':
+        return AppColors.expense;
+      case 'loan':
+        return AppColors.expense;
+      default:
+        return AppColors.transfer;
     }
   }
 
   IconData _walletIcon(String type) {
     switch (type) {
-      case 'checking': return Icons.account_balance;
-      case 'savings': return Icons.savings;
-      case 'cash': return Icons.money;
-      case 'credit_card': return Icons.credit_card;
-      case 'loan': return Icons.account_balance_wallet;
-      default: return Icons.account_balance;
+      case 'checking':
+        return Icons.account_balance;
+      case 'savings':
+        return Icons.savings;
+      case 'cash':
+        return Icons.money;
+      case 'credit_card':
+        return Icons.credit_card;
+      case 'loan':
+        return Icons.account_balance_wallet;
+      default:
+        return Icons.account_balance;
     }
   }
 }
