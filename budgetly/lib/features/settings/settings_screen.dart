@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/utils/money_utils.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -98,9 +99,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _setCurrency(String currency) async {
     setState(() => _currency = currency);
-    await ref
-        .read(settingsRepositoryProvider)
-        .set('currency', currency);
+    MoneyUtils.setDefaultCurrencyCode(currency);
+    await ref.read(settingsRepositoryProvider).set('currency', currency);
+    ref.invalidate(currencyCodeProvider);
+    ref.invalidate(totalBalanceProvider);
   }
 
   Future<void> _setThemeMode(String mode) async {

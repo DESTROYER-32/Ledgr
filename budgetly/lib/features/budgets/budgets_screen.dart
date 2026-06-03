@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
@@ -42,6 +43,25 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                 setState(() => _currentMonth =
                     AppDateUtils.nextMonth(_currentMonth)),
           ),
+          if (_budget != null)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (v) {
+                if (v == 'delete') _deleteBudget(_budget!);
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, size: 18),
+                      SizedBox(width: 8),
+                      Text('Delete Budget'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
       body: _buildBody(theme, periodStart, periodEnd),
@@ -134,7 +154,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       BudgetCategoryLimit limit, DateTime start, DateTime end,
       Map<int, Category> catMap) {
     final cat = catMap[limit.categoryId];
-    final catName = cat?.name ?? 'Category ${limit.categoryId}';
+    final catName = cat?.name ?? 'Deleted Category';
     final catColor = cat?.color != null ? Color(cat!.color!) : theme.colorScheme.primary;
 
     final periodKey = '${start.toIso8601String()},${end.toIso8601String()}';
@@ -170,6 +190,16 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                     const SizedBox(width: 8),
                     Text('/ ${MoneyUtils.format(limit.plannedAmountMinor)}',
                         style: theme.textTheme.bodySmall),
+                    const SizedBox(width: 4),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => _removeLimit(budget.id, limit.categoryId),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(Icons.close, size: 14,
+                            color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -233,7 +263,13 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     if (expenseCats.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No expense categories available')),
+          SnackBar(
+            content: const Text('No expense categories found.'),
+            action: SnackBarAction(
+              label: 'Create',
+              onPressed: () => context.push('/categories'),
+            ),
+          ),
         );
       }
       return;
@@ -302,6 +338,42 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             .setLimit(budget.id, selectedCat!.id, amount.round());
       }
     }
+  }
+
+  Future<void> _deleteBudget(Budget budget) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Delete Budget'),
+        content: const Text('Delete this budget and all its spending limits?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.expense,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      final repo = ref.read(budgetRepositoryProvider);
+      final limits = await repo.watchLimits(budget.id).first;
+      for (final limit in limits) {
+        await repo.removeLimit(budget.id, limit.categoryId);
+      }
+      await repo.delete(budget.id);
+    }
+  }
+
+  Future<void> _removeLimit(int budgetId, int categoryId) async {
+    final repo = ref.read(budgetRepositoryProvider);
+    await repo.removeLimit(budgetId, categoryId);
   }
 
   String _monthName(int month) {

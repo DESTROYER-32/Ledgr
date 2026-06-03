@@ -22,6 +22,7 @@ class DashboardScreen extends ConsumerWidget {
     final totalBalanceAsync = ref.watch(totalBalanceProvider);
     final recentAsync = ref.watch(recentTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
+    final walletsAsync = ref.watch(activeWalletsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -42,6 +43,7 @@ class DashboardScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
+            _buildSetupCard(context, theme, cs, walletsAsync, ref),
             _buildBalanceCard(context, theme, cs, totalBalanceAsync),
             const SizedBox(height: 20),
             _buildMonthlySummary(context, theme, cs, ref),
@@ -56,6 +58,62 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSetupCard(BuildContext context, ThemeData theme,
+      ColorScheme cs, AsyncValue<List<Wallet>> walletsAsync, WidgetRef ref) {
+    return walletsAsync.when(
+      data: (wallets) {
+        if (wallets.isNotEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Card(
+            color: cs.primaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.rocket_launch, color: cs.onPrimaryContainer, size: 24),
+                      const SizedBox(width: 12),
+                      Text('Welcome to Budgetly!',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: cs.onPrimaryContainer,
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Set up your first account and categories to get started.',
+                      style: TextStyle(color: cs.onPrimaryContainer)),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed: () => context.push('/wallets/new'),
+                        icon: const Icon(Icons.account_balance_wallet, size: 16),
+                        label: const Text('Add Account'),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: () => context.push('/categories'),
+                        icon: const Icon(Icons.category, size: 16),
+                        label: const Text('Manage Categories'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      error: (_, _) => const SizedBox.shrink(),
+      loading: () => const SizedBox.shrink(),
     );
   }
 
