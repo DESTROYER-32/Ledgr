@@ -19,10 +19,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _currency = 'USD';
   bool _canAuth = false;
   bool _isLoading = true;
+  String _themeMode = 'system';
+  int _themeSeed = 0xFF1A6D4A;
 
   final _currencies = [
     'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL',
   ];
+
+  static const _themeSeeds = <int>[
+    0xFF1A6D4A, // Green
+    0xFF1565C0, // Blue
+    0xFF7B1FA2, // Purple
+    0xFFC62828, // Red
+    0xFFEF6C00, // Orange
+    0xFF283593, // Indigo
+    0xFF00838F, // Teal
+    0xFF4E342E, // Brown
+    0xFF37474F, // Blue Grey
+  ];
+
+
 
   @override
   void initState() {
@@ -35,12 +51,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appLock = await repo.get('app_lock');
     final notifications = await repo.get('notifications');
     final currency = await repo.get('currency');
+    final themeMode = await repo.get('theme_mode');
+    final themeSeed = await repo.get('theme_seed');
     final canAuth = await AuthService.canAuthenticate();
     if (mounted) {
       setState(() {
         _appLock = appLock == 'true';
         _notifications = notifications == 'true';
         _currency = currency ?? 'USD';
+        _themeMode = themeMode ?? 'system';
+        _themeSeed = themeSeed != null ? int.parse(themeSeed) : 0xFF1A6D4A;
         _canAuth = canAuth;
         _isLoading = false;
       });
@@ -81,6 +101,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref
         .read(settingsRepositoryProvider)
         .set('currency', currency);
+  }
+
+  Future<void> _setThemeMode(String mode) async {
+    setState(() => _themeMode = mode);
+    await ref.read(settingsRepositoryProvider).set('theme_mode', mode);
+    ref.invalidate(themeConfigProvider);
+  }
+
+  Future<void> _setThemeSeed(int seed) async {
+    setState(() => _themeSeed = seed);
+    await ref
+        .read(settingsRepositoryProvider)
+        .set('theme_seed', seed.toString());
+    ref.invalidate(themeConfigProvider);
   }
 
   @override
@@ -150,6 +184,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (v != null) _setCurrency(v);
                 },
                 underline: const SizedBox(),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Theme', [
+            ListTile(
+              leading: Icon(Icons.palette_outlined,
+                  color: theme.colorScheme.primary),
+              title: const Text('Theme Mode'),
+              trailing: DropdownButton<String>(
+                value: _themeMode,
+                items: const [
+                  DropdownMenuItem(value: 'system', child: Text('System')),
+                  DropdownMenuItem(value: 'light', child: Text('Light')),
+                  DropdownMenuItem(value: 'dark', child: Text('Dark')),
+                ],
+                onChanged: (v) {
+                  if (v != null) _setThemeMode(v);
+                },
+                underline: const SizedBox(),
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: List.generate(_themeSeeds.length, (i) {
+                  final color = Color(_themeSeeds[i]);
+                  final selected = _themeSeed == _themeSeeds[i];
+                  return GestureDetector(
+                    onTap: () => _setThemeSeed(_themeSeeds[i]),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: selected
+                            ? Border.all(color: theme.colorScheme.onSurface, width: 2.5)
+                            : null,
+                        boxShadow: selected
+                            ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8)]
+                            : null,
+                      ),
+                      child: selected
+                          ? const Icon(Icons.check, color: Colors.white, size: 18)
+                          : null,
+                    ),
+                  );
+                }),
               ),
             ),
           ]),

@@ -84,29 +84,46 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
 
   Widget _buildNetWorthCard(
       Key key, BuildContext context, List<Wallet> wallets, ThemeData theme) {
-    final total = wallets.fold<int>(
-        0, (sum, w) => sum + w.initialBalanceMinor);
-    return Card(
-      key: key,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Net Worth',
-                style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            )),
-            const SizedBox(height: 4),
-            Text(MoneyUtils.format(total),
-                style: theme.textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-                '${wallets.length} account${wallets.length == 1 ? '' : 's'}',
-                style: theme.textTheme.bodySmall),
-          ],
+    final totalBalanceAsync = ref.watch(totalBalanceProvider);
+    return totalBalanceAsync.when(
+      data: (total) => Card(
+        key: key,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Net Worth',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              )),
+              const SizedBox(height: 4),
+              Text(MoneyUtils.format(total),
+                  style: theme.textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(
+                  '${wallets.length} account${wallets.length == 1 ? '' : 's'}',
+                  style: theme.textTheme.bodySmall),
+            ],
+          ),
+        ),
+      ),
+      error: (_, _) => Card(
+        key: key,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: const Padding(
+          padding: EdgeInsets.all(20),
+          child: Text('Error loading balance'),
+        ),
+      ),
+      loading: () => Card(
+        key: key,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: const Padding(
+          padding: EdgeInsets.all(20),
+          child: LinearProgressIndicator(),
         ),
       ),
     );

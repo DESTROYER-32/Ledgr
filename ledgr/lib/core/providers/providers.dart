@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
@@ -7,6 +8,12 @@ import '../database/repositories/recurring_repository.dart';
 import '../database/repositories/settings_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
+
+class ThemeConfig {
+  final ThemeMode themeMode;
+  final Color seedColor;
+  const ThemeConfig({required this.themeMode, required this.seedColor});
+}
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
 
@@ -62,7 +69,49 @@ final currencyCodeProvider = FutureProvider<String>((ref) async {
   return currency ?? 'USD';
 });
 
+final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
+  final repo = ref.watch(settingsRepositoryProvider);
+  final modeStr = await repo.get('theme_mode');
+  final seedStr = await repo.get('theme_seed');
+  final mode = switch (modeStr) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+  final seed = seedStr != null ? Color(int.parse(seedStr)) : const Color(0xFF1A6D4A);
+  return ThemeConfig(themeMode: mode, seedColor: seed);
+});
+
 final totalBalanceProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(walletRepositoryProvider);
   return repo.totalBalance();
+});
+
+final budgetLimitsProvider =
+    StreamProvider.family<List<BudgetCategoryLimit>, int>((ref, budgetId) {
+  return ref.watch(budgetRepositoryProvider).watchLimits(budgetId);
+});
+
+final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>(
+    (ref, key) async {
+  final parts = key.split(',');
+  final start = DateTime.parse(parts[0]);
+  final end = DateTime.parse(parts[1]);
+  return ref
+      .watch(transactionRepositoryProvider)
+      .spentByCategory(start, end);
+});
+
+final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) async {
+  final parts = key.split(',');
+  final start = DateTime.parse(parts[0]);
+  final end = DateTime.parse(parts[1]);
+  return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
+});
+
+final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) async {
+  final parts = key.split(',');
+  final start = DateTime.parse(parts[0]);
+  final end = DateTime.parse(parts[1]);
+  return ref.watch(transactionRepositoryProvider).totalExpenses(start, end);
 });

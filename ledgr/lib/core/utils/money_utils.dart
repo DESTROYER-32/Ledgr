@@ -5,20 +5,24 @@ class MoneyUtils {
 
   static String format(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
-    final format = NumberFormat.currency(
-      symbol: currencyCode ?? '',
-      decimalDigits: 2,
-    );
-    return format.format(amount);
+    final code = currencyCode ?? 'USD';
+    try {
+      final format = NumberFormat.simpleCurrency(name: code, decimalDigits: 2);
+      return format.format(amount);
+    } catch (_) {
+      return '$code ${amount.toStringAsFixed(2)}';
+    }
   }
 
   static String formatCompact(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
     if (amount.abs() >= 1000000) {
-      return '${(amount / 1000000).toStringAsFixed(1)}M';
+      final code = currencyCode ?? 'USD';
+      return '$code${(amount / 1000000).toStringAsFixed(1)}M';
     }
     if (amount.abs() >= 1000) {
-      return '${(amount / 1000).toStringAsFixed(1)}K';
+      final code = currencyCode ?? 'USD';
+      return '$code${(amount / 1000).toStringAsFixed(1)}K';
     }
     return format(amountMinor, currencyCode: currencyCode);
   }

@@ -19,7 +19,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final walletsAsync = ref.watch(activeWalletsProvider);
+    final totalBalanceAsync = ref.watch(totalBalanceProvider);
     final recentAsync = ref.watch(recentTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
 
@@ -42,7 +42,7 @@ class DashboardScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            _buildBalanceCard(context, theme, cs, walletsAsync),
+            _buildBalanceCard(context, theme, cs, totalBalanceAsync),
             const SizedBox(height: 20),
             _buildMonthlySummary(context, theme, cs, ref),
             const SizedBox(height: 24),
@@ -60,17 +60,17 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildBalanceCard(BuildContext context, ThemeData theme,
-      ColorScheme cs, AsyncValue<List<Wallet>> walletsAsync) {
-    return walletsAsync.when(
-      data: (wallets) {
-        final total = wallets.fold<int>(
-            0, (s, w) => s + w.initialBalanceMinor);
+      ColorScheme cs, AsyncValue<int> totalBalanceAsync) {
+    return totalBalanceAsync.when(
+      data: (total) {
         return BalanceCard(
           label: 'Total Balance',
           amount: MoneyUtils.format(total),
           icon: Icons.account_balance_wallet,
           accentColor: cs.primary,
-          bottom: Row(
+          bottom: Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               ActionChip(
                 avatar: Icon(Icons.account_balance,
@@ -79,7 +79,6 @@ class DashboardScreen extends ConsumerWidget {
                     style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/wallets'),
               ),
-              const SizedBox(width: 8),
               ActionChip(
                 avatar: Icon(Icons.track_changes,
                     size: 14, color: cs.primary),
@@ -87,7 +86,6 @@ class DashboardScreen extends ConsumerWidget {
                     style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/budgets'),
               ),
-              const SizedBox(width: 8),
               ActionChip(
                 avatar: Icon(Icons.category,
                     size: 14, color: cs.primary),
@@ -115,90 +113,87 @@ class DashboardScreen extends ConsumerWidget {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 0);
-    final repo = ref.read(transactionRepositoryProvider);
+    final periodKey = '${start.toIso8601String()},${end.toIso8601String()}';
+    final incomeAsync = ref.watch(monthlyIncomeProvider(periodKey));
+    final expensesAsync = ref.watch(monthlyExpensesProvider(periodKey));
 
-    return FutureBuilder<List<int>>(
-      future: Future.wait([
-        repo.totalIncome(start, end),
-        repo.totalExpenses(start, end)
-      ]),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: List.generate(
-                    3,
-                    (_) => const Expanded(
-                        child: Column(children: [
-                      SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2)),
-                    ]))),
-              ),
-            ),
-          );
-        }
-        final income = snapshot.data![0];
-        final expenses = snapshot.data![1];
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('This Month',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurfaceVariant,
-                )),
-                const SizedBox(height: 16),
-                Row(
+    return incomeAsync.when(
+      data: (income) {
+        return expensesAsync.when(
+          data: (expenses) {
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: StatTile(
-                        icon: Icons.arrow_downward,
-                        label: 'Income',
-                        value: MoneyUtils.format(income),
-                        color: AppColors.income,
-                      ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 40,
-                        color: cs.outlineVariant),
-                    Expanded(
-                      child: StatTile(
-                        icon: Icons.arrow_upward,
-                        label: 'Expenses',
-                        value: MoneyUtils.format(expenses),
-                        color: AppColors.expense,
-                      ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 40,
-                        color: cs.outlineVariant),
-                    Expanded(
-                      child: StatTile(
-                        icon: Icons.account_balance_wallet,
-                        label: 'Net',
-                        value: MoneyUtils.format(income - expenses),
-                        color: income - expenses >= 0
-                            ? AppColors.income
-                            : AppColors.expense,
-                      ),
+                    Text('This Month',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurfaceVariant,
+                    )),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatTile(
+                            icon: Icons.arrow_downward,
+                            label: 'Income',
+                            value: MoneyUtils.format(income),
+                            color: AppColors.income,
+                          ),
+                        ),
+                        Container(
+                            width: 1,
+                            height: 40,
+                            color: cs.outlineVariant),
+                        Expanded(
+                          child: StatTile(
+                            icon: Icons.arrow_upward,
+                            label: 'Expenses',
+                            value: MoneyUtils.format(expenses),
+                            color: AppColors.expense,
+                          ),
+                        ),
+                        Container(
+                            width: 1,
+                            height: 40,
+                            color: cs.outlineVariant),
+                        Expanded(
+                          child: StatTile(
+                            icon: Icons.account_balance_wallet,
+                            label: 'Net',
+                            value: MoneyUtils.format(income - expenses),
+                            color: income - expenses >= 0
+                                ? AppColors.income
+                                : AppColors.expense,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
+          error: (_, _) => const Card(child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Text('Error loading expenses'),
+          )),
+          loading: () => Card(child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )),
         );
       },
+      error: (_, _) => const Card(child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Text('Error loading income'),
+      )),
+      loading: () => Card(child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      )),
     );
   }
 
@@ -272,18 +267,13 @@ class DashboardScreen extends ConsumerWidget {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 0);
+    final periodKey = '${start.toIso8601String()},${end.toIso8601String()}';
+    final spentAsync = ref.watch(spentByCategoryProvider(periodKey));
+    final catsAsync = ref.watch(activeCategoriesProvider);
 
-    return FutureBuilder<Map<int, int>>(
-      future: ref
-          .read(transactionRepositoryProvider)
-          .spentByCategory(start, end),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        final data = snapshot.data!;
-        final catsAsync = ref.watch(activeCategoriesProvider);
-
+    return spentAsync.when(
+      data: (data) {
+        if (data.isEmpty) return const SizedBox.shrink();
         return catsAsync.when(
           data: (cats) {
             final catMap = {for (final c in cats) c.id: c};
@@ -398,6 +388,8 @@ class DashboardScreen extends ConsumerWidget {
           loading: () => const SizedBox.shrink(),
         );
       },
+      error: (e, _) => const SizedBox.shrink(),
+      loading: () => const SizedBox.shrink(),
     );
   }
 

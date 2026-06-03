@@ -48,13 +48,12 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   Widget _buildBody(ThemeData theme, DateTime start, DateTime end) {
-    return FutureBuilder<Budget?>(
-      future: ref.read(budgetRepositoryProvider).getForPeriod(start, end),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final budget = snapshot.data;
+    final budgetsAsync = ref.watch(allBudgetsProvider);
+    return budgetsAsync.when(
+      data: (budgets) {
+        final budget = budgets.where(
+          (b) => b.periodStart == start && b.periodEnd == end,
+        ).firstOrNull;
         if (budget == null) {
           return Center(
             child: Column(
@@ -77,60 +76,59 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         }
         return _budgetLimitsView(theme, budget, start, end);
       },
+      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => const Center(child: CircularProgressIndicator()),
     );
   }
 
   Widget _budgetLimitsView(ThemeData theme, Budget budget, DateTime start, DateTime end) {
-    final limitsStream =
-        ref.read(budgetRepositoryProvider).watchLimits(budget.id);
-    return StreamBuilder(
-      stream: limitsStream,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final limits = snapshot.data!;
+    final limitsAsync = ref.watch(budgetLimitsProvider(budget.id));
+    final catsAsync = ref.watch(activeCategoriesProvider);
+    return limitsAsync.when(
+      data: (limits) {
         if (limits.isEmpty) {
           return Center(
             child: Text('No spending limits set. Tap + to add.',
                 style: theme.textTheme.bodyLarge),
           );
         }
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: limits.map((limit) {
-            return _buildLimitCard(theme, budget, limit, start, end);
-          }).toList(),
+        return catsAsync.when(
+          data: (cats) {
+            final catMap = {for (final c in cats) c.id: c};
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: limits.map((limit) {
+                return _buildLimitCard(theme, budget, limit, start, end, catMap);
+              }).toList(),
+            );
+          },
+          error: (e, _) => Center(child: Text('Error: $e')),
+          loading: () => const Center(child: CircularProgressIndicator()),
         );
       },
+      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => const Center(child: CircularProgressIndicator()),
     );
   }
 
   Widget _buildLimitCard(ThemeData theme, Budget budget,
-      BudgetCategoryLimit limit, DateTime start, DateTime end) {
-    final catsAsync = ref.watch(activeCategoriesProvider);
-    String catName = 'Category ${limit.categoryId}';
-    Color catColor = theme.colorScheme.primary;
-    catsAsync.whenData((cats) {
-      final cat = cats.where((c) => c.id == limit.categoryId).firstOrNull;
-      if (cat != null) {
-        catName = cat.name;
-        if (cat.color != null) catColor = Color(cat.color!);
-      }
-    });
+      BudgetCategoryLimit limit, DateTime start, DateTime end,
+      Map<int, Category> catMap) {
+    final cat = catMap[limit.categoryId];
+    final catName = cat?.name ?? 'Category ${limit.categoryId}';
+    final catColor = cat?.color != null ? Color(cat!.color!) : theme.colorScheme.primary;
 
-    return FutureBuilder<int>(
-      future: ref
-          .read(transactionRepositoryProvider)
-          .spentByCategory(start, end)
-          .then((map) => map[limit.categoryId] ?? 0),
-      builder: (context, spentSnap) {
-        final spent = spentSnap.data ?? 0;
+    final periodKey = '${start.toIso8601String()},${end.toIso8601String()}';
+    final transactionsAsync = ref.watch(spentByCategoryProvider(periodKey));
+    return transactionsAsync.when(
+      data: (spentMap) {
+        final spent = spentMap[limit.categoryId] ?? 0;
         final remaining = limit.plannedAmountMinor - spent;
         final percentage = limit.plannedAmountMinor > 0
             ? (spent / limit.plannedAmountMinor).clamp(0.0, 1.0)
             : 0.0;
         final isOver = remaining < 0;
 
-        final raw = limit.plannedAmountMinor;
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: Padding(
@@ -151,7 +149,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                         style: TextStyle(
                             color: isOver ? AppColors.expense : null)),
                     const SizedBox(width: 8),
-                    Text('/ ${MoneyUtils.format(raw)}',
+                    Text('/ ${MoneyUtils.format(limit.plannedAmountMinor)}',
                         style: theme.textTheme.bodySmall),
                   ],
                 ),
@@ -180,6 +178,20 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           ),
         );
       },
+      error: (_, _) => const Card(
+        margin: EdgeInsets.only(bottom: 8),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('Error loading spent data'),
+        ),
+      ),
+      loading: () => const Card(
+        margin: EdgeInsets.only(bottom: 8),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: LinearProgressIndicator(),
+        ),
+      ),
     );
   }
 
