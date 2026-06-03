@@ -80,7 +80,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       color: Value(_color),
       periodStart: Value(_startDate),
       periodEnd: Value(_endDate),
-      currencyCode: Value('USD'),
+      currencyCode: const Value('USD'),
     );
 
     if (_isEditing) {

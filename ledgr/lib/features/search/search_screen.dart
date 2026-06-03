@@ -522,14 +522,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   padding: const EdgeInsets.only(right: 12),
                   child: Text(
                     'Exp: ${_formatAmount(totalExpenses)}',
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 12, color: AppColors.expense),
                   ),
                 ),
               if (totalIncome > 0)
                 Text(
                   'Inc: ${_formatAmount(totalIncome)}',
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 12, color: AppColors.income),
                 ),
             ],
