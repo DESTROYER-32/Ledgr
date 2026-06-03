@@ -84,7 +84,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     if (!mounted) return;
     final cat = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => _LimitDialog(categories: cats),
+      builder: (ctx) => _LimitDialog(
+        categories: cats,
+        isIncome: _budget!.isIncome,
+      ),
     );
     if (cat == null) return;
     final repo = ref.read(budgetRepositoryProvider);
@@ -660,7 +663,8 @@ class _CategoryLimitRow extends StatelessWidget {
 
 class _LimitDialog extends StatefulWidget {
   final List<Category> categories;
-  const _LimitDialog({required this.categories});
+  final bool isIncome;
+  const _LimitDialog({required this.categories, required this.isIncome});
 
   @override
   State<_LimitDialog> createState() => _LimitDialogState();
@@ -691,7 +695,7 @@ class _LimitDialogState extends State<_LimitDialog> {
                     EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
             isExpanded: true,
             items: widget.categories
-                .where((c) => c.kind == 'expense' || c.kind == 'both')
+                .where((c) => widget.isIncome ? (c.kind == 'income' || c.kind == 'both') : (c.kind == 'expense' || c.kind == 'both'))
                 .map((c) => DropdownMenuItem<int>(
                     value: c.id, child: Text(c.name)))
                 .toList(),

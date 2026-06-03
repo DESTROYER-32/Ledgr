@@ -27,15 +27,13 @@ class AppScaffold extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final index = _currentIndex(context);
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return Scaffold(
       body: Stack(
         children: [
           child,
           Positioned(
             right: 16,
-            bottom: 68 + bottomPadding + 4,
+            bottom: 0,
             child: SizedBox(
               width: 60,
               height: 60,

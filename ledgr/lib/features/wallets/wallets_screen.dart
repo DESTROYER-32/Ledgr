@@ -22,16 +22,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Accounts'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push('/wallets/new'),
-            tooltip: 'Add Account',
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Accounts')),
       body: walletsAsync.when(
         data: (wallets) {
           if (wallets.isEmpty) {
@@ -55,12 +46,19 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
           }
           return ReorderableListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: wallets.length + 1,
+            buildDefaultDragHandles: false,
+            itemCount: wallets.length + 2,
             onReorderItem: (oldIndex, newIndex) async {
+              if (oldIndex < 1 || oldIndex > wallets.length) return;
+              if (newIndex < 1) return;
+              if (newIndex > wallets.length) newIndex = wallets.length;
+              int from = oldIndex - 1;
+              int to = newIndex - 1;
+              if (to > from) to--;
               final repo = ref.read(walletRepositoryProvider);
               final items = [...wallets];
-              final item = items.removeAt(oldIndex);
-              items.insert(newIndex, item);
+              final item = items.removeAt(from);
+              items.insert(to, item);
               for (var i = 0; i < items.length; i++) {
                 await repo.update(
                   items[i].id,
@@ -72,6 +70,9 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
               if (index == 0) {
                 return _buildNetWorthCard(
                     const Key('networth'), context, wallets, theme);
+              }
+              if (index == wallets.length + 1) {
+                return _buildAddWalletCard(context, theme);
               }
               final wallet = wallets[index - 1];
               return _buildWalletCard(
@@ -179,6 +180,43 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
           ),
         ),
         onTap: () => context.push('/wallets/${wallet.id}'),
+      ),
+    );
+  }
+
+  Widget _buildAddWalletCard(BuildContext context, ThemeData theme) {
+    final cs = theme.colorScheme;
+    return Card(
+      key: const Key('add_wallet'),
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: cs.outline.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/wallets/new'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, color: cs.primary),
+                const SizedBox(width: 8),
+                Text('Add Account',
+                    style: TextStyle(
+                      color: cs.primary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    )),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
