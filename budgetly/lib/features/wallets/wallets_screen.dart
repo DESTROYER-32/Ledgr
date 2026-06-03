@@ -22,7 +22,16 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Accounts')),
+      appBar: AppBar(
+        title: const Text('Accounts'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => context.push('/wallets/new'),
+            tooltip: 'Add Account',
+          ),
+        ],
+      ),
       body: walletsAsync.when(
         data: (wallets) {
           if (wallets.isEmpty) {

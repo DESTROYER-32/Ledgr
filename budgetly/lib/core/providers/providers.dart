@@ -50,7 +50,7 @@ final allTransactionsProvider =
     StreamProvider<List<Transaction>>((ref) => ref.watch(transactionRepositoryProvider).watchAll());
 
 final recentTransactionsProvider = StreamProvider<List<Transaction>>(
-    (ref) => ref.watch(transactionRepositoryProvider).watchRecent(limit: 5));
+    (ref) => ref.watch(transactionRepositoryProvider).watchRecent(limit: 50));
 
 final activeCategoriesProvider =
     StreamProvider<List<Category>>((ref) => ref.watch(categoryRepositoryProvider).watchActive());

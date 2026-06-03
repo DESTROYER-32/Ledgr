@@ -30,8 +30,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
 
   bool get _isEditing => widget.budgetId != null;
 
-  static const _periodOptions = [7, 14, 30];
-
   @override
   void initState() {
     super.initState();
@@ -157,77 +155,78 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
             const SizedBox(height: 24),
             Text('Period', style: theme.textTheme.titleSmall),
             const SizedBox(height: 12),
-            SegmentedButton<int>(
+            SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 7, label: Text('7 days')),
-                ButtonSegment(value: 14, label: Text('14 days')),
-                ButtonSegment(value: 30, label: Text('30 days')),
+                ButtonSegment(value: '7', label: Text('7 days')),
+                ButtonSegment(value: '14', label: Text('14 days')),
+                ButtonSegment(value: '30', label: Text('30 days')),
+                ButtonSegment(value: 'custom', label: Text('Custom')),
               ],
-              selected: _periodOptions.contains(_periodDays)
-                  ? {_periodDays}
-                  : <int>{},
+              selected: {_periodDays == 7 ? '7' : _periodDays == 14 ? '14' : _periodDays == 30 ? '30' : 'custom'},
               onSelectionChanged: (v) {
-                setState(() {
-                  _periodDays = v.first;
-                  _updateEndDate();
-                });
+                final val = v.first;
+                if (val == 'custom') {
+                  setState(() => _periodDays = 0);
+                } else {
+                  setState(() {
+                    _periodDays = int.parse(val);
+                    _updateEndDate();
+                  });
+                }
               },
-              emptySelectionAllowed: false,
               showSelectedIcon: false,
             ),
-            if (!_periodOptions.contains(_periodDays)) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _startDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2035),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _startDate = picked;
-                            _updateEndDate();
-                          });
-                        }
-                      },
-                      child: Text(
-                        'Start: ${MoneyUtils.formatDateShort(_startDate)}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _startDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2035),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _startDate = picked;
+                          if (_periodDays > 0) _updateEndDate();
+                        });
+                      }
+                    },
+                    child: Text(
+                      'Start: ${MoneyUtils.formatDateShort(_startDate)}',
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _endDate,
-                          firstDate: _startDate,
-                          lastDate: DateTime(2035),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _endDate = picked;
-                            _periodDays =
-                                _endDate.difference(_startDate).inDays;
-                          });
-                        }
-                      },
-                      child: Text(
-                        'End: ${MoneyUtils.formatDateShort(_endDate)}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _endDate,
+                        firstDate: _startDate,
+                        lastDate: DateTime(2035),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _endDate = picked;
+                          _periodDays =
+                              _endDate.difference(_startDate).inDays;
+                        });
+                      }
+                    },
+                    child: Text(
+                      'End: ${MoneyUtils.formatDateShort(_endDate)}',
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
             Text('Color', style: theme.textTheme.titleSmall),
             const SizedBox(height: 12),

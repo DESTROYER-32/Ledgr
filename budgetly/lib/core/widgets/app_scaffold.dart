@@ -35,7 +35,7 @@ class AppScaffold extends StatelessWidget {
           child,
           Positioned(
             right: 16,
-            bottom: 68 + bottomPadding + 16,
+            bottom: 68 + bottomPadding + 4,
             child: SizedBox(
               width: 60,
               height: 60,

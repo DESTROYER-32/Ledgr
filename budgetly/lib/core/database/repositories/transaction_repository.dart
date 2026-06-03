@@ -92,6 +92,25 @@ class TransactionRepository {
     return map;
   }
 
+  Future<Map<int, int>> incomeByCategory(DateTime start, DateTime end) async {
+    final rows = await (_db.transactions.select()
+          ..where((t) =>
+              t.type.equals('income') &
+              t.date.isBiggerOrEqualValue(start) &
+              t.date.isSmallerOrEqualValue(end))
+          ..orderBy([]))
+        .get();
+
+    final map = <int, int>{};
+    for (final t in rows) {
+      if (t.categoryId != null) {
+        map.update(t.categoryId!, (v) => v + t.amountMinor,
+            ifAbsent: () => t.amountMinor);
+      }
+    }
+    return map;
+  }
+
   Future<int> totalIncome(DateTime start, DateTime end) async {
     final rows = await (_db.transactions.select()
           ..where((t) =>

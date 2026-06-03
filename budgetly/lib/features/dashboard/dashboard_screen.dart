@@ -797,7 +797,7 @@ class DashboardScreen extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: 'Recent Transactions',
+          title: 'Transaction History',
           actionLabel: 'See All',
           onAction: () => context.push('/search'),
         ),
@@ -829,17 +829,45 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               );
             }
+            final grouped = <String, List<Transaction>>{};
+            for (final t in transactions) {
+              final key = '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
+              grouped.putIfAbsent(key, () => []).add(t);
+            }
+            final sortedKeys = grouped.keys.toList()
+              ..sort((a, b) => b.compareTo(a));
+            final monthNames = [
+              '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+            ];
             return Column(
-                children: transactions.map((t) {
-              return TransactionTile(
-                id: t.id,
-                type: t.type,
-                amountMinor: t.amountMinor,
-                title: t.title,
-                date: t.date,
-                onTap: () =>
-                    context.push('/transactions/${t.id}'),
-              );
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: sortedKeys.take(3).expand((key) {
+              final parts = key.split('-');
+              final year = int.parse(parts[0]);
+              final month = int.parse(parts[1]);
+              final txns = grouped[key]!;
+              return [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+                  child: Text(
+                    '${monthNames[month]} $year',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ),
+                ...txns.take(10).map((t) => TransactionTile(
+                      id: t.id,
+                      type: t.type,
+                      amountMinor: t.amountMinor,
+                      title: t.title,
+                      date: t.date,
+                      onTap: () =>
+                          context.push('/transactions/${t.id}'),
+                    )),
+              ];
             }).toList());
           },
           error: (e, _) =>
