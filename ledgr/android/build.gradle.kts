@@ -8,12 +8,12 @@ allprojects {
 subprojects {
     plugins.withType(com.android.build.gradle.LibraryPlugin::class.java) {
         extensions.configure(com.android.build.gradle.LibraryExtension::class.java) {
-            compileSdk = 36
+            setCompileSdk(36)
         }
     }
     plugins.withType(com.android.build.gradle.AppPlugin::class.java) {
         extensions.configure(com.android.build.gradle.AppExtension::class.java) {
-            compileSdk = 36
+            setCompileSdk(36)
         }
     }
 }

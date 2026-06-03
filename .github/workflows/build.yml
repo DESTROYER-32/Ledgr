@@ -27,6 +27,14 @@ jobs:
         with:
           flutter-version: 3.44.1
 
+      - name: Create local.properties for CI
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          echo "flutter.sdk=$(dirname $(dirname $(which flutter)))" >> android/local.properties
+          echo "flutter.buildMode=release" >> android/local.properties
+          echo "flutter.versionName=1.0.0" >> android/local.properties
+          echo "flutter.versionCode=1" >> android/local.properties
+
       - run: flutter pub get
 
       - run: dart run build_runner build --delete-conflicting-outputs
