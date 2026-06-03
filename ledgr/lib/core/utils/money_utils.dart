@@ -3,9 +3,17 @@ import 'package:intl/intl.dart';
 class MoneyUtils {
   MoneyUtils._();
 
+  static String _defaultCurrencyCode = 'USD';
+
+  static String get defaultCurrencyCode => _defaultCurrencyCode;
+
+  static void setDefaultCurrencyCode(String code) {
+    _defaultCurrencyCode = code;
+  }
+
   static String format(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
-    final code = currencyCode ?? 'USD';
+    final code = currencyCode ?? _defaultCurrencyCode;
     try {
       final format = NumberFormat.simpleCurrency(name: code, decimalDigits: 2);
       return format.format(amount);
@@ -17,11 +25,11 @@ class MoneyUtils {
   static String formatCompact(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
     if (amount.abs() >= 1000000) {
-      final code = currencyCode ?? 'USD';
+      final code = currencyCode ?? _defaultCurrencyCode;
       return '$code${(amount / 1000000).toStringAsFixed(1)}M';
     }
     if (amount.abs() >= 1000) {
-      final code = currencyCode ?? 'USD';
+      final code = currencyCode ?? _defaultCurrencyCode;
       return '$code${(amount / 1000).toStringAsFixed(1)}K';
     }
     return format(amountMinor, currencyCode: currencyCode);

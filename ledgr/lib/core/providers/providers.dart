@@ -8,6 +8,7 @@ import '../database/repositories/recurring_repository.dart';
 import '../database/repositories/settings_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
+import '../utils/money_utils.dart';
 
 class ThemeConfig {
   final ThemeMode themeMode;
@@ -69,6 +70,11 @@ final currencyCodeProvider = FutureProvider<String>((ref) async {
   return currency ?? 'USD';
 });
 
+final formatMoneyProvider = Provider<String Function(int)>((ref) {
+  final code = ref.watch(currencyCodeProvider).valueOrNull ?? 'USD';
+  return (int amountMinor) => MoneyUtils.format(amountMinor, currencyCode: code);
+});
+
 final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
   final repo = ref.watch(settingsRepositoryProvider);
   final modeStr = await repo.get('theme_mode');
@@ -83,6 +89,8 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
 });
 
 final totalBalanceProvider = FutureProvider<int>((ref) async {
+  ref.watch(activeWalletsProvider);
+  ref.watch(allTransactionsProvider);
   final repo = ref.watch(walletRepositoryProvider);
   return repo.totalBalance();
 });
