@@ -92,7 +92,7 @@ class _TransactionFormScreenState
     final companion = TransactionsCompanion(
       type: Value(_type),
       amountMinor: Value(amount.round()),
-      currencyCode: const Value('USD'),
+      currencyCode: Value(MoneyUtils.defaultCurrencyCode),
       date: Value(_date),
       walletId: Value(_walletId!),
       transferWalletId: Value(_transferWalletId),
@@ -114,7 +114,7 @@ class _TransactionFormScreenState
       await repo.insert(TransactionsCompanion.insert(
         type: _type,
         amountMinor: amount.round(),
-        currencyCode: 'USD',
+        currencyCode: MoneyUtils.defaultCurrencyCode,
         date: _date,
         walletId: _walletId!,
         transferWalletId: Value(_transferWalletId),
@@ -138,6 +138,7 @@ class _TransactionFormScreenState
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
+    final currencyCode = MoneyUtils.defaultCurrencyCode;
 
     return Scaffold(
       appBar: AppBar(
@@ -183,7 +184,7 @@ class _TransactionFormScreenState
                   setState(() => _type = v.first),
             ),
             const SizedBox(height: 20),
-            AmountField(controller: _amountController),
+            AmountField(controller: _amountController, currencySymbol: currencyCode),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -226,7 +227,7 @@ class _TransactionFormScreenState
             ),
             const SizedBox(height: 16),
             walletsAsync.when(
-              data: (wallets) => DropdownButtonFormField<int>(
+                data: (wallets) => DropdownButtonFormField<int>(
                 initialValue: _walletId,
                 decoration:
                     const InputDecoration(labelText: 'Account'),
@@ -240,6 +241,7 @@ class _TransactionFormScreenState
               error: (e, _) => Text('$e'),
               loading: () => const LinearProgressIndicator(),
             ),
+            const SizedBox(height: 16),
             if (_type == 'expense' || _type == 'income')
               catsAsync.when(
                 data: (cats) => DropdownButtonFormField<int>(

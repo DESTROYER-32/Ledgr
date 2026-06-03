@@ -16,12 +16,13 @@ class AmountField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final symbol = currencySymbol;
     return TextField(
       controller: controller,
       autofocus: autofocus,
       decoration: InputDecoration(
         labelText: label,
-        prefixText: '$currencySymbol ',
+        prefixText: '$symbol ',
         hintText: '0.00',
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),

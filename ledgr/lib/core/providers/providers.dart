@@ -102,6 +102,7 @@ final budgetLimitsProvider =
 
 final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>(
     (ref, key) async {
+  ref.watch(allTransactionsProvider);
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
@@ -111,6 +112,7 @@ final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>(
 });
 
 final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) async {
+  ref.watch(allTransactionsProvider);
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
@@ -118,6 +120,7 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) asyn
 });
 
 final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) async {
+  ref.watch(allTransactionsProvider);
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
