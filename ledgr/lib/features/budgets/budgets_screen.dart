@@ -16,6 +16,7 @@ class BudgetsScreen extends ConsumerStatefulWidget {
 class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   DateTime _currentMonth =
       DateTime(DateTime.now().year, DateTime.now().month, 1);
+  Budget? _budget;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +45,12 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         ],
       ),
       body: _buildBody(theme, periodStart, periodEnd),
+      floatingActionButton: _budget != null
+          ? FloatingActionButton(
+              onPressed: () => _addLimit(_budget!),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -54,6 +61,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         final budget = budgets.where(
           (b) => b.periodStart == start && b.periodEnd == end,
         ).firstOrNull;
+        _budget = budget;
         if (budget == null) {
           return Center(
             child: Column(
@@ -88,8 +96,19 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       data: (limits) {
         if (limits.isEmpty) {
           return Center(
-            child: Text('No spending limits set. Tap + to add.',
-                style: theme.textTheme.bodyLarge),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('No spending limits set.',
+                    style: theme.textTheme.bodyLarge),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => _addLimit(budget),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Limit'),
+                ),
+              ],
+            ),
           );
         }
         return catsAsync.when(
@@ -203,37 +222,84 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       periodEnd: end,
       currencyCode: 'USD',
     ));
+    final budget = await repo.getById(budgetId);
+    if (budget != null) _addLimit(budget);
+  }
 
+  Future<void> _addLimit(Budget budget) async {
     final cats = await ref.read(categoryRepositoryProvider).watchActive().first;
     if (!mounted) return;
-    final scaffoldContext = context;
-    for (final cat in cats.where((c) => c.kind == 'expense')) {
-      final amountStr = await showDialog<String>(
-        // ignore: use_build_context_synchronously
-        context: scaffoldContext,
-        builder: (c) => AlertDialog(
-          title: Text('Limit for ${cat.name}'),
-          content: const TextField(
-            decoration: InputDecoration(
-                labelText: 'Amount', prefixText: '\$ '),
-            keyboardType:
-                TextInputType.numberWithOptions(decimal: true),
+    final expenseCats = cats.where((c) => c.kind == 'expense').toList();
+    if (expenseCats.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No expense categories available')),
+        );
+      }
+      return;
+    }
+
+    Category? selectedCat;
+    final amountController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Add Spending Limit'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<Category>(
+                decoration: const InputDecoration(labelText: 'Category'),
+                items: expenseCats
+                    .map((cat) => DropdownMenuItem(
+                          value: cat,
+                          child: Text(cat.name),
+                        ))
+                    .toList(),
+                onChanged: (v) => selectedCat = v,
+                validator: (v) => v == null ? 'Select a category' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: amountController,
+                decoration: const InputDecoration(labelText: 'Amount'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Enter an amount';
+                  if (double.tryParse(v) == null) return 'Invalid number';
+                  return null;
+                },
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(c),
-                child: const Text('Skip')),
-            FilledButton(
-                onPressed: () => Navigator.pop(c, '0'),
-                child: const Text('Set \$0')),
-          ],
         ),
-      );
-      if (amountStr != null && mounted) {
-        final amount = (double.tryParse(amountStr) ?? 0) * 100;
-        if (amount > 0) {
-          await repo.setLimit(budgetId, cat.id, amount.round());
-        }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(c, true);
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && selectedCat != null && mounted) {
+      final amount = (double.tryParse(amountController.text) ?? 0) * 100;
+      if (amount > 0) {
+        await ref
+            .read(budgetRepositoryProvider)
+            .setLimit(budget.id, selectedCat!.id, amount.round());
       }
     }
   }
