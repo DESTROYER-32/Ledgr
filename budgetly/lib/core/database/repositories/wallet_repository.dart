@@ -8,6 +8,8 @@ class WalletRepository {
 
   Stream<List<Wallet>> watchAll() => _db.wallets.select().watch();
 
+  Future<List<Wallet>> getAll() => _db.wallets.select().get();
+
   Stream<List<Wallet>> watchActive() => (_db.wallets.select()
         ..where((w) => w.archived.equals(false))
         ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))

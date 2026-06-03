@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/backup/backup_screen.dart';
+import '../../features/budgets/budget_detail_screen.dart';
+import '../../features/budgets/budget_form_screen.dart';
 import '../../features/budgets/budgets_screen.dart';
 import '../../features/categories/categories_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
@@ -50,6 +52,25 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const SettingsScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/budgets/new',
+        name: 'budget-new',
+        builder: (context, state) => const BudgetFormScreen(),
+      ),
+      GoRoute(
+        path: '/budgets/:id',
+        name: 'budget-detail',
+        builder: (context, state) => BudgetDetailScreen(
+          budgetId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/budgets/:id/edit',
+        name: 'budget-edit',
+        builder: (context, state) => BudgetFormScreen(
+          budgetId: int.parse(state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/wallets/new',

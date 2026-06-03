@@ -23,6 +23,8 @@ class DashboardScreen extends ConsumerWidget {
     final recentAsync = ref.watch(recentTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
     final walletsAsync = ref.watch(activeWalletsProvider);
+    final pinnedBudgets = ref.watch(pinnedBudgetsProvider);
+    final budgetsAsync = ref.watch(allBudgetsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,9 +48,13 @@ class DashboardScreen extends ConsumerWidget {
             _buildSetupCard(context, theme, cs, walletsAsync, ref),
             _buildBalanceCard(context, theme, cs, totalBalanceAsync),
             const SizedBox(height: 20),
+            _buildWalletCards(context, theme, cs, walletsAsync),
+            const SizedBox(height: 20),
             _buildMonthlySummary(context, theme, cs, ref),
             const SizedBox(height: 24),
             _buildQuickActions(context, cs),
+            const SizedBox(height: 24),
+            _buildBudgetCards(context, theme, cs, pinnedBudgets, budgetsAsync),
             const SizedBox(height: 24),
             _buildSpendingChart(context, theme, cs, ref),
             const SizedBox(height: 24),
@@ -163,6 +169,230 @@ class DashboardScreen extends ConsumerWidget {
               child: SizedBox(
                   height: 100,
                   child: LinearProgressIndicator()))),
+    );
+  }
+
+  Widget _buildWalletCards(BuildContext context, ThemeData theme,
+      ColorScheme cs, AsyncValue<List<Wallet>> walletsAsync) {
+    return walletsAsync.when(
+      data: (wallets) {
+        if (wallets.length < 2) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('Accounts',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant,
+                )),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => context.push('/wallets'),
+                  child: const Text('View All',
+                      style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: wallets.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: 10),
+                itemBuilder: (_, i) {
+                  final w = wallets[i];
+                  final icon = w.type == 'cash'
+                      ? Icons.money
+                      : w.type == 'credit'
+                          ? Icons.credit_card
+                          : Icons.account_balance;
+                  return _miniWalletCard(context, cs, w, icon);
+                },
+              ),
+            ),
+          ],
+        );
+      },
+      error: (_, _) => const SizedBox.shrink(),
+      loading: () => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _miniWalletCard(BuildContext context, ColorScheme cs, Wallet w,
+      IconData icon) {
+    return GestureDetector(
+      onTap: () => context.push('/wallets/${w.id}'),
+      child: Card(
+        child: Container(
+          width: 140,
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 16, color: cs.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(w.name,
+                        style: const TextStyle(fontSize: 12),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                MoneyUtils.format(w.initialBalanceMinor),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: cs.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBudgetCards(
+      BuildContext context,
+      ThemeData theme,
+      ColorScheme cs,
+      List<Budget> pinnedBudgets,
+      AsyncValue<List<Budget>> budgetsAsync) {
+    if (pinnedBudgets.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.track_changes,
+                size: 16, color: cs.primary),
+            const SizedBox(width: 6),
+            Text('Budgets',
+                style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: cs.onSurfaceVariant,
+            )),
+            const Spacer(),
+            TextButton(
+              onPressed: () => context.push('/budgets'),
+              child: const Text('View All',
+                  style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: pinnedBudgets.length + 1,
+            separatorBuilder: (_, _) =>
+                const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              if (i == pinnedBudgets.length) {
+                return _addBudgetCard(context, cs);
+              }
+              final b = pinnedBudgets[i];
+              return _budgetCardPreview(context, cs, b);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _budgetCardPreview(
+      BuildContext context, ColorScheme cs, Budget budget) {
+    final color = budget.color != null
+        ? Color(budget.color!)
+        : cs.primary;
+    final isIncome = budget.isIncome;
+    return GestureDetector(
+      onTap: () => context.push('/budgets/${budget.id}'),
+      child: Card(
+        child: Container(
+          width: 160,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withValues(alpha: 0.08),
+                cs.surface,
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.track_changes,
+                      size: 14, color: color),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(budget.name,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: color),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isIncome ? 'Savings' : 'Expense',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
+                style: TextStyle(
+                    fontSize: 10, color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _addBudgetCard(BuildContext context, ColorScheme cs) {
+    return GestureDetector(
+      onTap: () => context.push('/budgets/new'),
+      child: Card(
+        child: Container(
+          width: 100,
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_circle_outline,
+                  size: 24, color: cs.onSurfaceVariant),
+              const SizedBox(height: 6),
+              Text('Add Budget',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: cs.onSurfaceVariant,
+                  )),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

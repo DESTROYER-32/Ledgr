@@ -53,6 +53,9 @@ class Budgets extends Table {
   DateTimeColumn get periodStart => dateTime()();
   DateTimeColumn get periodEnd => dateTime()();
   TextColumn get currencyCode => text()();
+  BoolColumn get isIncome => boolean().withDefault(const Constant(false))();
+  BoolColumn get pinned => boolean().withDefault(const Constant(false))();
+  IntColumn get color => integer().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
