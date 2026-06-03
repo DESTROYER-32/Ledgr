@@ -205,10 +205,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                           ),
                         );
                         if (ok == true) {
-                          final repo = ref
-                              .read(
-                                  budgetRepositoryProvider);
-                          await repo.delete(budget.id);
+                              final repo = ref
+                                  .read(
+                                      budgetRepositoryProvider);
+                              await repo.deleteWithLimits(budget.id);
                         }
                       }
                     },

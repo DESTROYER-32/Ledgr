@@ -29,6 +29,13 @@ class BudgetRepository {
   Future<void> delete(int id) =>
       (_db.budgets.delete()..where((b) => b.id.equals(id))).go();
 
+  Future<void> deleteWithLimits(int id) async {
+    await (_db.budgetCategoryLimits.delete()
+          ..where((l) => l.budgetId.equals(id)))
+        .go();
+    await delete(id);
+  }
+
   Stream<List<BudgetCategoryLimit>> watchLimits(int budgetId) =>
       (_db.budgetCategoryLimits.select()
             ..where((l) => l.budgetId.equals(budgetId)))

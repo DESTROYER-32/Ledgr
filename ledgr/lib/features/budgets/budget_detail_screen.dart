@@ -44,21 +44,28 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     }
     _currentStart ??= budget.periodStart;
     final limits = await repo.watchLimits(budget.id).first;
-    final spent = await ref
-        .read(transactionRepositoryProvider)
-        .spentByCategory(_currentStart!, budget.periodEnd);
+    final txRepo = ref.read(transactionRepositoryProvider);
     final totalPlanned =
         limits.fold<int>(0, (s, l) => s + l.plannedAmountMinor);
-    final totalSpent = budget.isIncome
-        ? await ref
-            .read(transactionRepositoryProvider)
-            .totalIncome(_currentStart!, budget.periodEnd)
-        : spent.values.fold<int>(0, (s, v) => s + v);
+
+    Map<int, int> byCategory;
+    int totalSpent;
+    if (budget.isIncome) {
+      byCategory = await txRepo.incomeByCategory(
+          _currentStart!, budget.periodEnd);
+      totalSpent =
+          byCategory.values.fold<int>(0, (s, v) => s + v);
+    } else {
+      byCategory = await txRepo.spentByCategory(
+          _currentStart!, budget.periodEnd);
+      totalSpent =
+          byCategory.values.fold<int>(0, (s, v) => s + v);
+    }
 
     final filteredSpent = limits.isNotEmpty
-        ? Map.fromEntries(spent.entries
+        ? Map.fromEntries(byCategory.entries
             .where((e) => limits.any((l) => l.categoryId == e.key)))
-        : spent;
+        : byCategory;
 
     if (mounted) {
       setState(() {
@@ -155,7 +162,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 if (ok == true && mounted) {
                   final repo =
                       ref.read(budgetRepositoryProvider);
-                  await repo.delete(budget.id);
+                  await repo.deleteWithLimits(budget.id);
                   nav.pop();
                 }
               }
@@ -438,7 +445,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Spending Breakdown',
+            Text(budget.isIncome ? 'Income Breakdown' : 'Spending Breakdown',
                 style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: cs.onSurfaceVariant,
