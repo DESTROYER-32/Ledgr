@@ -75,31 +75,31 @@ class DashboardScreen extends ConsumerWidget {
               ActionChip(
                 avatar: Icon(Icons.account_balance,
                     size: 14, color: cs.primary),
-                label: Text('Accounts',
-                    style: const TextStyle(fontSize: 12)),
+                label: const Text('Accounts',
+                    style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/wallets'),
               ),
               const SizedBox(width: 8),
               ActionChip(
                 avatar: Icon(Icons.track_changes,
                     size: 14, color: cs.primary),
-                label: Text('Budgets',
-                    style: const TextStyle(fontSize: 12)),
+                label: const Text('Budgets',
+                    style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/budgets'),
               ),
               const SizedBox(width: 8),
               ActionChip(
                 avatar: Icon(Icons.category,
                     size: 14, color: cs.primary),
-                label: Text('Categories',
-                    style: const TextStyle(fontSize: 12)),
+                label: const Text('Categories',
+                    style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/categories'),
               ),
             ],
           ),
         );
       },
-      error: (e, _) => BalanceCard(
+      error: (e, _) => const BalanceCard(
           label: 'Total Balance', amount: 'Error'),
       loading: () => const Card(
           child: Padding(

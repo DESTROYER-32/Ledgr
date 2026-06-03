@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,10 +47,9 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
           return ReorderableListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: wallets.length + 1,
-            onReorder: (oldIndex, newIndex) async {
+            onReorderItem: (oldIndex, newIndex) async {
               final repo = ref.read(walletRepositoryProvider);
               final items = [...wallets];
-              if (oldIndex < newIndex) newIndex--;
               final item = items.removeAt(oldIndex);
               items.insert(newIndex, item);
               for (var i = 0; i < items.length; i++) {
@@ -62,11 +62,12 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _buildNetWorthCard(
-                    Key('networth'), context, wallets, theme);
+                    const Key('networth'), context, wallets, theme);
               }
               final wallet = wallets[index - 1];
               return _buildWalletCard(
-                  Key('wallet_${wallet.id}'), context, wallet, theme);
+                  Key('wallet_${wallet.id}'), context, wallet, theme,
+                  index: index);
             },
           );
         },
@@ -112,7 +113,8 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
   }
 
   Widget _buildWalletCard(
-      Key key, BuildContext context, Wallet wallet, ThemeData theme) {
+      Key key, BuildContext context, Wallet wallet, ThemeData theme,
+      {int index = 0}) {
     return Card(
       key: key,
       margin: const EdgeInsets.only(bottom: 8),
@@ -123,7 +125,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ReorderableDragStartListener(
-              index: wallets.indexOf(wallet) + 1,
+              index: index,
               child: const Icon(Icons.drag_handle,
                   color: Colors.grey),
             ),

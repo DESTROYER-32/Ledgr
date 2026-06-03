@@ -229,7 +229,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 12, vertical: 10),
                         ),
-                        keyboardType: TextInputType
+                        keyboardType: const TextInputType
                             .numberWithOptions(decimal: true),
                         onChanged: (v) =>
                             setState(() => _minAmount = v),
@@ -243,7 +243,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 12, vertical: 10),
                         ),
-                        keyboardType: TextInputType
+                        keyboardType: const TextInputType
                             .numberWithOptions(decimal: true),
                         onChanged: (v) =>
                             setState(() => _maxAmount = v),

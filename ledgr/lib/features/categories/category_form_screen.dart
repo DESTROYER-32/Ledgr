@@ -21,7 +21,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
   final _nameController = TextEditingController();
   String _kind = 'expense';
   String _icon = 'category';
-  int _color = AppColors.categoryColors[0].value;
+  int _color = AppColors.categoryColors[0].toARGB32();
 
   final _icons = [
     ('work', Icons.work),
@@ -61,7 +61,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
         _nameController.text = c.name;
         _kind = c.kind;
         _icon = c.icon ?? 'category';
-        _color = c.color ?? AppColors.categoryColors[0].value;
+        _color = c.color ?? AppColors.categoryColors[0].toARGB32();
       });
     }
   }
@@ -174,9 +174,9 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
               spacing: 8,
               runSpacing: 8,
               children: AppColors.categoryColors.map((c) {
-                final selected = _color == c.value;
+                final selected = _color == c.toARGB32();
                 return GestureDetector(
-                  onTap: () => setState(() => _color = c.value),
+                  onTap: () => setState(() => _color = c.toARGB32()),
                   child: Container(
                     width: 36,
                     height: 36,
@@ -189,7 +189,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
                           : null,
                     ),
                     child: selected
-                        ? Icon(Icons.check, color: Colors.white, size: 18)
+                        ? const Icon(Icons.check, color: Colors.white, size: 18)
                         : null,
                   ),
                 );
