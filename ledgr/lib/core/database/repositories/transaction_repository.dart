@@ -8,6 +8,18 @@ class TransactionRepository {
   final AppDatabase _db;
   TransactionRepository(this._db);
 
+  Future<double?> _getRate(String from, String to) async {
+    if (from == to) return 1.0;
+    final rate = await (_db.exchangeRates.select()
+          ..where((r) =>
+              r.fromCurrency.equals(from) & r.toCurrency.equals(to)))
+        .getSingleOrNull();
+    return rate?.rate;
+  }
+
+  int _convert(int amountMinor, double rate) =>
+      (amountMinor * rate).round();
+
   Stream<List<Transaction>> watchAll() => _db.transactions.select().watch();
 
   Stream<List<Transaction>> watchRecent({int limit = 10}) =>
@@ -113,7 +125,8 @@ class TransactionRepository {
     return q.get();
   }
 
-  Future<Map<int, int>> spentByCategory(DateTime start, DateTime end) async {
+  Future<Map<int, int>> spentByCategory(DateTime start, DateTime end,
+      {String? targetCurrency}) async {
     final rows = await (_db.transactions.select()
           ..where((t) =>
               t.type.equals('expense') &
@@ -126,14 +139,20 @@ class TransactionRepository {
     final map = <int, int>{};
     for (final t in rows) {
       if (t.categoryId != null) {
-        map.update(t.categoryId!, (v) => v + t.amountMinor,
-            ifAbsent: () => t.amountMinor);
+        int amount = t.amountMinor;
+        if (targetCurrency != null) {
+          final rate = await _getRate(t.currencyCode, targetCurrency);
+          if (rate != null) amount = _convert(t.amountMinor, rate);
+        }
+        map.update(t.categoryId!, (v) => v + amount,
+            ifAbsent: () => amount);
       }
     }
     return map;
   }
 
-  Future<Map<int, int>> incomeByCategory(DateTime start, DateTime end) async {
+  Future<Map<int, int>> incomeByCategory(DateTime start, DateTime end,
+      {String? targetCurrency}) async {
     final rows = await (_db.transactions.select()
           ..where((t) =>
               t.type.equals('income') &
@@ -145,24 +164,40 @@ class TransactionRepository {
     final map = <int, int>{};
     for (final t in rows) {
       if (t.categoryId != null) {
-        map.update(t.categoryId!, (v) => v + t.amountMinor,
-            ifAbsent: () => t.amountMinor);
+        int amount = t.amountMinor;
+        if (targetCurrency != null) {
+          final rate = await _getRate(t.currencyCode, targetCurrency);
+          if (rate != null) amount = _convert(t.amountMinor, rate);
+        }
+        map.update(t.categoryId!, (v) => v + amount,
+            ifAbsent: () => amount);
       }
     }
     return map;
   }
 
-  Future<int> totalIncome(DateTime start, DateTime end) async {
+  Future<int> totalIncome(DateTime start, DateTime end,
+      {String? targetCurrency}) async {
     final rows = await (_db.transactions.select()
           ..where((t) =>
               t.type.equals('income') &
               t.date.isBiggerOrEqualValue(start) &
               t.date.isSmallerOrEqualValue(end)))
         .get();
-    return rows.fold<int>(0, (sum, t) => sum + t.amountMinor);
+    var total = 0;
+    for (final t in rows) {
+      int amount = t.amountMinor;
+      if (targetCurrency != null) {
+        final rate = await _getRate(t.currencyCode, targetCurrency);
+        if (rate != null) amount = _convert(t.amountMinor, rate);
+      }
+      total += amount;
+    }
+    return total;
   }
 
-  Future<int> totalExpenses(DateTime start, DateTime end) async {
+  Future<int> totalExpenses(DateTime start, DateTime end,
+      {String? targetCurrency}) async {
     final rows = await (_db.transactions.select()
           ..where((t) =>
               t.type.equals('expense') &
@@ -170,7 +205,16 @@ class TransactionRepository {
               t.date.isBiggerOrEqualValue(start) &
               t.date.isSmallerOrEqualValue(end)))
         .get();
-    return rows.fold<int>(0, (sum, t) => sum + t.amountMinor);
+    var total = 0;
+    for (final t in rows) {
+      int amount = t.amountMinor;
+      if (targetCurrency != null) {
+        final rate = await _getRate(t.currencyCode, targetCurrency);
+        if (rate != null) amount = _convert(t.amountMinor, rate);
+      }
+      total += amount;
+    }
+    return total;
   }
 
   Future<List<Transaction>> getByObjective(int objectiveId) =>
