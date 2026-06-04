@@ -9,7 +9,6 @@ import '../database/repositories/delete_log_repository.dart';
 import '../database/repositories/objective_repository.dart';
 import '../database/repositories/recurring_repository.dart';
 import '../services/recurring_service.dart';
-import '../database/repositories/scanner_template_repository.dart';
 import '../database/repositories/settings_repository.dart';
 import '../database/repositories/exchange_rate_repository.dart';
 import '../database/repositories/transaction_repository.dart';
@@ -68,11 +67,6 @@ final exchangeRateRepositoryProvider = Provider<ExchangeRateRepository>((ref) {
 final associatedTitleRepositoryProvider =
     Provider<AssociatedTitleRepository>((ref) {
   return AssociatedTitleRepository(ref.watch(appDatabaseProvider));
-});
-
-final scannerTemplateRepositoryProvider =
-    Provider<ScannerTemplateRepository>((ref) {
-  return ScannerTemplateRepository(ref.watch(appDatabaseProvider));
 });
 
 final deleteLogRepositoryProvider = Provider<DeleteLogRepository>((ref) {

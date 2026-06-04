@@ -130,7 +130,15 @@ class BudgetRepository {
           t.specialType.equals('none') | t.specialType.isNull());
     }
 
-    final rows = await q.get();
+    var rows = await q.get();
+    if (budget.specificMode) {
+      final budgetIdStr = budget.id.toString();
+      rows = rows.where((t) {
+        if (t.budgetFks == null) return false;
+        final ids = t.budgetFks!.split(',').map((s) => s.trim());
+        return ids.contains(budgetIdStr);
+      }).toList();
+    }
     final map = <int, int>{};
     for (final t in rows) {
       if (t.categoryId != null) {

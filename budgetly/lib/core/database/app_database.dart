@@ -20,7 +20,6 @@ part 'app_database.g.dart';
   Settings,
   Objectives,
   AssociatedTitles,
-  ScannerTemplates,
   DeleteLogs,
   ExchangeRates,
 ])
@@ -28,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration {
@@ -63,6 +62,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 8) {
           await _upgradeToV8(m);
+        }
+        if (from < 9) {
+          await _upgradeToV9(m);
         }
       },
     );
@@ -102,7 +104,6 @@ class AppDatabase extends _$AppDatabase {
     await m.createTable(budgetWallets);
     await m.createTable(objectives);
     await m.createTable(associatedTitles);
-    await m.createTable(scannerTemplates);
     await m.createTable(deleteLogs);
 
     await customStatement('DROP TABLE IF EXISTS goals');
@@ -133,6 +134,11 @@ class AppDatabase extends _$AppDatabase {
       }
     } catch (_) {}
     await customStatement('DROP TABLE IF EXISTS goals');
+  }
+
+  Future<void> _upgradeToV9(Migrator m) async {
+    await m.addColumn(budgets, budgets.specificMode);
+    await m.addColumn(transactions, transactions.budgetFks);
   }
 }
 

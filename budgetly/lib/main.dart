@@ -72,11 +72,33 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     final appLock = await repo.get('app_lock');
     if (appLock == 'true') {
       _locked = true;
-      final authed = await AuthService.authenticate();
-      _locked = false;
-      if (!authed && mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      final canAuth = await AuthService.canAuthenticate();
+      if (!canAuth) {
+        _locked = false;
+        return;
       }
+      final authed = await AuthService.authenticate();
+      if (!authed && mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('App Locked'),
+            content: const Text('Authentication is required to access Budgetly.'),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  final retry = await AuthService.authenticate();
+                  if (!retry && mounted) _onResume();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+      _locked = false;
     }
   }
 

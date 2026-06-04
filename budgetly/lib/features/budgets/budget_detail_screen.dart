@@ -614,6 +614,17 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
           final inDateRange = !t.date.isBefore(budget.periodStart) &&
               !t.date.isAfter(budget.periodEnd);
           if (!inDateRange) return false;
+          if (budget.specificMode) {
+            if (t.budgetFks == null) return false;
+            final fks = (t.budgetFks!.isNotEmpty
+                    ? t.budgetFks!.split(',')
+                    : <String>[])
+                .map((s) => int.tryParse(s))
+                .where((n) => n != null)
+                .cast<int>()
+                .toList();
+            return fks.contains(budget.id);
+          }
           if (_limits.isNotEmpty &&
               t.type == 'expense' &&
               t.categoryId != null) {

@@ -49,6 +49,7 @@ class Transactions extends Table {
   TextColumn get tags => text().nullable()();
   TextColumn get recurrenceRule => text().nullable()();
   TextColumn get budgetFksExclude => text().nullable()();
+  TextColumn get budgetFks => text().nullable()();
   IntColumn get objectiveFk => integer().references(Objectives, #id).nullable()();
   TextColumn get attachmentPath => text().nullable()();
   TextColumn get methodAdded => text().nullable()();
@@ -68,6 +69,7 @@ class Budgets extends Table {
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
   IntColumn get color => integer().nullable()();
   IntColumn get plannedAmountMinor => integer().withDefault(const Constant(0))();
+  BoolColumn get specificMode => boolean().withDefault(const Constant(false))();
   BoolColumn get includeIncome => boolean().withDefault(const Constant(true))();
   BoolColumn get includeDebtCredit => boolean().withDefault(const Constant(true))();
   BoolColumn get includeBalanceCorrection => boolean().withDefault(const Constant(true))();
@@ -152,20 +154,6 @@ class AssociatedTitles extends Table {
   TextColumn get title => text()();
   IntColumn get categoryId => integer().references(Categories, #id)();
   BoolColumn get exactMatch => boolean().withDefault(const Constant(false))();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
-
-@DataClassName('ScannerTemplate')
-class ScannerTemplates extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text()();
-  TextColumn get contains => text().nullable()();
-  TextColumn get titleBefore => text().nullable()();
-  TextColumn get titleAfter => text().nullable()();
-  TextColumn get amountBefore => text().nullable()();
-  TextColumn get amountAfter => text().nullable()();
-  IntColumn get defaultCategoryId => integer().references(Categories, #id).nullable()();
-  IntColumn get walletId => integer().references(Wallets, #id).nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 

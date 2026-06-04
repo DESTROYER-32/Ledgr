@@ -27,8 +27,6 @@ import '../../features/activity/activity_screen.dart';
 import '../../features/bill_splitter/bill_splitter_screen.dart';
 import '../../features/subscriptions/subscriptions_screen.dart';
 import '../../features/credit_debt/credit_debt_screen.dart';
-import '../../features/scanner_templates/scanner_templates_screen.dart';
-import '../../features/scanner_templates/scanner_template_form_screen.dart';
 import '../widgets/app_scaffold.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -235,23 +233,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/credit-debt',
         name: 'credit-debt',
         builder: (context, state) => const CreditDebtScreen(),
-      ),
-      GoRoute(
-        path: '/scanner-templates',
-        name: 'scanner-templates',
-        builder: (context, state) => const ScannerTemplatesScreen(),
-      ),
-      GoRoute(
-        path: '/scanner-templates/new',
-        name: 'scanner-template-new',
-        builder: (context, state) => const ScannerTemplateFormScreen(),
-      ),
-      GoRoute(
-        path: '/scanner-templates/:id',
-        name: 'scanner-template-edit',
-        builder: (context, state) => ScannerTemplateFormScreen(
-          templateId: int.parse(state.pathParameters['id']!),
-        ),
       ),
     ],
   );

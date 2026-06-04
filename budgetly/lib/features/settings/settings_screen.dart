@@ -6,6 +6,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/utils/currency_utils.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -23,9 +24,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
 
-  final _currencies = [
-    'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL',
-  ];
+  final _currencies = CurrencyUtils.codes;
 
   static const _themeSeeds = <int>[
     0xFF1A6D4A, // Green
@@ -266,13 +265,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: const Text(
                   'Auto-categorize transactions by keyword'),
               onTap: () => context.push('/smart-labels'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.document_scanner),
-              title: const Text('Scanner Templates'),
-              subtitle: const Text(
-                  'Parse transaction emails automatically'),
-              onTap: () => context.push('/scanner-templates'),
             ),
             ListTile(
               leading: const Icon(Icons.call_split),
