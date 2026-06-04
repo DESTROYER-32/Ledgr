@@ -47,7 +47,6 @@ class BudgetlyApp extends ConsumerStatefulWidget {
 class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     with WidgetsBindingObserver {
   AppLifecycleListener? _lifecycleListener;
-  bool _locked = false;
 
   @override
   void initState() {
@@ -67,38 +66,36 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
   }
 
   Future<void> _onResume() async {
-    if (_locked) return;
     final repo = ref.read(settingsRepositoryProvider);
     final appLock = await repo.get('app_lock');
-    if (appLock == 'true') {
-      _locked = true;
-      final canAuth = await AuthService.canAuthenticate();
-      if (!canAuth) {
-        _locked = false;
-        return;
-      }
-      final authed = await AuthService.authenticate();
-      if (!authed && mounted) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            title: const Text('App Locked'),
-            content: const Text('Authentication is required to access Budgetly.'),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  Navigator.of(ctx).pop();
-                  final retry = await AuthService.authenticate();
-                  if (!retry && mounted) _onResume();
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        );
-      }
-      _locked = false;
+    if (appLock != 'true') return;
+    final canAuth = await AuthService.canAuthenticate();
+    if (!canAuth) return;
+    var authed = await AuthService.authenticate();
+    while (!authed) {
+      if (!mounted) return;
+      final retry = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('App Locked'),
+          content: const Text('Authentication is required to access Budgetly.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Close'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final ok = await AuthService.authenticate();
+                if (ctx.mounted) Navigator.of(ctx).pop(ok);
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+      authed = retry ?? false;
     }
   }
 

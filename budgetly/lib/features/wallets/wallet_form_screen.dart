@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/currency_utils.dart';
 
 class WalletFormScreen extends ConsumerStatefulWidget {
   final int? walletId;
@@ -19,7 +20,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
   final _nameController = TextEditingController();
   String _type = 'checking';
   final _balanceController = TextEditingController();
-  String _currencyCode = 'USD';
+  String _currencyCode = '';
   bool _isLoading = false;
 
   final _types = [
@@ -33,7 +34,13 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.walletId != null) _loadWallet();
+    if (widget.walletId != null) {
+      _loadWallet();
+    } else {
+      final defaultCurrency =
+          ref.read(currencyCodeProvider).valueOrNull ?? 'USD';
+      _currencyCode = defaultCurrency;
+    }
   }
 
   Future<void> _loadWallet() async {
@@ -110,11 +117,27 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               }).toList(),
             ),
             const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: _currencyCode,
+              decoration: const InputDecoration(labelText: 'Currency'),
+              items: CurrencyUtils.codes
+                  .map((c) => DropdownMenuItem(
+                      value: c,
+                      child: Text(
+                          '$c  ${CurrencyUtils.symbolFor(c) ?? ''}')))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) setState(() => _currencyCode = v);
+              },
+            ),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _balanceController,
               decoration: InputDecoration(
                 labelText: 'Current balance',
-                prefixText: '$_currencyCode ',
+                prefixText:
+                    '${CurrencyUtils.symbolFor(_currencyCode) ?? _currencyCode} ',
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),

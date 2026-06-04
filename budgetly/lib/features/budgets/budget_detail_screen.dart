@@ -54,12 +54,14 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     int totalSpent;
     if (budget.isIncome) {
       byCategory = await txRepo.incomeByCategory(
-          _currentStart!, budget.periodEnd);
+          _currentStart!, budget.periodEnd,
+          targetCurrency: budget.currencyCode);
       totalSpent =
           byCategory.values.fold<int>(0, (s, v) => s + v);
     } else {
       byCategory = await txRepo.spentByCategory(
-          _currentStart!, budget.periodEnd);
+          _currentStart!, budget.periodEnd,
+          targetCurrency: budget.currencyCode);
       totalSpent =
           byCategory.values.fold<int>(0, (s, v) => s + v);
     }
@@ -74,10 +76,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     final prevStart = prevEnd.subtract(duration);
     int prevTotalSpent;
     if (budget.isIncome) {
-      final prevByCategory = await txRepo.incomeByCategory(prevStart, prevEnd);
+      final prevByCategory = await txRepo.incomeByCategory(prevStart, prevEnd,
+          targetCurrency: budget.currencyCode);
       prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
     } else {
-      final prevByCategory = await txRepo.spentByCategory(prevStart, prevEnd);
+      final prevByCategory = await txRepo.spentByCategory(prevStart, prevEnd,
+          targetCurrency: budget.currencyCode);
       prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
     }
 
@@ -120,6 +124,22 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     _load();
   }
 
+  Future<void> _addMoneyToGoal(Budget budget) async {
+    final wallets =
+        await ref.read(walletRepositoryProvider).watchActive().first;
+    if (!mounted) return;
+    final walletId = await showDialog<int>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _AddMoneyDialog(wallets: wallets, budget: budget),
+    );
+    if (walletId == null || !mounted) return;
+    context.push('/transactions/new', extra: <String, dynamic>{
+      'type': 'income',
+      'walletId': walletId,
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -143,6 +163,13 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     final isOver = _totalSpent > _totalPlanned;
 
     return Scaffold(
+      floatingActionButton: budget.isIncome
+          ? FloatingActionButton.extended(
+              onPressed: () => _addMoneyToGoal(budget),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Money'),
+            )
+          : null,
       appBar: AppBar(
         title: Text(budget.name),
         actions: [
@@ -279,7 +306,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                         style: theme.textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold)),
                     Text(
-                      budget.isIncome ? 'Savings' : 'Expense',
+                      budget.isIncome ? 'Goal' : 'Budget',
                       style: TextStyle(
                         fontSize: 12,
                         color: cs.onSurfaceVariant,
@@ -811,6 +838,95 @@ class _LimitDialogState extends State<_LimitDialog> {
               'categoryId': _selectedCatId!,
               'amount': amt.round(),
             });
+          },
+          child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+}
+
+class _AddMoneyDialog extends StatefulWidget {
+  final List<Wallet> wallets;
+  final Budget budget;
+  const _AddMoneyDialog({required this.wallets, required this.budget});
+
+  @override
+  State<_AddMoneyDialog> createState() => _AddMoneyDialogState();
+}
+
+class _AddMoneyDialogState extends State<_AddMoneyDialog> {
+  int? _selectedWalletId;
+  final _amountController = TextEditingController();
+  DateTime _date = DateTime.now();
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add Money to Goal'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DropdownButtonFormField<int>(
+            initialValue: _selectedWalletId,
+            decoration: const InputDecoration(
+              labelText: 'Account',
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            isExpanded: true,
+            items: widget.wallets
+                .map((w) => DropdownMenuItem<int>(
+                    value: w.id,
+                    child: Text(
+                        '${w.name} (${w.currencyCode})')))
+                .toList(),
+            onChanged: (v) => setState(() => _selectedWalletId = v),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _amountController,
+            decoration: const InputDecoration(
+              labelText: 'Amount',
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _date,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2035),
+              );
+              if (picked != null) {
+                setState(() => _date = picked);
+              }
+            },
+            icon: const Icon(Icons.calendar_today, size: 16),
+            label: Text(MoneyUtils.formatDateShort(_date)),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
+        FilledButton(
+          onPressed: () {
+            if (_selectedWalletId == null ||
+                _amountController.text.isEmpty) { return; }
+            Navigator.pop(context, _selectedWalletId);
           },
           child: const Text('Add'),
         ),

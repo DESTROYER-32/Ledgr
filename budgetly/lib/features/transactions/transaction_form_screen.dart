@@ -106,6 +106,29 @@ class _TransactionFormScreenState
     if (exchangeRate != null && mounted) {
       final converted = amount * exchangeRate.rate;
       _amountController.text = converted.toStringAsFixed(2);
+    } else if (mounted) {
+      await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Rate Not Found'),
+          content: Text(
+              'No exchange rate found for $fromCurrency → $toCurrency.\n'
+              'Enter the converted amount manually, or cancel to keep the '
+              'original value.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Keep Original'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx, _amountController.text);
+              },
+              child: const Text('Use Current Value'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -314,10 +337,32 @@ class _TransactionFormScreenState
                     .map((w) => DropdownMenuItem(
                         value: w.id, child: Text(w.name)))
                     .toList(),
-                onChanged: (v) => setState(() {
-                  _walletId = v;
-                  _currencyCode = null;
-                }),
+                onChanged: (v) async {
+                  final oldWalletId = _walletId;
+                  final oldCurrency = _currencyCode;
+                  setState(() {
+                    _walletId = v;
+                    _currencyCode = null;
+                  });
+                  if (oldCurrency != null && oldWalletId != null) {
+                    final oldWallet = wallets
+                        .where((w) => w.id == oldWalletId)
+                        .firstOrNull;
+                    final newWallet = wallets
+                        .where((w) => w.id == v)
+                        .firstOrNull;
+                    if (oldWallet != null &&
+                        newWallet != null &&
+                        oldCurrency != oldWallet.currencyCode) {
+                      final amount =
+                          double.tryParse(_amountController.text) ?? 0;
+                      if (amount > 0) {
+                        await _convertAmount(
+                            oldCurrency, newWallet.currencyCode, amount);
+                      }
+                    }
+                  }
+                },
                 validator: (v) => v == null ? 'Required' : null,
               ),
               error: (e, _) => Text('$e'),
@@ -335,10 +380,12 @@ class _TransactionFormScreenState
                   .toList(),
               onChanged: (v) {
                 if (v != null) {
+                  final fromCurrency = _currencyCode ?? walletCurrency;
+                  final amount =
+                      double.tryParse(_amountController.text) ?? 0;
                   setState(() => _currencyCode = v);
-                  if (v != walletCurrency) {
-                    _convertAmount(walletCurrency, v,
-                        double.tryParse(_amountController.text) ?? 0);
+                  if (fromCurrency != v && amount > 0) {
+                    _convertAmount(fromCurrency, v, amount);
                   }
                 }
               },

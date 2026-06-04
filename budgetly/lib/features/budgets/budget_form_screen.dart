@@ -155,11 +155,11 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               segments: const [
                 ButtonSegment(
                     value: false,
-                    label: Text('Expense'),
+                    label: Text('Budget'),
                     icon: Icon(Icons.arrow_upward)),
                 ButtonSegment(
                     value: true,
-                    label: Text('Savings'),
+                    label: Text('Goal'),
                     icon: Icon(Icons.savings)),
               ],
               selected: {_isIncome},

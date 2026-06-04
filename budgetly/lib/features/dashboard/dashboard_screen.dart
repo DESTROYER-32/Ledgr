@@ -407,7 +407,7 @@ class DashboardScreen extends ConsumerWidget {
     final color = budget.color != null
         ? Color(budget.color!)
         : cs.primary;
-    final isIncome = budget.isIncome;
+    final isGoal = budget.isIncome;
     return GestureDetector(
       onTap: () => context.push('/budgets/${budget.id}'),
       child: Card(
@@ -430,7 +430,10 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.track_changes,
+                  Icon(
+                      isGoal
+                          ? Icons.savings
+                          : Icons.track_changes,
                       size: 14, color: color),
                   const SizedBox(width: 6),
                   Expanded(
@@ -445,18 +448,57 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                isIncome ? 'Savings' : 'Expense',
+                isGoal ? 'Goal' : 'Budget',
                 style: TextStyle(
                   fontSize: 10,
                   color: cs.onSurfaceVariant,
                 ),
               ),
-              const Spacer(),
-              Text(
-                '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                style: TextStyle(
-                    fontSize: 10, color: cs.onSurfaceVariant),
-              ),
+              if (isGoal && budget.plannedAmountMinor > 0) ...[
+                const Spacer(),
+                Consumer(builder: (context, ref, _) {
+                  final txRepo =
+                      ref.watch(transactionRepositoryProvider);
+                  return FutureBuilder<int>(
+                    future: txRepo.totalIncome(
+                        budget.periodStart, budget.periodEnd),
+                    builder: (context, snap) {
+                      final saved = snap.data ?? 0;
+                      final pct = (saved / budget.plannedAmountMinor)
+                          .clamp(0.0, 1.0);
+                      return Column(
+                        children: [
+                          Text(
+                            '${MoneyUtils.format(saved)} / ${MoneyUtils.format(budget.plannedAmountMinor)}',
+                            style: TextStyle(
+                                fontSize: 9,
+                                color: cs.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius:
+                                BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: pct,
+                              minHeight: 4,
+                              backgroundColor:
+                                  cs.surfaceContainerHighest,
+                              color: AppColors.income,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }),
+              ] else ...[
+                const Spacer(),
+                Text(
+                  '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
+                  style: TextStyle(
+                      fontSize: 10, color: cs.onSurfaceVariant),
+                ),
+              ],
             ],
           ),
         ),
