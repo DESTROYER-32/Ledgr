@@ -2242,6 +2242,17 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _budgetFksMeta = const VerificationMeta(
+    'budgetFks',
+  );
+  @override
+  late final GeneratedColumn<String> budgetFks = GeneratedColumn<String>(
+    'budget_fks',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _objectiveFkMeta = const VerificationMeta(
     'objectiveFk',
   );
@@ -2318,6 +2329,7 @@ class $TransactionsTable extends Transactions
     tags,
     recurrenceRule,
     budgetFksExclude,
+    budgetFks,
     objectiveFk,
     attachmentPath,
     methodAdded,
@@ -2445,6 +2457,12 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
+    if (data.containsKey('budget_fks')) {
+      context.handle(
+        _budgetFksMeta,
+        budgetFks.isAcceptableOrUnknown(data['budget_fks']!, _budgetFksMeta),
+      );
+    }
     if (data.containsKey('objective_fk')) {
       context.handle(
         _objectiveFkMeta,
@@ -2549,6 +2567,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}budget_fks_exclude'],
       ),
+      budgetFks: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}budget_fks'],
+      ),
       objectiveFk: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}objective_fk'],
@@ -2593,6 +2615,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? tags;
   final String? recurrenceRule;
   final String? budgetFksExclude;
+  final String? budgetFks;
   final int? objectiveFk;
   final String? attachmentPath;
   final String? methodAdded;
@@ -2613,6 +2636,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.tags,
     this.recurrenceRule,
     this.budgetFksExclude,
+    this.budgetFks,
     this.objectiveFk,
     this.attachmentPath,
     this.methodAdded,
@@ -2649,6 +2673,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     }
     if (!nullToAbsent || budgetFksExclude != null) {
       map['budget_fks_exclude'] = Variable<String>(budgetFksExclude);
+    }
+    if (!nullToAbsent || budgetFks != null) {
+      map['budget_fks'] = Variable<String>(budgetFks);
     }
     if (!nullToAbsent || objectiveFk != null) {
       map['objective_fk'] = Variable<int>(objectiveFk);
@@ -2690,6 +2717,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       budgetFksExclude: budgetFksExclude == null && nullToAbsent
           ? const Value.absent()
           : Value(budgetFksExclude),
+      budgetFks: budgetFks == null && nullToAbsent
+          ? const Value.absent()
+          : Value(budgetFks),
       objectiveFk: objectiveFk == null && nullToAbsent
           ? const Value.absent()
           : Value(objectiveFk),
@@ -2724,6 +2754,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       tags: serializer.fromJson<String?>(json['tags']),
       recurrenceRule: serializer.fromJson<String?>(json['recurrenceRule']),
       budgetFksExclude: serializer.fromJson<String?>(json['budgetFksExclude']),
+      budgetFks: serializer.fromJson<String?>(json['budgetFks']),
       objectiveFk: serializer.fromJson<int?>(json['objectiveFk']),
       attachmentPath: serializer.fromJson<String?>(json['attachmentPath']),
       methodAdded: serializer.fromJson<String?>(json['methodAdded']),
@@ -2749,6 +2780,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'tags': serializer.toJson<String?>(tags),
       'recurrenceRule': serializer.toJson<String?>(recurrenceRule),
       'budgetFksExclude': serializer.toJson<String?>(budgetFksExclude),
+      'budgetFks': serializer.toJson<String?>(budgetFks),
       'objectiveFk': serializer.toJson<int?>(objectiveFk),
       'attachmentPath': serializer.toJson<String?>(attachmentPath),
       'methodAdded': serializer.toJson<String?>(methodAdded),
@@ -2772,6 +2804,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> tags = const Value.absent(),
     Value<String?> recurrenceRule = const Value.absent(),
     Value<String?> budgetFksExclude = const Value.absent(),
+    Value<String?> budgetFks = const Value.absent(),
     Value<int?> objectiveFk = const Value.absent(),
     Value<String?> attachmentPath = const Value.absent(),
     Value<String?> methodAdded = const Value.absent(),
@@ -2798,6 +2831,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     budgetFksExclude: budgetFksExclude.present
         ? budgetFksExclude.value
         : this.budgetFksExclude,
+    budgetFks: budgetFks.present ? budgetFks.value : this.budgetFks,
     objectiveFk: objectiveFk.present ? objectiveFk.value : this.objectiveFk,
     attachmentPath: attachmentPath.present
         ? attachmentPath.value
@@ -2836,6 +2870,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       budgetFksExclude: data.budgetFksExclude.present
           ? data.budgetFksExclude.value
           : this.budgetFksExclude,
+      budgetFks: data.budgetFks.present ? data.budgetFks.value : this.budgetFks,
       objectiveFk: data.objectiveFk.present
           ? data.objectiveFk.value
           : this.objectiveFk,
@@ -2867,6 +2902,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('tags: $tags, ')
           ..write('recurrenceRule: $recurrenceRule, ')
           ..write('budgetFksExclude: $budgetFksExclude, ')
+          ..write('budgetFks: $budgetFks, ')
           ..write('objectiveFk: $objectiveFk, ')
           ..write('attachmentPath: $attachmentPath, ')
           ..write('methodAdded: $methodAdded, ')
@@ -2892,6 +2928,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     tags,
     recurrenceRule,
     budgetFksExclude,
+    budgetFks,
     objectiveFk,
     attachmentPath,
     methodAdded,
@@ -2916,6 +2953,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.tags == this.tags &&
           other.recurrenceRule == this.recurrenceRule &&
           other.budgetFksExclude == this.budgetFksExclude &&
+          other.budgetFks == this.budgetFks &&
           other.objectiveFk == this.objectiveFk &&
           other.attachmentPath == this.attachmentPath &&
           other.methodAdded == this.methodAdded &&
@@ -2938,6 +2976,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> tags;
   final Value<String?> recurrenceRule;
   final Value<String?> budgetFksExclude;
+  final Value<String?> budgetFks;
   final Value<int?> objectiveFk;
   final Value<String?> attachmentPath;
   final Value<String?> methodAdded;
@@ -2958,6 +2997,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.tags = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
     this.budgetFksExclude = const Value.absent(),
+    this.budgetFks = const Value.absent(),
     this.objectiveFk = const Value.absent(),
     this.attachmentPath = const Value.absent(),
     this.methodAdded = const Value.absent(),
@@ -2979,6 +3019,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.tags = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
     this.budgetFksExclude = const Value.absent(),
+    this.budgetFks = const Value.absent(),
     this.objectiveFk = const Value.absent(),
     this.attachmentPath = const Value.absent(),
     this.methodAdded = const Value.absent(),
@@ -3004,6 +3045,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? tags,
     Expression<String>? recurrenceRule,
     Expression<String>? budgetFksExclude,
+    Expression<String>? budgetFks,
     Expression<int>? objectiveFk,
     Expression<String>? attachmentPath,
     Expression<String>? methodAdded,
@@ -3025,6 +3067,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (tags != null) 'tags': tags,
       if (recurrenceRule != null) 'recurrence_rule': recurrenceRule,
       if (budgetFksExclude != null) 'budget_fks_exclude': budgetFksExclude,
+      if (budgetFks != null) 'budget_fks': budgetFks,
       if (objectiveFk != null) 'objective_fk': objectiveFk,
       if (attachmentPath != null) 'attachment_path': attachmentPath,
       if (methodAdded != null) 'method_added': methodAdded,
@@ -3048,6 +3091,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? tags,
     Value<String?>? recurrenceRule,
     Value<String?>? budgetFksExclude,
+    Value<String?>? budgetFks,
     Value<int?>? objectiveFk,
     Value<String?>? attachmentPath,
     Value<String?>? methodAdded,
@@ -3069,6 +3113,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       tags: tags ?? this.tags,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
       budgetFksExclude: budgetFksExclude ?? this.budgetFksExclude,
+      budgetFks: budgetFks ?? this.budgetFks,
       objectiveFk: objectiveFk ?? this.objectiveFk,
       attachmentPath: attachmentPath ?? this.attachmentPath,
       methodAdded: methodAdded ?? this.methodAdded,
@@ -3122,6 +3167,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (budgetFksExclude.present) {
       map['budget_fks_exclude'] = Variable<String>(budgetFksExclude.value);
     }
+    if (budgetFks.present) {
+      map['budget_fks'] = Variable<String>(budgetFks.value);
+    }
     if (objectiveFk.present) {
       map['objective_fk'] = Variable<int>(objectiveFk.value);
     }
@@ -3157,6 +3205,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('tags: $tags, ')
           ..write('recurrenceRule: $recurrenceRule, ')
           ..write('budgetFksExclude: $budgetFksExclude, ')
+          ..write('budgetFks: $budgetFks, ')
           ..write('objectiveFk: $objectiveFk, ')
           ..write('attachmentPath: $attachmentPath, ')
           ..write('methodAdded: $methodAdded, ')
@@ -3290,6 +3339,21 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _specificModeMeta = const VerificationMeta(
+    'specificMode',
+  );
+  @override
+  late final GeneratedColumn<bool> specificMode = GeneratedColumn<bool>(
+    'specific_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("specific_mode" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _includeIncomeMeta = const VerificationMeta(
     'includeIncome',
   );
@@ -3412,6 +3476,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     archived,
     color,
     plannedAmountMinor,
+    specificMode,
     includeIncome,
     includeDebtCredit,
     includeBalanceCorrection,
@@ -3504,6 +3569,15 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         plannedAmountMinor.isAcceptableOrUnknown(
           data['planned_amount_minor']!,
           _plannedAmountMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('specific_mode')) {
+      context.handle(
+        _specificModeMeta,
+        specificMode.isAcceptableOrUnknown(
+          data['specific_mode']!,
+          _specificModeMeta,
         ),
       );
     }
@@ -3622,6 +3696,10 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         DriftSqlType.int,
         data['${effectivePrefix}planned_amount_minor'],
       )!,
+      specificMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}specific_mode'],
+      )!,
       includeIncome: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}include_income'],
@@ -3674,6 +3752,7 @@ class Budget extends DataClass implements Insertable<Budget> {
   final bool archived;
   final int? color;
   final int plannedAmountMinor;
+  final bool specificMode;
   final bool includeIncome;
   final bool includeDebtCredit;
   final bool includeBalanceCorrection;
@@ -3693,6 +3772,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     required this.archived,
     this.color,
     required this.plannedAmountMinor,
+    required this.specificMode,
     required this.includeIncome,
     required this.includeDebtCredit,
     required this.includeBalanceCorrection,
@@ -3717,6 +3797,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       map['color'] = Variable<int>(color);
     }
     map['planned_amount_minor'] = Variable<int>(plannedAmountMinor);
+    map['specific_mode'] = Variable<bool>(specificMode);
     map['include_income'] = Variable<bool>(includeIncome);
     map['include_debt_credit'] = Variable<bool>(includeDebtCredit);
     map['include_balance_correction'] = Variable<bool>(
@@ -3746,6 +3827,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           ? const Value.absent()
           : Value(color),
       plannedAmountMinor: Value(plannedAmountMinor),
+      specificMode: Value(specificMode),
       includeIncome: Value(includeIncome),
       includeDebtCredit: Value(includeDebtCredit),
       includeBalanceCorrection: Value(includeBalanceCorrection),
@@ -3775,6 +3857,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       archived: serializer.fromJson<bool>(json['archived']),
       color: serializer.fromJson<int?>(json['color']),
       plannedAmountMinor: serializer.fromJson<int>(json['plannedAmountMinor']),
+      specificMode: serializer.fromJson<bool>(json['specificMode']),
       includeIncome: serializer.fromJson<bool>(json['includeIncome']),
       includeDebtCredit: serializer.fromJson<bool>(json['includeDebtCredit']),
       includeBalanceCorrection: serializer.fromJson<bool>(
@@ -3803,6 +3886,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       'archived': serializer.toJson<bool>(archived),
       'color': serializer.toJson<int?>(color),
       'plannedAmountMinor': serializer.toJson<int>(plannedAmountMinor),
+      'specificMode': serializer.toJson<bool>(specificMode),
       'includeIncome': serializer.toJson<bool>(includeIncome),
       'includeDebtCredit': serializer.toJson<bool>(includeDebtCredit),
       'includeBalanceCorrection': serializer.toJson<bool>(
@@ -3827,6 +3911,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     bool? archived,
     Value<int?> color = const Value.absent(),
     int? plannedAmountMinor,
+    bool? specificMode,
     bool? includeIncome,
     bool? includeDebtCredit,
     bool? includeBalanceCorrection,
@@ -3846,6 +3931,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     archived: archived ?? this.archived,
     color: color.present ? color.value : this.color,
     plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
+    specificMode: specificMode ?? this.specificMode,
     includeIncome: includeIncome ?? this.includeIncome,
     includeDebtCredit: includeDebtCredit ?? this.includeDebtCredit,
     includeBalanceCorrection:
@@ -3876,6 +3962,9 @@ class Budget extends DataClass implements Insertable<Budget> {
       plannedAmountMinor: data.plannedAmountMinor.present
           ? data.plannedAmountMinor.value
           : this.plannedAmountMinor,
+      specificMode: data.specificMode.present
+          ? data.specificMode.value
+          : this.specificMode,
       includeIncome: data.includeIncome.present
           ? data.includeIncome.value
           : this.includeIncome,
@@ -3912,6 +4001,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           ..write('archived: $archived, ')
           ..write('color: $color, ')
           ..write('plannedAmountMinor: $plannedAmountMinor, ')
+          ..write('specificMode: $specificMode, ')
           ..write('includeIncome: $includeIncome, ')
           ..write('includeDebtCredit: $includeDebtCredit, ')
           ..write('includeBalanceCorrection: $includeBalanceCorrection, ')
@@ -3936,6 +4026,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     archived,
     color,
     plannedAmountMinor,
+    specificMode,
     includeIncome,
     includeDebtCredit,
     includeBalanceCorrection,
@@ -3959,6 +4050,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           other.archived == this.archived &&
           other.color == this.color &&
           other.plannedAmountMinor == this.plannedAmountMinor &&
+          other.specificMode == this.specificMode &&
           other.includeIncome == this.includeIncome &&
           other.includeDebtCredit == this.includeDebtCredit &&
           other.includeBalanceCorrection == this.includeBalanceCorrection &&
@@ -3980,6 +4072,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   final Value<bool> archived;
   final Value<int?> color;
   final Value<int> plannedAmountMinor;
+  final Value<bool> specificMode;
   final Value<bool> includeIncome;
   final Value<bool> includeDebtCredit;
   final Value<bool> includeBalanceCorrection;
@@ -3999,6 +4092,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.archived = const Value.absent(),
     this.color = const Value.absent(),
     this.plannedAmountMinor = const Value.absent(),
+    this.specificMode = const Value.absent(),
     this.includeIncome = const Value.absent(),
     this.includeDebtCredit = const Value.absent(),
     this.includeBalanceCorrection = const Value.absent(),
@@ -4019,6 +4113,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.archived = const Value.absent(),
     this.color = const Value.absent(),
     this.plannedAmountMinor = const Value.absent(),
+    this.specificMode = const Value.absent(),
     this.includeIncome = const Value.absent(),
     this.includeDebtCredit = const Value.absent(),
     this.includeBalanceCorrection = const Value.absent(),
@@ -4042,6 +4137,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Expression<bool>? archived,
     Expression<int>? color,
     Expression<int>? plannedAmountMinor,
+    Expression<bool>? specificMode,
     Expression<bool>? includeIncome,
     Expression<bool>? includeDebtCredit,
     Expression<bool>? includeBalanceCorrection,
@@ -4063,6 +4159,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       if (color != null) 'color': color,
       if (plannedAmountMinor != null)
         'planned_amount_minor': plannedAmountMinor,
+      if (specificMode != null) 'specific_mode': specificMode,
       if (includeIncome != null) 'include_income': includeIncome,
       if (includeDebtCredit != null) 'include_debt_credit': includeDebtCredit,
       if (includeBalanceCorrection != null)
@@ -4087,6 +4184,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Value<bool>? archived,
     Value<int?>? color,
     Value<int>? plannedAmountMinor,
+    Value<bool>? specificMode,
     Value<bool>? includeIncome,
     Value<bool>? includeDebtCredit,
     Value<bool>? includeBalanceCorrection,
@@ -4107,6 +4205,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       archived: archived ?? this.archived,
       color: color ?? this.color,
       plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
+      specificMode: specificMode ?? this.specificMode,
       includeIncome: includeIncome ?? this.includeIncome,
       includeDebtCredit: includeDebtCredit ?? this.includeDebtCredit,
       includeBalanceCorrection:
@@ -4153,6 +4252,9 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     if (plannedAmountMinor.present) {
       map['planned_amount_minor'] = Variable<int>(plannedAmountMinor.value);
     }
+    if (specificMode.present) {
+      map['specific_mode'] = Variable<bool>(specificMode.value);
+    }
     if (includeIncome.present) {
       map['include_income'] = Variable<bool>(includeIncome.value);
     }
@@ -4197,6 +4299,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
           ..write('archived: $archived, ')
           ..write('color: $color, ')
           ..write('plannedAmountMinor: $plannedAmountMinor, ')
+          ..write('specificMode: $specificMode, ')
           ..write('includeIncome: $includeIncome, ')
           ..write('includeDebtCredit: $includeDebtCredit, ')
           ..write('includeBalanceCorrection: $includeBalanceCorrection, ')
@@ -6282,637 +6385,6 @@ class AssociatedTitlesCompanion extends UpdateCompanion<AssociatedTitle> {
   }
 }
 
-class $ScannerTemplatesTable extends ScannerTemplates
-    with TableInfo<$ScannerTemplatesTable, ScannerTemplate> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $ScannerTemplatesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _containsMeta = const VerificationMeta(
-    'contains',
-  );
-  @override
-  late final GeneratedColumn<String> contains = GeneratedColumn<String>(
-    'contains',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _titleBeforeMeta = const VerificationMeta(
-    'titleBefore',
-  );
-  @override
-  late final GeneratedColumn<String> titleBefore = GeneratedColumn<String>(
-    'title_before',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _titleAfterMeta = const VerificationMeta(
-    'titleAfter',
-  );
-  @override
-  late final GeneratedColumn<String> titleAfter = GeneratedColumn<String>(
-    'title_after',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _amountBeforeMeta = const VerificationMeta(
-    'amountBefore',
-  );
-  @override
-  late final GeneratedColumn<String> amountBefore = GeneratedColumn<String>(
-    'amount_before',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _amountAfterMeta = const VerificationMeta(
-    'amountAfter',
-  );
-  @override
-  late final GeneratedColumn<String> amountAfter = GeneratedColumn<String>(
-    'amount_after',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _defaultCategoryIdMeta = const VerificationMeta(
-    'defaultCategoryId',
-  );
-  @override
-  late final GeneratedColumn<int> defaultCategoryId = GeneratedColumn<int>(
-    'default_category_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
-    ),
-  );
-  static const VerificationMeta _walletIdMeta = const VerificationMeta(
-    'walletId',
-  );
-  @override
-  late final GeneratedColumn<int> walletId = GeneratedColumn<int>(
-    'wallet_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
-    ),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    contains,
-    titleBefore,
-    titleAfter,
-    amountBefore,
-    amountAfter,
-    defaultCategoryId,
-    walletId,
-    createdAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'scanner_templates';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<ScannerTemplate> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('contains')) {
-      context.handle(
-        _containsMeta,
-        contains.isAcceptableOrUnknown(data['contains']!, _containsMeta),
-      );
-    }
-    if (data.containsKey('title_before')) {
-      context.handle(
-        _titleBeforeMeta,
-        titleBefore.isAcceptableOrUnknown(
-          data['title_before']!,
-          _titleBeforeMeta,
-        ),
-      );
-    }
-    if (data.containsKey('title_after')) {
-      context.handle(
-        _titleAfterMeta,
-        titleAfter.isAcceptableOrUnknown(data['title_after']!, _titleAfterMeta),
-      );
-    }
-    if (data.containsKey('amount_before')) {
-      context.handle(
-        _amountBeforeMeta,
-        amountBefore.isAcceptableOrUnknown(
-          data['amount_before']!,
-          _amountBeforeMeta,
-        ),
-      );
-    }
-    if (data.containsKey('amount_after')) {
-      context.handle(
-        _amountAfterMeta,
-        amountAfter.isAcceptableOrUnknown(
-          data['amount_after']!,
-          _amountAfterMeta,
-        ),
-      );
-    }
-    if (data.containsKey('default_category_id')) {
-      context.handle(
-        _defaultCategoryIdMeta,
-        defaultCategoryId.isAcceptableOrUnknown(
-          data['default_category_id']!,
-          _defaultCategoryIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('wallet_id')) {
-      context.handle(
-        _walletIdMeta,
-        walletId.isAcceptableOrUnknown(data['wallet_id']!, _walletIdMeta),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  ScannerTemplate map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return ScannerTemplate(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      contains: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}contains'],
-      ),
-      titleBefore: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title_before'],
-      ),
-      titleAfter: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title_after'],
-      ),
-      amountBefore: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}amount_before'],
-      ),
-      amountAfter: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}amount_after'],
-      ),
-      defaultCategoryId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}default_category_id'],
-      ),
-      walletId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}wallet_id'],
-      ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-    );
-  }
-
-  @override
-  $ScannerTemplatesTable createAlias(String alias) {
-    return $ScannerTemplatesTable(attachedDatabase, alias);
-  }
-}
-
-class ScannerTemplate extends DataClass implements Insertable<ScannerTemplate> {
-  final int id;
-  final String name;
-  final String? contains;
-  final String? titleBefore;
-  final String? titleAfter;
-  final String? amountBefore;
-  final String? amountAfter;
-  final int? defaultCategoryId;
-  final int? walletId;
-  final DateTime createdAt;
-  const ScannerTemplate({
-    required this.id,
-    required this.name,
-    this.contains,
-    this.titleBefore,
-    this.titleAfter,
-    this.amountBefore,
-    this.amountAfter,
-    this.defaultCategoryId,
-    this.walletId,
-    required this.createdAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || contains != null) {
-      map['contains'] = Variable<String>(contains);
-    }
-    if (!nullToAbsent || titleBefore != null) {
-      map['title_before'] = Variable<String>(titleBefore);
-    }
-    if (!nullToAbsent || titleAfter != null) {
-      map['title_after'] = Variable<String>(titleAfter);
-    }
-    if (!nullToAbsent || amountBefore != null) {
-      map['amount_before'] = Variable<String>(amountBefore);
-    }
-    if (!nullToAbsent || amountAfter != null) {
-      map['amount_after'] = Variable<String>(amountAfter);
-    }
-    if (!nullToAbsent || defaultCategoryId != null) {
-      map['default_category_id'] = Variable<int>(defaultCategoryId);
-    }
-    if (!nullToAbsent || walletId != null) {
-      map['wallet_id'] = Variable<int>(walletId);
-    }
-    map['created_at'] = Variable<DateTime>(createdAt);
-    return map;
-  }
-
-  ScannerTemplatesCompanion toCompanion(bool nullToAbsent) {
-    return ScannerTemplatesCompanion(
-      id: Value(id),
-      name: Value(name),
-      contains: contains == null && nullToAbsent
-          ? const Value.absent()
-          : Value(contains),
-      titleBefore: titleBefore == null && nullToAbsent
-          ? const Value.absent()
-          : Value(titleBefore),
-      titleAfter: titleAfter == null && nullToAbsent
-          ? const Value.absent()
-          : Value(titleAfter),
-      amountBefore: amountBefore == null && nullToAbsent
-          ? const Value.absent()
-          : Value(amountBefore),
-      amountAfter: amountAfter == null && nullToAbsent
-          ? const Value.absent()
-          : Value(amountAfter),
-      defaultCategoryId: defaultCategoryId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(defaultCategoryId),
-      walletId: walletId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(walletId),
-      createdAt: Value(createdAt),
-    );
-  }
-
-  factory ScannerTemplate.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return ScannerTemplate(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      contains: serializer.fromJson<String?>(json['contains']),
-      titleBefore: serializer.fromJson<String?>(json['titleBefore']),
-      titleAfter: serializer.fromJson<String?>(json['titleAfter']),
-      amountBefore: serializer.fromJson<String?>(json['amountBefore']),
-      amountAfter: serializer.fromJson<String?>(json['amountAfter']),
-      defaultCategoryId: serializer.fromJson<int?>(json['defaultCategoryId']),
-      walletId: serializer.fromJson<int?>(json['walletId']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'contains': serializer.toJson<String?>(contains),
-      'titleBefore': serializer.toJson<String?>(titleBefore),
-      'titleAfter': serializer.toJson<String?>(titleAfter),
-      'amountBefore': serializer.toJson<String?>(amountBefore),
-      'amountAfter': serializer.toJson<String?>(amountAfter),
-      'defaultCategoryId': serializer.toJson<int?>(defaultCategoryId),
-      'walletId': serializer.toJson<int?>(walletId),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-    };
-  }
-
-  ScannerTemplate copyWith({
-    int? id,
-    String? name,
-    Value<String?> contains = const Value.absent(),
-    Value<String?> titleBefore = const Value.absent(),
-    Value<String?> titleAfter = const Value.absent(),
-    Value<String?> amountBefore = const Value.absent(),
-    Value<String?> amountAfter = const Value.absent(),
-    Value<int?> defaultCategoryId = const Value.absent(),
-    Value<int?> walletId = const Value.absent(),
-    DateTime? createdAt,
-  }) => ScannerTemplate(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    contains: contains.present ? contains.value : this.contains,
-    titleBefore: titleBefore.present ? titleBefore.value : this.titleBefore,
-    titleAfter: titleAfter.present ? titleAfter.value : this.titleAfter,
-    amountBefore: amountBefore.present ? amountBefore.value : this.amountBefore,
-    amountAfter: amountAfter.present ? amountAfter.value : this.amountAfter,
-    defaultCategoryId: defaultCategoryId.present
-        ? defaultCategoryId.value
-        : this.defaultCategoryId,
-    walletId: walletId.present ? walletId.value : this.walletId,
-    createdAt: createdAt ?? this.createdAt,
-  );
-  ScannerTemplate copyWithCompanion(ScannerTemplatesCompanion data) {
-    return ScannerTemplate(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      contains: data.contains.present ? data.contains.value : this.contains,
-      titleBefore: data.titleBefore.present
-          ? data.titleBefore.value
-          : this.titleBefore,
-      titleAfter: data.titleAfter.present
-          ? data.titleAfter.value
-          : this.titleAfter,
-      amountBefore: data.amountBefore.present
-          ? data.amountBefore.value
-          : this.amountBefore,
-      amountAfter: data.amountAfter.present
-          ? data.amountAfter.value
-          : this.amountAfter,
-      defaultCategoryId: data.defaultCategoryId.present
-          ? data.defaultCategoryId.value
-          : this.defaultCategoryId,
-      walletId: data.walletId.present ? data.walletId.value : this.walletId,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('ScannerTemplate(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('contains: $contains, ')
-          ..write('titleBefore: $titleBefore, ')
-          ..write('titleAfter: $titleAfter, ')
-          ..write('amountBefore: $amountBefore, ')
-          ..write('amountAfter: $amountAfter, ')
-          ..write('defaultCategoryId: $defaultCategoryId, ')
-          ..write('walletId: $walletId, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    name,
-    contains,
-    titleBefore,
-    titleAfter,
-    amountBefore,
-    amountAfter,
-    defaultCategoryId,
-    walletId,
-    createdAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is ScannerTemplate &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.contains == this.contains &&
-          other.titleBefore == this.titleBefore &&
-          other.titleAfter == this.titleAfter &&
-          other.amountBefore == this.amountBefore &&
-          other.amountAfter == this.amountAfter &&
-          other.defaultCategoryId == this.defaultCategoryId &&
-          other.walletId == this.walletId &&
-          other.createdAt == this.createdAt);
-}
-
-class ScannerTemplatesCompanion extends UpdateCompanion<ScannerTemplate> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<String?> contains;
-  final Value<String?> titleBefore;
-  final Value<String?> titleAfter;
-  final Value<String?> amountBefore;
-  final Value<String?> amountAfter;
-  final Value<int?> defaultCategoryId;
-  final Value<int?> walletId;
-  final Value<DateTime> createdAt;
-  const ScannerTemplatesCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.contains = const Value.absent(),
-    this.titleBefore = const Value.absent(),
-    this.titleAfter = const Value.absent(),
-    this.amountBefore = const Value.absent(),
-    this.amountAfter = const Value.absent(),
-    this.defaultCategoryId = const Value.absent(),
-    this.walletId = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  });
-  ScannerTemplatesCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    this.contains = const Value.absent(),
-    this.titleBefore = const Value.absent(),
-    this.titleAfter = const Value.absent(),
-    this.amountBefore = const Value.absent(),
-    this.amountAfter = const Value.absent(),
-    this.defaultCategoryId = const Value.absent(),
-    this.walletId = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  }) : name = Value(name);
-  static Insertable<ScannerTemplate> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<String>? contains,
-    Expression<String>? titleBefore,
-    Expression<String>? titleAfter,
-    Expression<String>? amountBefore,
-    Expression<String>? amountAfter,
-    Expression<int>? defaultCategoryId,
-    Expression<int>? walletId,
-    Expression<DateTime>? createdAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (contains != null) 'contains': contains,
-      if (titleBefore != null) 'title_before': titleBefore,
-      if (titleAfter != null) 'title_after': titleAfter,
-      if (amountBefore != null) 'amount_before': amountBefore,
-      if (amountAfter != null) 'amount_after': amountAfter,
-      if (defaultCategoryId != null) 'default_category_id': defaultCategoryId,
-      if (walletId != null) 'wallet_id': walletId,
-      if (createdAt != null) 'created_at': createdAt,
-    });
-  }
-
-  ScannerTemplatesCompanion copyWith({
-    Value<int>? id,
-    Value<String>? name,
-    Value<String?>? contains,
-    Value<String?>? titleBefore,
-    Value<String?>? titleAfter,
-    Value<String?>? amountBefore,
-    Value<String?>? amountAfter,
-    Value<int?>? defaultCategoryId,
-    Value<int?>? walletId,
-    Value<DateTime>? createdAt,
-  }) {
-    return ScannerTemplatesCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      contains: contains ?? this.contains,
-      titleBefore: titleBefore ?? this.titleBefore,
-      titleAfter: titleAfter ?? this.titleAfter,
-      amountBefore: amountBefore ?? this.amountBefore,
-      amountAfter: amountAfter ?? this.amountAfter,
-      defaultCategoryId: defaultCategoryId ?? this.defaultCategoryId,
-      walletId: walletId ?? this.walletId,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (contains.present) {
-      map['contains'] = Variable<String>(contains.value);
-    }
-    if (titleBefore.present) {
-      map['title_before'] = Variable<String>(titleBefore.value);
-    }
-    if (titleAfter.present) {
-      map['title_after'] = Variable<String>(titleAfter.value);
-    }
-    if (amountBefore.present) {
-      map['amount_before'] = Variable<String>(amountBefore.value);
-    }
-    if (amountAfter.present) {
-      map['amount_after'] = Variable<String>(amountAfter.value);
-    }
-    if (defaultCategoryId.present) {
-      map['default_category_id'] = Variable<int>(defaultCategoryId.value);
-    }
-    if (walletId.present) {
-      map['wallet_id'] = Variable<int>(walletId.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('ScannerTemplatesCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('contains: $contains, ')
-          ..write('titleBefore: $titleBefore, ')
-          ..write('titleAfter: $titleAfter, ')
-          ..write('amountBefore: $amountBefore, ')
-          ..write('amountAfter: $amountAfter, ')
-          ..write('defaultCategoryId: $defaultCategoryId, ')
-          ..write('walletId: $walletId, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $DeleteLogsTable extends DeleteLogs
     with TableInfo<$DeleteLogsTable, DeleteLog> {
   @override
@@ -7586,9 +7058,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AssociatedTitlesTable associatedTitles = $AssociatedTitlesTable(
     this,
   );
-  late final $ScannerTemplatesTable scannerTemplates = $ScannerTemplatesTable(
-    this,
-  );
   late final $DeleteLogsTable deleteLogs = $DeleteLogsTable(this);
   late final $ExchangeRatesTable exchangeRates = $ExchangeRatesTable(this);
   @override
@@ -7606,7 +7075,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     recurringTransactions,
     settings,
     associatedTitles,
-    scannerTemplates,
     deleteLogs,
     exchangeRates,
   ];
@@ -7803,29 +7271,6 @@ final class $$WalletsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _recurringTransferWalletTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$ScannerTemplatesTable, List<ScannerTemplate>>
-  _scannerTemplatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.scannerTemplates,
-    aliasName: $_aliasNameGenerator(
-      db.wallets.id,
-      db.scannerTemplates.walletId,
-    ),
-  );
-
-  $$ScannerTemplatesTableProcessedTableManager get scannerTemplatesRefs {
-    final manager = $$ScannerTemplatesTableTableManager(
-      $_db,
-      $_db.scannerTemplates,
-    ).filter((f) => f.walletId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _scannerTemplatesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -8076,31 +7521,6 @@ class $$WalletsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
-    return f(composer);
-  }
-
-  Expression<bool> scannerTemplatesRefs(
-    Expression<bool> Function($$ScannerTemplatesTableFilterComposer f) f,
-  ) {
-    final $$ScannerTemplatesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.scannerTemplates,
-      getReferencedColumn: (t) => t.walletId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ScannerTemplatesTableFilterComposer(
-            $db: $db,
-            $table: $db.scannerTemplates,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
     return f(composer);
   }
 }
@@ -8401,31 +7821,6 @@ class $$WalletsTableAnnotationComposer
         );
     return f(composer);
   }
-
-  Expression<T> scannerTemplatesRefs<T extends Object>(
-    Expression<T> Function($$ScannerTemplatesTableAnnotationComposer a) f,
-  ) {
-    final $$ScannerTemplatesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.scannerTemplates,
-      getReferencedColumn: (t) => t.walletId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ScannerTemplatesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.scannerTemplates,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$WalletsTableTableManager
@@ -8449,7 +7844,6 @@ class $$WalletsTableTableManager
             bool budgetWalletsRefs,
             bool recurringTransactionsRefs,
             bool recurringTransferWallet,
-            bool scannerTemplatesRefs,
           })
         > {
   $$WalletsTableTableManager(_$AppDatabase db, $WalletsTable table)
@@ -8536,7 +7930,6 @@ class $$WalletsTableTableManager
                 budgetWalletsRefs = false,
                 recurringTransactionsRefs = false,
                 recurringTransferWallet = false,
-                scannerTemplatesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -8548,7 +7941,6 @@ class $$WalletsTableTableManager
                     if (budgetWalletsRefs) db.budgetWallets,
                     if (recurringTransactionsRefs) db.recurringTransactions,
                     if (recurringTransferWallet) db.recurringTransactions,
-                    if (scannerTemplatesRefs) db.scannerTemplates,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -8700,27 +8092,6 @@ class $$WalletsTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (scannerTemplatesRefs)
-                        await $_getPrefetchedData<
-                          Wallet,
-                          $WalletsTable,
-                          ScannerTemplate
-                        >(
-                          currentTable: table,
-                          referencedTable: $$WalletsTableReferences
-                              ._scannerTemplatesRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$WalletsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).scannerTemplatesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.walletId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                     ];
                   },
                 );
@@ -8749,7 +8120,6 @@ typedef $$WalletsTableProcessedTableManager =
         bool budgetWalletsRefs,
         bool recurringTransactionsRefs,
         bool recurringTransferWallet,
-        bool scannerTemplatesRefs,
       })
     >;
 typedef $$CategoriesTableCreateCompanionBuilder =
@@ -8896,29 +8266,6 @@ final class $$CategoriesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _associatedTitlesRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$ScannerTemplatesTable, List<ScannerTemplate>>
-  _scannerTemplatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.scannerTemplates,
-    aliasName: $_aliasNameGenerator(
-      db.categories.id,
-      db.scannerTemplates.defaultCategoryId,
-    ),
-  );
-
-  $$ScannerTemplatesTableProcessedTableManager get scannerTemplatesRefs {
-    final manager = $$ScannerTemplatesTableTableManager(
-      $_db,
-      $_db.scannerTemplates,
-    ).filter((f) => f.defaultCategoryId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _scannerTemplatesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -9095,31 +8442,6 @@ class $$CategoriesTableFilterComposer
           }) => $$AssociatedTitlesTableFilterComposer(
             $db: $db,
             $table: $db.associatedTitles,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> scannerTemplatesRefs(
-    Expression<bool> Function($$ScannerTemplatesTableFilterComposer f) f,
-  ) {
-    final $$ScannerTemplatesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.scannerTemplates,
-      getReferencedColumn: (t) => t.defaultCategoryId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ScannerTemplatesTableFilterComposer(
-            $db: $db,
-            $table: $db.scannerTemplates,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9368,31 +8690,6 @@ class $$CategoriesTableAnnotationComposer
     );
     return f(composer);
   }
-
-  Expression<T> scannerTemplatesRefs<T extends Object>(
-    Expression<T> Function($$ScannerTemplatesTableAnnotationComposer a) f,
-  ) {
-    final $$ScannerTemplatesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.scannerTemplates,
-      getReferencedColumn: (t) => t.defaultCategoryId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ScannerTemplatesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.scannerTemplates,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$CategoriesTableTableManager
@@ -9414,7 +8711,6 @@ class $$CategoriesTableTableManager
             bool budgetCategoryLimitsRefs,
             bool recurringTransactionsRefs,
             bool associatedTitlesRefs,
-            bool scannerTemplatesRefs,
           })
         > {
   $$CategoriesTableTableManager(_$AppDatabase db, $CategoriesTable table)
@@ -9491,7 +8787,6 @@ class $$CategoriesTableTableManager
                 budgetCategoryLimitsRefs = false,
                 recurringTransactionsRefs = false,
                 associatedTitlesRefs = false,
-                scannerTemplatesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -9500,7 +8795,6 @@ class $$CategoriesTableTableManager
                     if (budgetCategoryLimitsRefs) db.budgetCategoryLimits,
                     if (recurringTransactionsRefs) db.recurringTransactions,
                     if (associatedTitlesRefs) db.associatedTitles,
-                    if (scannerTemplatesRefs) db.scannerTemplates,
                   ],
                   addJoins:
                       <
@@ -9621,27 +8915,6 @@ class $$CategoriesTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (scannerTemplatesRefs)
-                        await $_getPrefetchedData<
-                          Category,
-                          $CategoriesTable,
-                          ScannerTemplate
-                        >(
-                          currentTable: table,
-                          referencedTable: $$CategoriesTableReferences
-                              ._scannerTemplatesRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$CategoriesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).scannerTemplatesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.defaultCategoryId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                     ];
                   },
                 );
@@ -9668,7 +8941,6 @@ typedef $$CategoriesTableProcessedTableManager =
         bool budgetCategoryLimitsRefs,
         bool recurringTransactionsRefs,
         bool associatedTitlesRefs,
-        bool scannerTemplatesRefs,
       })
     >;
 typedef $$ObjectivesTableCreateCompanionBuilder =
@@ -10270,6 +9542,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> tags,
       Value<String?> recurrenceRule,
       Value<String?> budgetFksExclude,
+      Value<String?> budgetFks,
       Value<int?> objectiveFk,
       Value<String?> attachmentPath,
       Value<String?> methodAdded,
@@ -10292,6 +9565,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> tags,
       Value<String?> recurrenceRule,
       Value<String?> budgetFksExclude,
+      Value<String?> budgetFks,
       Value<int?> objectiveFk,
       Value<String?> attachmentPath,
       Value<String?> methodAdded,
@@ -10441,6 +9715,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get budgetFksExclude => $composableBuilder(
     column: $table.budgetFksExclude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get budgetFks => $composableBuilder(
+    column: $table.budgetFks,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10621,6 +9900,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get budgetFks => $composableBuilder(
+    column: $table.budgetFks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get attachmentPath => $composableBuilder(
     column: $table.attachmentPath,
     builder: (column) => ColumnOrderings(column),
@@ -10786,6 +10070,9 @@ class $$TransactionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get budgetFks =>
+      $composableBuilder(column: $table.budgetFks, builder: (column) => column);
+
   GeneratedColumn<String> get attachmentPath => $composableBuilder(
     column: $table.attachmentPath,
     builder: (column) => column,
@@ -10942,6 +10229,7 @@ class $$TransactionsTableTableManager
                 Value<String?> tags = const Value.absent(),
                 Value<String?> recurrenceRule = const Value.absent(),
                 Value<String?> budgetFksExclude = const Value.absent(),
+                Value<String?> budgetFks = const Value.absent(),
                 Value<int?> objectiveFk = const Value.absent(),
                 Value<String?> attachmentPath = const Value.absent(),
                 Value<String?> methodAdded = const Value.absent(),
@@ -10962,6 +10250,7 @@ class $$TransactionsTableTableManager
                 tags: tags,
                 recurrenceRule: recurrenceRule,
                 budgetFksExclude: budgetFksExclude,
+                budgetFks: budgetFks,
                 objectiveFk: objectiveFk,
                 attachmentPath: attachmentPath,
                 methodAdded: methodAdded,
@@ -10984,6 +10273,7 @@ class $$TransactionsTableTableManager
                 Value<String?> tags = const Value.absent(),
                 Value<String?> recurrenceRule = const Value.absent(),
                 Value<String?> budgetFksExclude = const Value.absent(),
+                Value<String?> budgetFks = const Value.absent(),
                 Value<int?> objectiveFk = const Value.absent(),
                 Value<String?> attachmentPath = const Value.absent(),
                 Value<String?> methodAdded = const Value.absent(),
@@ -11004,6 +10294,7 @@ class $$TransactionsTableTableManager
                 tags: tags,
                 recurrenceRule: recurrenceRule,
                 budgetFksExclude: budgetFksExclude,
+                budgetFks: budgetFks,
                 objectiveFk: objectiveFk,
                 attachmentPath: attachmentPath,
                 methodAdded: methodAdded,
@@ -11147,6 +10438,7 @@ typedef $$BudgetsTableCreateCompanionBuilder =
       Value<bool> archived,
       Value<int?> color,
       Value<int> plannedAmountMinor,
+      Value<bool> specificMode,
       Value<bool> includeIncome,
       Value<bool> includeDebtCredit,
       Value<bool> includeBalanceCorrection,
@@ -11168,6 +10460,7 @@ typedef $$BudgetsTableUpdateCompanionBuilder =
       Value<bool> archived,
       Value<int?> color,
       Value<int> plannedAmountMinor,
+      Value<bool> specificMode,
       Value<bool> includeIncome,
       Value<bool> includeDebtCredit,
       Value<bool> includeBalanceCorrection,
@@ -11285,6 +10578,11 @@ class $$BudgetsTableFilterComposer
 
   ColumnFilters<int> get plannedAmountMinor => $composableBuilder(
     column: $table.plannedAmountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get specificMode => $composableBuilder(
+    column: $table.specificMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11438,6 +10736,11 @@ class $$BudgetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get specificMode => $composableBuilder(
+    column: $table.specificMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get includeIncome => $composableBuilder(
     column: $table.includeIncome,
     builder: (column) => ColumnOrderings(column),
@@ -11521,6 +10824,11 @@ class $$BudgetsTableAnnotationComposer
 
   GeneratedColumn<int> get plannedAmountMinor => $composableBuilder(
     column: $table.plannedAmountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get specificMode => $composableBuilder(
+    column: $table.specificMode,
     builder: (column) => column,
   );
 
@@ -11653,6 +10961,7 @@ class $$BudgetsTableTableManager
                 Value<bool> archived = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 Value<int> plannedAmountMinor = const Value.absent(),
+                Value<bool> specificMode = const Value.absent(),
                 Value<bool> includeIncome = const Value.absent(),
                 Value<bool> includeDebtCredit = const Value.absent(),
                 Value<bool> includeBalanceCorrection = const Value.absent(),
@@ -11672,6 +10981,7 @@ class $$BudgetsTableTableManager
                 archived: archived,
                 color: color,
                 plannedAmountMinor: plannedAmountMinor,
+                specificMode: specificMode,
                 includeIncome: includeIncome,
                 includeDebtCredit: includeDebtCredit,
                 includeBalanceCorrection: includeBalanceCorrection,
@@ -11693,6 +11003,7 @@ class $$BudgetsTableTableManager
                 Value<bool> archived = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 Value<int> plannedAmountMinor = const Value.absent(),
+                Value<bool> specificMode = const Value.absent(),
                 Value<bool> includeIncome = const Value.absent(),
                 Value<bool> includeDebtCredit = const Value.absent(),
                 Value<bool> includeBalanceCorrection = const Value.absent(),
@@ -11712,6 +11023,7 @@ class $$BudgetsTableTableManager
                 archived: archived,
                 color: color,
                 plannedAmountMinor: plannedAmountMinor,
+                specificMode: specificMode,
                 includeIncome: includeIncome,
                 includeDebtCredit: includeDebtCredit,
                 includeBalanceCorrection: includeBalanceCorrection,
@@ -13887,525 +13199,6 @@ typedef $$AssociatedTitlesTableProcessedTableManager =
       AssociatedTitle,
       PrefetchHooks Function({bool categoryId})
     >;
-typedef $$ScannerTemplatesTableCreateCompanionBuilder =
-    ScannerTemplatesCompanion Function({
-      Value<int> id,
-      required String name,
-      Value<String?> contains,
-      Value<String?> titleBefore,
-      Value<String?> titleAfter,
-      Value<String?> amountBefore,
-      Value<String?> amountAfter,
-      Value<int?> defaultCategoryId,
-      Value<int?> walletId,
-      Value<DateTime> createdAt,
-    });
-typedef $$ScannerTemplatesTableUpdateCompanionBuilder =
-    ScannerTemplatesCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<String?> contains,
-      Value<String?> titleBefore,
-      Value<String?> titleAfter,
-      Value<String?> amountBefore,
-      Value<String?> amountAfter,
-      Value<int?> defaultCategoryId,
-      Value<int?> walletId,
-      Value<DateTime> createdAt,
-    });
-
-final class $$ScannerTemplatesTableReferences
-    extends
-        BaseReferences<_$AppDatabase, $ScannerTemplatesTable, ScannerTemplate> {
-  $$ScannerTemplatesTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $CategoriesTable _defaultCategoryIdTable(_$AppDatabase db) =>
-      db.categories.createAlias(
-        $_aliasNameGenerator(
-          db.scannerTemplates.defaultCategoryId,
-          db.categories.id,
-        ),
-      );
-
-  $$CategoriesTableProcessedTableManager? get defaultCategoryId {
-    final $_column = $_itemColumn<int>('default_category_id');
-    if ($_column == null) return null;
-    final manager = $$CategoriesTableTableManager(
-      $_db,
-      $_db.categories,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_defaultCategoryIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $WalletsTable _walletIdTable(_$AppDatabase db) =>
-      db.wallets.createAlias(
-        $_aliasNameGenerator(db.scannerTemplates.walletId, db.wallets.id),
-      );
-
-  $$WalletsTableProcessedTableManager? get walletId {
-    final $_column = $_itemColumn<int>('wallet_id');
-    if ($_column == null) return null;
-    final manager = $$WalletsTableTableManager(
-      $_db,
-      $_db.wallets,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_walletIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$ScannerTemplatesTableFilterComposer
-    extends Composer<_$AppDatabase, $ScannerTemplatesTable> {
-  $$ScannerTemplatesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get contains => $composableBuilder(
-    column: $table.contains,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get titleBefore => $composableBuilder(
-    column: $table.titleBefore,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get titleAfter => $composableBuilder(
-    column: $table.titleAfter,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get amountBefore => $composableBuilder(
-    column: $table.amountBefore,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get amountAfter => $composableBuilder(
-    column: $table.amountAfter,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$CategoriesTableFilterComposer get defaultCategoryId {
-    final $$CategoriesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.defaultCategoryId,
-      referencedTable: $db.categories,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$CategoriesTableFilterComposer(
-            $db: $db,
-            $table: $db.categories,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$WalletsTableFilterComposer get walletId {
-    final $$WalletsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.walletId,
-      referencedTable: $db.wallets,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WalletsTableFilterComposer(
-            $db: $db,
-            $table: $db.wallets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$ScannerTemplatesTableOrderingComposer
-    extends Composer<_$AppDatabase, $ScannerTemplatesTable> {
-  $$ScannerTemplatesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get contains => $composableBuilder(
-    column: $table.contains,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get titleBefore => $composableBuilder(
-    column: $table.titleBefore,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get titleAfter => $composableBuilder(
-    column: $table.titleAfter,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get amountBefore => $composableBuilder(
-    column: $table.amountBefore,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get amountAfter => $composableBuilder(
-    column: $table.amountAfter,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$CategoriesTableOrderingComposer get defaultCategoryId {
-    final $$CategoriesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.defaultCategoryId,
-      referencedTable: $db.categories,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$CategoriesTableOrderingComposer(
-            $db: $db,
-            $table: $db.categories,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$WalletsTableOrderingComposer get walletId {
-    final $$WalletsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.walletId,
-      referencedTable: $db.wallets,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WalletsTableOrderingComposer(
-            $db: $db,
-            $table: $db.wallets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$ScannerTemplatesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ScannerTemplatesTable> {
-  $$ScannerTemplatesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get contains =>
-      $composableBuilder(column: $table.contains, builder: (column) => column);
-
-  GeneratedColumn<String> get titleBefore => $composableBuilder(
-    column: $table.titleBefore,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get titleAfter => $composableBuilder(
-    column: $table.titleAfter,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get amountBefore => $composableBuilder(
-    column: $table.amountBefore,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get amountAfter => $composableBuilder(
-    column: $table.amountAfter,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  $$CategoriesTableAnnotationComposer get defaultCategoryId {
-    final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.defaultCategoryId,
-      referencedTable: $db.categories,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$CategoriesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.categories,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$WalletsTableAnnotationComposer get walletId {
-    final $$WalletsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.walletId,
-      referencedTable: $db.wallets,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WalletsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.wallets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$ScannerTemplatesTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $ScannerTemplatesTable,
-          ScannerTemplate,
-          $$ScannerTemplatesTableFilterComposer,
-          $$ScannerTemplatesTableOrderingComposer,
-          $$ScannerTemplatesTableAnnotationComposer,
-          $$ScannerTemplatesTableCreateCompanionBuilder,
-          $$ScannerTemplatesTableUpdateCompanionBuilder,
-          (ScannerTemplate, $$ScannerTemplatesTableReferences),
-          ScannerTemplate,
-          PrefetchHooks Function({bool defaultCategoryId, bool walletId})
-        > {
-  $$ScannerTemplatesTableTableManager(
-    _$AppDatabase db,
-    $ScannerTemplatesTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$ScannerTemplatesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$ScannerTemplatesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$ScannerTemplatesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String?> contains = const Value.absent(),
-                Value<String?> titleBefore = const Value.absent(),
-                Value<String?> titleAfter = const Value.absent(),
-                Value<String?> amountBefore = const Value.absent(),
-                Value<String?> amountAfter = const Value.absent(),
-                Value<int?> defaultCategoryId = const Value.absent(),
-                Value<int?> walletId = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => ScannerTemplatesCompanion(
-                id: id,
-                name: name,
-                contains: contains,
-                titleBefore: titleBefore,
-                titleAfter: titleAfter,
-                amountBefore: amountBefore,
-                amountAfter: amountAfter,
-                defaultCategoryId: defaultCategoryId,
-                walletId: walletId,
-                createdAt: createdAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                Value<String?> contains = const Value.absent(),
-                Value<String?> titleBefore = const Value.absent(),
-                Value<String?> titleAfter = const Value.absent(),
-                Value<String?> amountBefore = const Value.absent(),
-                Value<String?> amountAfter = const Value.absent(),
-                Value<int?> defaultCategoryId = const Value.absent(),
-                Value<int?> walletId = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => ScannerTemplatesCompanion.insert(
-                id: id,
-                name: name,
-                contains: contains,
-                titleBefore: titleBefore,
-                titleAfter: titleAfter,
-                amountBefore: amountBefore,
-                amountAfter: amountAfter,
-                defaultCategoryId: defaultCategoryId,
-                walletId: walletId,
-                createdAt: createdAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$ScannerTemplatesTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({defaultCategoryId = false, walletId = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (defaultCategoryId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.defaultCategoryId,
-                                    referencedTable:
-                                        $$ScannerTemplatesTableReferences
-                                            ._defaultCategoryIdTable(db),
-                                    referencedColumn:
-                                        $$ScannerTemplatesTableReferences
-                                            ._defaultCategoryIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
-                        if (walletId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.walletId,
-                                    referencedTable:
-                                        $$ScannerTemplatesTableReferences
-                                            ._walletIdTable(db),
-                                    referencedColumn:
-                                        $$ScannerTemplatesTableReferences
-                                            ._walletIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$ScannerTemplatesTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $ScannerTemplatesTable,
-      ScannerTemplate,
-      $$ScannerTemplatesTableFilterComposer,
-      $$ScannerTemplatesTableOrderingComposer,
-      $$ScannerTemplatesTableAnnotationComposer,
-      $$ScannerTemplatesTableCreateCompanionBuilder,
-      $$ScannerTemplatesTableUpdateCompanionBuilder,
-      (ScannerTemplate, $$ScannerTemplatesTableReferences),
-      ScannerTemplate,
-      PrefetchHooks Function({bool defaultCategoryId, bool walletId})
-    >;
 typedef $$DeleteLogsTableCreateCompanionBuilder =
     DeleteLogsCompanion Function({
       Value<int> id,
@@ -14800,8 +13593,6 @@ class $AppDatabaseManager {
       $$SettingsTableTableManager(_db, _db.settings);
   $$AssociatedTitlesTableTableManager get associatedTitles =>
       $$AssociatedTitlesTableTableManager(_db, _db.associatedTitles);
-  $$ScannerTemplatesTableTableManager get scannerTemplates =>
-      $$ScannerTemplatesTableTableManager(_db, _db.scannerTemplates);
   $$DeleteLogsTableTableManager get deleteLogs =>
       $$DeleteLogsTableTableManager(_db, _db.deleteLogs);
   $$ExchangeRatesTableTableManager get exchangeRates =>

@@ -11,6 +11,15 @@ class MoneyUtils {
     _defaultCurrencyCode = code;
   }
 
+  static String _symbol(String code) {
+    try {
+      return NumberFormat.simpleCurrency(name: code, decimalDigits: 2)
+          .currencySymbol;
+    } catch (_) {
+      return code;
+    }
+  }
+
   static String format(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
     final code = currencyCode ?? _defaultCurrencyCode;
@@ -24,13 +33,12 @@ class MoneyUtils {
 
   static String formatCompact(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
+    final sym = _symbol(currencyCode ?? _defaultCurrencyCode);
     if (amount.abs() >= 1000000) {
-      final code = currencyCode ?? _defaultCurrencyCode;
-      return '$code${(amount / 1000000).toStringAsFixed(1)}M';
+      return '$sym${(amount / 1000000).toStringAsFixed(1)}M';
     }
     if (amount.abs() >= 1000) {
-      final code = currencyCode ?? _defaultCurrencyCode;
-      return '$code${(amount / 1000).toStringAsFixed(1)}K';
+      return '$sym${(amount / 1000).toStringAsFixed(1)}K';
     }
     return format(amountMinor, currencyCode: currencyCode);
   }
