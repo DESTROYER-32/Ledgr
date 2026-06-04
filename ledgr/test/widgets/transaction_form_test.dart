@@ -19,7 +19,7 @@ void main() {
     expect(find.text('Expense'), findsWidgets);
     expect(find.text('Income'), findsWidgets);
     expect(find.text('Transfer'), findsWidgets);
-    expect(find.text('Add Transaction'), findsOneWidget);
+    expect(find.text('New Transaction'), findsOneWidget);
   });
 
   testWidgets('Transaction form shows amount field',

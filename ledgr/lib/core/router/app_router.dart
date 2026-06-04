@@ -6,21 +6,29 @@ import '../../features/budgets/budget_detail_screen.dart';
 import '../../features/budgets/budget_form_screen.dart';
 import '../../features/budgets/budgets_screen.dart';
 import '../../features/categories/categories_screen.dart';
+import '../../features/categories/category_form_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
-import '../../features/goals/goal_detail_screen.dart';
-import '../../features/goals/goal_form_screen.dart';
-import '../../features/goals/goals_list_screen.dart';
-import '../../features/goals/exchange_rates_screen.dart';
+import '../../features/exchange_rates/exchange_rates_screen.dart';
+import '../../features/objectives/objective_detail_screen.dart';
+import '../../features/objectives/objective_form_screen.dart';
+import '../../features/objectives/objectives_list_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/recurring/recurring_screen.dart';
 import '../../features/recurring/recurring_form_screen.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/transactions/transaction_form_screen.dart';
-import '../../features/categories/category_form_screen.dart';
 import '../../features/wallets/wallet_detail_screen.dart';
 import '../../features/wallets/wallet_form_screen.dart';
 import '../../features/wallets/wallets_screen.dart';
+import '../../features/smart_labels/associated_titles_screen.dart';
+import '../../features/smart_labels/associated_title_form_screen.dart';
+import '../../features/activity/activity_screen.dart';
+import '../../features/bill_splitter/bill_splitter_screen.dart';
+import '../../features/subscriptions/subscriptions_screen.dart';
+import '../../features/credit_debt/credit_debt_screen.dart';
+import '../../features/scanner_templates/scanner_templates_screen.dart';
+import '../../features/scanner_templates/scanner_template_form_screen.dart';
 import '../widgets/app_scaffold.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -121,7 +129,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/categories/new',
         name: 'category-new',
-        builder: (context, state) => const CategoryFormScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CategoryFormScreen(
+            preselectedParentId: extra?['parentId'] as int?,
+          );
+        },
       ),
       GoRoute(
         path: '/categories/edit/:id',
@@ -158,33 +171,87 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/goals',
-        name: 'goals',
-        builder: (context, state) => const GoalsListScreen(),
+        path: '/objectives',
+        name: 'objectives',
+        builder: (context, state) => const ObjectivesListScreen(),
       ),
       GoRoute(
-        path: '/goals/new',
-        name: 'goal-new',
-        builder: (context, state) => const GoalFormScreen(),
+        path: '/objectives/new',
+        name: 'objective-new',
+        builder: (context, state) => const ObjectiveFormScreen(),
       ),
       GoRoute(
-        path: '/goals/:id',
-        name: 'goal-detail',
-        builder: (context, state) => GoalDetailScreen(
-          goalId: int.parse(state.pathParameters['id']!),
+        path: '/objectives/:id',
+        name: 'objective-detail',
+        builder: (context, state) => ObjectiveDetailScreen(
+          objectiveId: int.parse(state.pathParameters['id']!),
         ),
       ),
       GoRoute(
-        path: '/goals/:id/edit',
-        name: 'goal-edit',
-        builder: (context, state) => GoalFormScreen(
-          goalId: int.parse(state.pathParameters['id']!),
+        path: '/objectives/:id/edit',
+        name: 'objective-edit',
+        builder: (context, state) => ObjectiveFormScreen(
+          objectiveId: int.parse(state.pathParameters['id']!),
         ),
       ),
       GoRoute(
         path: '/exchange-rates',
         name: 'exchange-rates',
         builder: (context, state) => const ExchangeRatesScreen(),
+      ),
+      GoRoute(
+        path: '/smart-labels',
+        name: 'smart-labels',
+        builder: (context, state) => const AssociatedTitlesScreen(),
+      ),
+      GoRoute(
+        path: '/smart-labels/new',
+        name: 'smart-label-new',
+        builder: (context, state) => const AssociatedTitleFormScreen(),
+      ),
+      GoRoute(
+        path: '/smart-labels/:id',
+        name: 'smart-label-edit',
+        builder: (context, state) => AssociatedTitleFormScreen(
+          titleId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/activity',
+        name: 'activity',
+        builder: (context, state) => const ActivityScreen(),
+      ),
+      GoRoute(
+        path: '/bill-splitter',
+        name: 'bill-splitter',
+        builder: (context, state) => const BillSplitterScreen(),
+      ),
+      GoRoute(
+        path: '/subscriptions',
+        name: 'subscriptions',
+        builder: (context, state) => const SubscriptionsScreen(),
+      ),
+      GoRoute(
+        path: '/credit-debt',
+        name: 'credit-debt',
+        builder: (context, state) => const CreditDebtScreen(),
+      ),
+      GoRoute(
+        path: '/scanner-templates',
+        name: 'scanner-templates',
+        builder: (context, state) => const ScannerTemplatesScreen(),
+      ),
+      GoRoute(
+        path: '/scanner-templates/new',
+        name: 'scanner-template-new',
+        builder: (context, state) => const ScannerTemplateFormScreen(),
+      ),
+      GoRoute(
+        path: '/scanner-templates/:id',
+        name: 'scanner-template-edit',
+        builder: (context, state) => ScannerTemplateFormScreen(
+          templateId: int.parse(state.pathParameters['id']!),
+        ),
       ),
     ],
   );
