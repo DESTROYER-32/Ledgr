@@ -5,7 +5,7 @@ class AuthService {
 
   static Future<bool> canAuthenticate() async {
     try {
-      return await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+      return await _auth.isDeviceSupported();
     } catch (_) {
       return false;
     }

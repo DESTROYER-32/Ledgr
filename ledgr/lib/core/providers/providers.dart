@@ -9,6 +9,7 @@ import '../database/repositories/delete_log_repository.dart';
 import '../database/repositories/objective_repository.dart';
 import '../database/repositories/recurring_repository.dart';
 import '../services/recurring_service.dart';
+import '../services/exchange_rate_service.dart';
 import '../database/repositories/settings_repository.dart';
 import '../database/repositories/exchange_rate_repository.dart';
 import '../database/repositories/transaction_repository.dart';
@@ -64,8 +65,13 @@ final exchangeRateRepositoryProvider = Provider<ExchangeRateRepository>((ref) {
   return ExchangeRateRepository(ref.watch(appDatabaseProvider));
 });
 
-final associatedTitleRepositoryProvider =
-    Provider<AssociatedTitleRepository>((ref) {
+final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
+  return ExchangeRateService(ref.watch(exchangeRateRepositoryProvider));
+});
+
+final associatedTitleRepositoryProvider = Provider<AssociatedTitleRepository>((
+  ref,
+) {
   return AssociatedTitleRepository(ref.watch(appDatabaseProvider));
 });
 
@@ -81,26 +87,33 @@ final recurringServiceProvider = Provider<RecurringService>((ref) {
 });
 
 // Stream providers for reactive queries
-final activeWalletsProvider =
-    StreamProvider<List<Wallet>>((ref) => ref.watch(walletRepositoryProvider).watchActive());
+final activeWalletsProvider = StreamProvider<List<Wallet>>(
+  (ref) => ref.watch(walletRepositoryProvider).watchActive(),
+);
 
-final allTransactionsProvider =
-    StreamProvider<List<Transaction>>((ref) => ref.watch(transactionRepositoryProvider).watchAll());
+final allTransactionsProvider = StreamProvider<List<Transaction>>(
+  (ref) => ref.watch(transactionRepositoryProvider).watchAll(),
+);
 
 final recentTransactionsProvider = StreamProvider<List<Transaction>>(
-    (ref) => ref.watch(transactionRepositoryProvider).watchRecent(limit: 50));
+  (ref) => ref.watch(transactionRepositoryProvider).watchRecent(limit: 50),
+);
 
-final activeCategoriesProvider =
-    StreamProvider<List<Category>>((ref) => ref.watch(categoryRepositoryProvider).watchActive());
+final activeCategoriesProvider = StreamProvider<List<Category>>(
+  (ref) => ref.watch(categoryRepositoryProvider).watchActive(),
+);
 
-final parentCategoriesProvider =
-    StreamProvider<List<Category>>((ref) => ref.watch(categoryRepositoryProvider).watchParents());
+final parentCategoriesProvider = StreamProvider<List<Category>>(
+  (ref) => ref.watch(categoryRepositoryProvider).watchParents(),
+);
 
-final expenseCategoriesProvider =
-    StreamProvider<List<Category>>((ref) => ref.watch(categoryRepositoryProvider).watchByKind('expense'));
+final expenseCategoriesProvider = StreamProvider<List<Category>>(
+  (ref) => ref.watch(categoryRepositoryProvider).watchByKind('expense'),
+);
 
-final allBudgetsProvider =
-    StreamProvider<List<Budget>>((ref) => ref.watch(budgetRepositoryProvider).watchAll());
+final allBudgetsProvider = StreamProvider<List<Budget>>(
+  (ref) => ref.watch(budgetRepositoryProvider).watchAll(),
+);
 
 final pinnedBudgetsProvider = Provider<List<Budget>>((ref) {
   final budgets = ref.watch(allBudgetsProvider).valueOrNull ?? [];
@@ -109,10 +122,12 @@ final pinnedBudgetsProvider = Provider<List<Budget>>((ref) {
 });
 
 final activeRecurringProvider = StreamProvider<List<RecurringTransaction>>(
-    (ref) => ref.watch(recurringRepositoryProvider).watchActive());
+  (ref) => ref.watch(recurringRepositoryProvider).watchActive(),
+);
 
 final upcomingTransactionsProvider = StreamProvider<List<Transaction>>(
-    (ref) => ref.watch(transactionRepositoryProvider).watchUpcoming());
+  (ref) => ref.watch(transactionRepositoryProvider).watchUpcoming(),
+);
 
 final currencyCodeProvider = FutureProvider<String>((ref) async {
   final repo = ref.watch(settingsRepositoryProvider);
@@ -128,12 +143,14 @@ final defaultWalletIdProvider = FutureProvider<int?>((ref) async {
 
 final formatMoneyProvider = Provider<String Function(int)>((ref) {
   final code = ref.watch(currencyCodeProvider).valueOrNull ?? 'USD';
-  return (int amountMinor) => MoneyUtils.format(amountMinor, currencyCode: code);
+  return (int amountMinor) =>
+      MoneyUtils.format(amountMinor, currencyCode: code);
 });
 
 final formatMoneyCompactProvider = Provider<String Function(int)>((ref) {
   final code = ref.watch(currencyCodeProvider).valueOrNull ?? 'USD';
-  return (int amountMinor) => MoneyUtils.formatCompact(amountMinor, currencyCode: code);
+  return (int amountMinor) =>
+      MoneyUtils.formatCompact(amountMinor, currencyCode: code);
 });
 
 final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
@@ -148,7 +165,9 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
     'dark' => ThemeMode.dark,
     _ => ThemeMode.system,
   };
-  final seed = seedStr != null ? Color(int.parse(seedStr)) : const Color(0xFF1A6D4A);
+  final seed = seedStr != null
+      ? Color(int.parse(seedStr))
+      : const Color(0xFF1A6D4A);
   final font = fontStr ?? 'System';
   final anim = animStr != null ? double.tryParse(animStr) ?? 1.0 : 1.0;
   final outlined = iconStr == 'true';
@@ -183,11 +202,13 @@ final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
 
 final budgetLimitsProvider =
     StreamProvider.family<List<BudgetCategoryLimit>, int>((ref, budgetId) {
-  return ref.watch(budgetRepositoryProvider).watchLimits(budgetId);
-});
+      return ref.watch(budgetRepositoryProvider).watchLimits(budgetId);
+    });
 
-final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>(
-    (ref, key) async {
+final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>((
+  ref,
+  key,
+) async {
   ref.watch(allTransactionsProvider);
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
@@ -198,7 +219,10 @@ final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>(
       .spentByCategory(start, end, targetCurrency: currency);
 });
 
-final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) async {
+final monthlyIncomeProvider = FutureProvider.family<int, String>((
+  ref,
+  key,
+) async {
   ref.watch(allTransactionsProvider);
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
@@ -209,13 +233,18 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) asyn
       .totalIncome(start, end, targetCurrency: currency);
 });
 
-final allObjectivesProvider =
-    StreamProvider<List<Objective>>((ref) => ref.watch(objectiveRepositoryProvider).watchAll());
+final allObjectivesProvider = StreamProvider<List<Objective>>(
+  (ref) => ref.watch(objectiveRepositoryProvider).watchAll(),
+);
 
-final pinnedObjectivesProvider =
-    StreamProvider<List<Objective>>((ref) => ref.watch(objectiveRepositoryProvider).watchPinned());
+final pinnedObjectivesProvider = StreamProvider<List<Objective>>(
+  (ref) => ref.watch(objectiveRepositoryProvider).watchPinned(),
+);
 
-final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) async {
+final monthlyExpensesProvider = FutureProvider.family<int, String>((
+  ref,
+  key,
+) async {
   ref.watch(allTransactionsProvider);
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
@@ -226,10 +255,13 @@ final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) as
       .totalExpenses(start, end, targetCurrency: currency);
 });
 
-final deleteLogsProvider =
-    StreamProvider<List<DeleteLog>>((ref) => ref.watch(deleteLogRepositoryProvider).watchAll());
+final deleteLogsProvider = StreamProvider<List<DeleteLog>>(
+  (ref) => ref.watch(deleteLogRepositoryProvider).watchAll(),
+);
 
-final subcategoriesProvider =
-    StreamProvider.family<List<Category>, int>((ref, parentId) {
+final subcategoriesProvider = StreamProvider.family<List<Category>, int>((
+  ref,
+  parentId,
+) {
   return ref.watch(categoryRepositoryProvider).watchSubcategories(parentId);
 });
