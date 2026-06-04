@@ -7,6 +7,10 @@ import '../../features/budgets/budget_form_screen.dart';
 import '../../features/budgets/budgets_screen.dart';
 import '../../features/categories/categories_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/goals/goal_detail_screen.dart';
+import '../../features/goals/goal_form_screen.dart';
+import '../../features/goals/goals_list_screen.dart';
+import '../../features/goals/exchange_rates_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/recurring/recurring_screen.dart';
 import '../../features/recurring/recurring_form_screen.dart';
@@ -152,6 +156,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => RecurringFormScreen(
           recurringId: int.parse(state.pathParameters['id']!),
         ),
+      ),
+      GoRoute(
+        path: '/goals',
+        name: 'goals',
+        builder: (context, state) => const GoalsListScreen(),
+      ),
+      GoRoute(
+        path: '/goals/new',
+        name: 'goal-new',
+        builder: (context, state) => const GoalFormScreen(),
+      ),
+      GoRoute(
+        path: '/goals/:id',
+        name: 'goal-detail',
+        builder: (context, state) => GoalDetailScreen(
+          goalId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/goals/:id/edit',
+        name: 'goal-edit',
+        builder: (context, state) => GoalFormScreen(
+          goalId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/exchange-rates',
+        name: 'exchange-rates',
+        builder: (context, state) => const ExchangeRatesScreen(),
       ),
     ],
   );

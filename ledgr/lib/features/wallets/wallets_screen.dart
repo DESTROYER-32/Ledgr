@@ -19,6 +19,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
   @override
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
+    final balancesAsync = ref.watch(walletBalancesProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -75,8 +76,9 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
                 return _buildAddWalletCard(context, theme);
               }
               final wallet = wallets[index - 1];
+              final balance = balancesAsync.valueOrNull?[wallet.id] ?? wallet.initialBalanceMinor;
               return _buildWalletCard(
-                  Key('wallet_${wallet.id}'), context, wallet, theme,
+                  Key('wallet_${wallet.id}'), context, wallet, balance, theme,
                   index: index);
             },
           );
@@ -136,7 +138,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
   }
 
   Widget _buildWalletCard(
-      Key key, BuildContext context, Wallet wallet, ThemeData theme,
+      Key key, BuildContext context, Wallet wallet, int balance, ThemeData theme,
       {int index = 0}) {
     return Card(
       key: key,
@@ -164,13 +166,13 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
         title: Text(wallet.name,
             style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
-            wallet.type.replaceAll('_', ' ').toUpperCase()),
+            '${wallet.type.replaceAll('_', ' ').toUpperCase()} \u2022 ${wallet.currencyCode}'),
         trailing: Text(
-          MoneyUtils.format(wallet.initialBalanceMinor),
+          MoneyUtils.format(balance, currencyCode: wallet.currencyCode),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
-            color: wallet.initialBalanceMinor >= 0
+            color: balance >= 0
                 ? AppColors.income
                 : AppColors.expense,
           ),

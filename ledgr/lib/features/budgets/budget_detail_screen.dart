@@ -26,6 +26,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   Map<int, int> _spentByCategory = {};
   int _totalSpent = 0;
   int _totalPlanned = 0;
+  int _prevTotalSpent = 0;
   bool _loading = true;
   DateTime? _currentStart;
 
@@ -68,6 +69,18 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             .where((e) => limits.any((l) => l.categoryId == e.key)))
         : byCategory;
 
+    final duration = budget.periodEnd.difference(budget.periodStart);
+    final prevEnd = budget.periodStart.subtract(const Duration(days: 1));
+    final prevStart = prevEnd.subtract(duration);
+    int prevTotalSpent;
+    if (budget.isIncome) {
+      final prevByCategory = await txRepo.incomeByCategory(prevStart, prevEnd);
+      prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
+    } else {
+      final prevByCategory = await txRepo.spentByCategory(prevStart, prevEnd);
+      prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
+    }
+
     if (mounted) {
       setState(() {
         _budget = budget;
@@ -75,6 +88,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
         _spentByCategory = filteredSpent;
         _totalSpent = totalSpent;
         _totalPlanned = totalPlanned;
+        _prevTotalSpent = prevTotalSpent;
         _loading = false;
       });
     }
@@ -207,6 +221,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
           const SizedBox(height: 16),
           _buildProgressCard(theme, cs, budget, color, pct, remaining, isOver),
           const SizedBox(height: 16),
+          _buildHistoryCard(theme, cs, budget),
+          const SizedBox(height: 16),
           if (_limits.isNotEmpty)
             _buildCategoryBreakdown(theme, cs, budget, color),
           if (_spentByCategory.isNotEmpty) ...[
@@ -287,6 +303,61 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
                   style: TextStyle(
                       fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryCard(ThemeData theme, ColorScheme cs, Budget budget) {
+    if (_prevTotalSpent == 0) return const SizedBox.shrink();
+    final diff = _totalSpent - _prevTotalSpent;
+    final pctChange = _prevTotalSpent > 0
+        ? ((diff / _prevTotalSpent) * 100).round()
+        : 0;
+    final increased = diff > 0;
+    final isIncome = budget.isIncome;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('vs Previous Period',
+                style: theme.textTheme.titleSmall?.copyWith(
+              color: cs.onSurfaceVariant,
+            )),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  increased
+                      ? (isIncome ? Icons.arrow_upward : Icons.arrow_upward)
+                      : (isIncome ? Icons.arrow_downward : Icons.arrow_downward),
+                  size: 20,
+                  color: isIncome
+                      ? (increased ? AppColors.income : AppColors.expense)
+                      : (increased ? AppColors.expense : AppColors.income),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isIncome
+                          ? '${MoneyUtils.format(_prevTotalSpent)} \u2192 ${MoneyUtils.format(_totalSpent)}'
+                          : '${MoneyUtils.format(_prevTotalSpent)} \u2192 ${MoneyUtils.format(_totalSpent)}',
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    Text(
+                      '${increased ? '+' : ''}$pctChange% ${isIncome ? (increased ? 'more saved' : 'less saved') : (increased ? 'more spent' : 'less spent')}',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    ),
+                  ],
                 ),
               ],
             ),

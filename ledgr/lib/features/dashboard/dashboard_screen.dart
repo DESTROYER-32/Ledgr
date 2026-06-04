@@ -23,8 +23,10 @@ class DashboardScreen extends ConsumerWidget {
     final recentAsync = ref.watch(recentTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
     final walletsAsync = ref.watch(activeWalletsProvider);
+    final walletBalancesAsync = ref.watch(walletBalancesProvider);
     final pinnedBudgets = ref.watch(pinnedBudgetsProvider);
     final budgetsAsync = ref.watch(allBudgetsProvider);
+    final goalsAsync = ref.watch(allGoalsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -55,13 +57,15 @@ class DashboardScreen extends ConsumerWidget {
             _buildSetupCard(context, theme, cs, walletsAsync, ref),
             _buildBalanceCard(context, theme, cs, totalBalanceAsync),
             const SizedBox(height: 20),
-            _buildWalletCards(context, theme, cs, walletsAsync),
+            _buildWalletCards(context, theme, cs, walletsAsync, walletBalancesAsync),
             const SizedBox(height: 20),
             _buildMonthlySummary(context, theme, cs, ref),
             const SizedBox(height: 24),
             _buildQuickActions(context, cs),
             const SizedBox(height: 24),
             _buildBudgetCards(context, theme, cs, pinnedBudgets, budgetsAsync),
+            const SizedBox(height: 24),
+            _buildGoalsSection(context, theme, cs, goalsAsync),
             const SizedBox(height: 24),
             _buildSpendingChart(context, theme, cs, ref),
             const SizedBox(height: 24),
@@ -180,7 +184,9 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildWalletCards(BuildContext context, ThemeData theme,
-      ColorScheme cs, AsyncValue<List<Wallet>> walletsAsync) {
+      ColorScheme cs, AsyncValue<List<Wallet>> walletsAsync,
+      AsyncValue<Map<int, int>> balancesAsync) {
+    final balances = balancesAsync.valueOrNull ?? {};
     return walletsAsync.when(
       data: (wallets) {
         if (wallets.length < 2) return const SizedBox.shrink();
@@ -212,12 +218,13 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 10),
                 itemBuilder: (_, i) {
                   final w = wallets[i];
+                  final balance = balances[w.id] ?? w.initialBalanceMinor;
                   final icon = w.type == 'cash'
                       ? Icons.money
                       : w.type == 'credit'
                           ? Icons.credit_card
                           : Icons.account_balance;
-                  return _miniWalletCard(context, cs, w, icon);
+                  return _miniWalletCard(context, cs, w, icon, balance);
                 },
               ),
             ),
@@ -230,7 +237,7 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _miniWalletCard(BuildContext context, ColorScheme cs, Wallet w,
-      IconData icon) {
+      IconData icon, int balance) {
     return GestureDetector(
       onTap: () => context.push('/wallets/${w.id}'),
       child: Card(
@@ -253,14 +260,101 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const Spacer(),
               Text(
-                MoneyUtils.format(w.initialBalanceMinor),
+                MoneyUtils.format(balance, currencyCode: w.currencyCode),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                   color: cs.onSurface,
                 ),
               ),
+              Text(w.currencyCode,
+                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoalsSection(BuildContext context, ThemeData theme,
+      ColorScheme cs, AsyncValue<List<Goal>> goalsAsync) {
+    return goalsAsync.when(
+      data: (goals) {
+        final active = goals.where((g) => !g.archived).take(3).toList();
+        if (active.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.flag, size: 16, color: cs.primary),
+                const SizedBox(width: 6),
+                Text('Goals',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant,
+                )),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => context.push('/goals'),
+                  child: const Text('View All',
+                      style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...active.map((g) => _goalRow(context, cs, g)),
+          ],
+        );
+      },
+      error: (_, _) => const SizedBox.shrink(),
+      loading: () => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _goalRow(BuildContext context, ColorScheme cs, Goal goal) {
+    final color = goal.color != null ? Color(goal.color!) : cs.primary;
+    final pct = goal.targetAmountMinor > 0
+        ? (goal.currentAmountMinor / goal.targetAmountMinor).clamp(0.0, 1.0)
+        : 0.0;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => context.push('/goals/${goal.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Icon(
+                  goal.icon != null ? IconData(goal.icon!) : Icons.flag,
+                  color: color, size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(goal.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: pct,
+                          backgroundColor: color.withValues(alpha: 0.12),
+                          color: color,
+                          minHeight: 5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${(pct * 100).toStringAsFixed(0)}%',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+              ],
+            ),
           ),
         ),
       ),

@@ -85,11 +85,12 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       plannedAmountMinor: Value(plannedAmountMinor),
     );
 
+    int budgetId;
     if (_isEditing) {
-      await repo.update(widget.budgetId!, companion);
-      if (mounted) context.pop();
+      budgetId = widget.budgetId!;
+      await repo.update(budgetId, companion);
     } else {
-      await repo.insert(
+      budgetId = await repo.insert(
         BudgetsCompanion.insert(
           name: _nameController.text.trim(),
           periodStart: _startDate,
@@ -100,8 +101,22 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           plannedAmountMinor: Value(plannedAmountMinor),
         ),
       );
-      if (mounted) context.pop();
     }
+
+    final existing = await repo.watchLimits(budgetId).first;
+    final existingCats = existing.map((l) => l.categoryId).toSet();
+    for (final catId in _selectedCategoryIds) {
+      if (!existingCats.contains(catId)) {
+        await repo.setLimit(budgetId, catId, 0);
+      }
+    }
+    for (final l in existing) {
+      if (!_selectedCategoryIds.contains(l.categoryId)) {
+        await repo.removeLimit(budgetId, l.categoryId);
+      }
+    }
+
+    if (mounted) context.pop();
   }
 
   @override
