@@ -41,6 +41,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _currencyCode;
   DateTime _date = DateTime.now();
   bool _isLoading = false;
+  bool _isConverting = false;
   bool _isEditing = false;
 
   @override
@@ -108,8 +109,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     super.dispose();
   }
 
-  void _duplicate(Map<String, dynamic> extra) {
-    context.pushReplacement('/transactions/new', extra: extra);
+  void _duplicate() {
+    setState(() => _isEditing = false);
   }
 
   Future<void> _convertAmount(
@@ -118,9 +119,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     double amount,
   ) async {
     if (amount <= 0 || fromCurrency == toCurrency) return;
+    setState(() => _isConverting = true);
     final service = ref.read(exchangeRateServiceProvider);
     final rate = await service.getConversionRate(fromCurrency, toCurrency);
-    if (rate != null && mounted) {
+    if (!mounted) return;
+    setState(() => _isConverting = false);
+    if (rate != null) {
       final converted = amount * rate;
       _amountController.text = converted.toStringAsFixed(2);
     } else if (mounted) {
@@ -248,13 +252,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             IconButton(
               icon: const Icon(Icons.copy),
               tooltip: 'Duplicate',
-              onPressed: () {
-                final extra = <String, dynamic>{
-                  'type': _type,
-                  'walletId': _walletId,
-                };
-                _duplicate(extra);
-              },
+              onPressed: () => _duplicate(),
             ),
         ],
       ),
@@ -308,6 +306,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               controller: _amountController,
               currencySymbol: displayCurrency,
             ),
+            if (_isConverting)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -409,13 +412,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (v) {
+              onChanged: (v) async {
                 if (v != null) {
                   final fromCurrency = _currencyCode ?? walletCurrency;
                   final amount = double.tryParse(_amountController.text) ?? 0;
                   setState(() => _currencyCode = v);
                   if (fromCurrency != v && amount > 0) {
-                    _convertAmount(fromCurrency, v, amount);
+                    await _convertAmount(fromCurrency, v, amount);
                   }
                 }
               },
