@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/utils/currency_utils.dart';
 import '../../core/widgets/amount_field.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -32,9 +33,13 @@ class _TransactionFormScreenState
   final _noteController = TextEditingController();
   final _tagsController = TextEditingController();
   String _type = 'expense';
+  String _specialType = 'none';
   int? _walletId;
   int? _transferWalletId;
   int? _categoryId;
+  int? _objectiveId;
+  Set<int> _budgetIds = {};
+  String? _currencyCode;
   DateTime _date = DateTime.now();
   bool _isLoading = false;
   bool _isEditing = false;
@@ -56,12 +61,24 @@ class _TransactionFormScreenState
     if (t != null && mounted) {
       setState(() {
         _type = t.type;
+        _specialType = t.specialType;
         _walletId = t.walletId;
         _transferWalletId = t.transferWalletId;
         _categoryId = t.categoryId;
+        _objectiveId = t.objectiveFk;
+        _currencyCode = t.currencyCode;
+        if (t.budgetFks != null && t.budgetFks!.isNotEmpty) {
+          _budgetIds = t.budgetFks!
+              .split(',')
+              .map((s) => int.tryParse(s.trim()))
+              .where((n) => n != null)
+              .cast<int>()
+              .toSet();
+        }
         _date = t.date;
         _titleController.text = t.title ?? '';
         _noteController.text = t.note ?? '';
+        _tagsController.text = t.tags ?? '';
         _amountController.text =
             (t.amountMinor / 100).toStringAsFixed(2);
       });
@@ -81,6 +98,49 @@ class _TransactionFormScreenState
     context.pushReplacement('/transactions/new', extra: extra);
   }
 
+  Future<void> _convertAmount(
+      String fromCurrency, String toCurrency, double amount) async {
+    if (amount <= 0 || fromCurrency == toCurrency) return;
+    final repo = ref.read(exchangeRateRepositoryProvider);
+    final exchangeRate = await repo.getRate(fromCurrency, toCurrency);
+    if (exchangeRate != null && mounted) {
+      final converted = amount * exchangeRate.rate;
+      _amountController.text = converted.toStringAsFixed(2);
+    } else if (mounted) {
+      await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Rate Not Found'),
+          content: Text(
+              'No exchange rate found for $fromCurrency → $toCurrency.\n'
+              'Enter the converted amount manually, or cancel to keep the '
+              'original value.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Keep Original'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx, _amountController.text);
+              },
+              child: const Text('Use Current Value'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _autoCategorize(String title) async {
+    if (title.isEmpty) return;
+    final repo = ref.read(associatedTitleRepositoryProvider);
+    final catId = await repo.findCategoryIdForTitle(title);
+    if (catId != null && mounted) {
+      setState(() => _categoryId = catId);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_walletId == null) return;
@@ -89,10 +149,12 @@ class _TransactionFormScreenState
     final repo = ref.read(transactionRepositoryProvider);
     final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
     final wallet = await ref.read(walletRepositoryProvider).getById(_walletId!);
-    final currencyCode = wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final walletCurrency = wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final currencyCode = _currencyCode ?? walletCurrency;
 
     final companion = TransactionsCompanion(
       type: Value(_type),
+      specialType: Value(_specialType),
       amountMinor: Value(amount.round()),
       currencyCode: Value(currencyCode),
       date: Value(_date),
@@ -108,6 +170,12 @@ class _TransactionFormScreenState
       tags: Value(_tagsController.text.isEmpty
           ? null
           : _tagsController.text),
+      budgetFks: _budgetIds.isNotEmpty
+          ? Value(_budgetIds.join(','))
+          : const Value(null),
+      objectiveFk: _objectiveId != null
+          ? Value(_objectiveId!)
+          : const Value(null),
     );
 
     if (_isEditing) {
@@ -115,6 +183,7 @@ class _TransactionFormScreenState
     } else {
       await repo.insert(TransactionsCompanion.insert(
         type: _type,
+        specialType: Value(_specialType),
         amountMinor: amount.round(),
         currencyCode: currencyCode,
         date: _date,
@@ -130,6 +199,12 @@ class _TransactionFormScreenState
         tags: Value(_tagsController.text.isEmpty
             ? null
             : _tagsController.text),
+        budgetFks: _budgetIds.isNotEmpty
+            ? Value(_budgetIds.join(','))
+            : const Value(null),
+        objectiveFk: _objectiveId != null
+            ? Value(_objectiveId!)
+            : const Value(null),
       ));
     }
 
@@ -140,9 +215,12 @@ class _TransactionFormScreenState
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
+    final objectivesAsync = ref.watch(allObjectivesProvider);
+    final theme = Theme.of(context);
     final wallets = walletsAsync.valueOrNull ?? [];
     final selectedWallet = wallets.where((w) => w.id == _walletId).firstOrNull;
-    final displayCurrency = selectedWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final walletCurrency = selectedWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final displayCurrency = _currencyCode ?? walletCurrency;
 
     return Scaffold(
       appBar: AppBar(
@@ -189,6 +267,22 @@ class _TransactionFormScreenState
                 if (_type == 'transfer') _categoryId = null;
               }),
             ),
+            const SizedBox(height: 12),
+            Text('Type', style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 4),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _specialChip('none', 'Standard'),
+                  _specialChip('upcoming', 'Upcoming'),
+                  _specialChip('subscription', 'Subscription'),
+                  _specialChip('repetitive', 'Repetitive'),
+                  if (_type == 'expense') _specialChip('debt', 'Debt'),
+                  if (_type == 'income') _specialChip('credit', 'Credit'),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
             AmountField(controller: _amountController, currencySymbol: displayCurrency),
             const SizedBox(height: 16),
@@ -198,6 +292,7 @@ class _TransactionFormScreenState
                 labelText: 'Title / Payee',
                 hintText: 'Optional',
               ),
+              onChanged: _autoCategorize,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -242,11 +337,58 @@ class _TransactionFormScreenState
                     .map((w) => DropdownMenuItem(
                         value: w.id, child: Text(w.name)))
                     .toList(),
-                onChanged: (v) => setState(() => _walletId = v),
+                onChanged: (v) async {
+                  final oldWalletId = _walletId;
+                  final oldCurrency = _currencyCode;
+                  setState(() {
+                    _walletId = v;
+                    _currencyCode = null;
+                  });
+                  if (oldCurrency != null && oldWalletId != null) {
+                    final oldWallet = wallets
+                        .where((w) => w.id == oldWalletId)
+                        .firstOrNull;
+                    final newWallet = wallets
+                        .where((w) => w.id == v)
+                        .firstOrNull;
+                    if (oldWallet != null &&
+                        newWallet != null &&
+                        oldCurrency != oldWallet.currencyCode) {
+                      final amount =
+                          double.tryParse(_amountController.text) ?? 0;
+                      if (amount > 0) {
+                        await _convertAmount(
+                            oldCurrency, newWallet.currencyCode, amount);
+                      }
+                    }
+                  }
+                },
                 validator: (v) => v == null ? 'Required' : null,
               ),
               error: (e, _) => Text('$e'),
               loading: () => const LinearProgressIndicator(),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: displayCurrency,
+              decoration: const InputDecoration(labelText: 'Currency'),
+              items: CurrencyUtils.codes
+                  .map((c) => DropdownMenuItem(
+                      value: c,
+                      child: Text('$c  ${CurrencyUtils.symbolFor(c)}')))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) {
+                  final fromCurrency = _currencyCode ?? walletCurrency;
+                  final amount =
+                      double.tryParse(_amountController.text) ?? 0;
+                  setState(() => _currencyCode = v);
+                  if (fromCurrency != v && amount > 0) {
+                    _convertAmount(fromCurrency, v, amount);
+                  }
+                }
+              },
             ),
             const SizedBox(height: 16),
             if (_type == 'expense' || _type == 'income')
@@ -286,6 +428,72 @@ class _TransactionFormScreenState
                 error: (e, _) => Text('$e'),
                 loading: () => const LinearProgressIndicator(),
               ),
+            const SizedBox(height: 16),
+            objectivesAsync.when(
+              data: (objectives) => DropdownButtonFormField<int?>(
+                isExpanded: true,
+                initialValue: _objectiveId,
+                decoration: const InputDecoration(
+                    labelText: 'Link to Goal/Loan (optional)'),
+                items: [
+                  const DropdownMenuItem(
+                      value: null, child: Text('None')),
+                  ...objectives.map((o) => DropdownMenuItem(
+                      value: o.id,
+                      child: Text(
+                          '${o.name} (${o.type == 'loan' ? 'Loan' : 'Goal'})'))),
+                ],
+                onChanged: (v) =>
+                    setState(() => _objectiveId = v),
+              ),
+              error: (e, _) => Text('$e'),
+              loading: () => const LinearProgressIndicator(),
+            ),
+            const SizedBox(height: 16),
+            ref.watch(allBudgetsProvider).when(
+              data: (allBudgets) {
+                final active = allBudgets
+                    .where((b) => b.specificMode && b.periodEnd.isAfter(DateTime.now()))
+                    .toList();
+                if (active.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Assign to Budgets',
+                        style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 4),
+                    Text('Select budgets in tracking mode',
+                        style: TextStyle(
+                            fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: active.map((b) {
+                        final selected = _budgetIds.contains(b.id);
+                        return FilterChip(
+                          label: Text(b.name,
+                              style: const TextStyle(fontSize: 12)),
+                          selected: selected,
+                          onSelected: (v) {
+                            setState(() {
+                              if (v) {
+                                _budgetIds.add(b.id);
+                              } else {
+                                _budgetIds.remove(b.id);
+                              }
+                            });
+                          },
+                          visualDensity: VisualDensity.compact,
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                );
+              },
+              error: (_, _) => const SizedBox.shrink(),
+              loading: () => const SizedBox.shrink(),
+            ),
             const SizedBox(height: 32),
             FilledButton(
               onPressed: _isLoading ? null : _save,
@@ -293,6 +501,19 @@ class _TransactionFormScreenState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _specialChip(String value, String label) {
+    final selected = _specialType == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: FilterChip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        selected: selected,
+        onSelected: (_) => setState(() => _specialType = value),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }

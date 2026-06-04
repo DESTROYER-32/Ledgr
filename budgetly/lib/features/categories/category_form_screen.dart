@@ -9,7 +9,8 @@ import '../../core/theme/app_theme.dart';
 
 class CategoryFormScreen extends ConsumerStatefulWidget {
   final int? categoryId;
-  const CategoryFormScreen({super.key, this.categoryId});
+  final int? preselectedParentId;
+  const CategoryFormScreen({super.key, this.categoryId, this.preselectedParentId});
 
   @override
   ConsumerState<CategoryFormScreen> createState() =>
@@ -22,6 +23,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
   String _kind = 'expense';
   String _icon = 'category';
   int _color = AppColors.categoryColors[0].toARGB32();
+  int? _parentCategoryId;
 
   final _icons = [
     ('work', Icons.work),
@@ -49,6 +51,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
   @override
   void initState() {
     super.initState();
+    _parentCategoryId = widget.preselectedParentId;
     if (_isEditing) _load();
   }
 
@@ -62,6 +65,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
         _kind = c.kind;
         _icon = c.icon ?? 'category';
         _color = c.color ?? AppColors.categoryColors[0].toARGB32();
+        _parentCategoryId = c.mainCategoryPk;
       });
     }
   }
@@ -80,6 +84,9 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
       kind: Value(_kind),
       icon: Value(_icon),
       color: Value(_color),
+      mainCategoryPk: _parentCategoryId != null
+          ? Value(_parentCategoryId!)
+          : const Value(null),
     );
 
     if (_isEditing) {
@@ -90,6 +97,9 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
         kind: _kind,
         icon: Value(_icon),
         color: Value(_color),
+        mainCategoryPk: _parentCategoryId != null
+            ? Value(_parentCategoryId!)
+            : const Value(null),
       ));
     }
     if (mounted) context.pop();
@@ -118,6 +128,45 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
+            const SizedBox(height: 16),
+            Consumer(builder: (context, ref, _) {
+              final parentsAsync = ref.watch(parentCategoriesProvider);
+              return parentsAsync.when(
+                data: (parents) {
+                  final filtered = parents
+                      .where((p) =>
+                          widget.categoryId == null || p.id != widget.categoryId)
+                      .toList();
+                  return DropdownButtonFormField<int?>(
+                    initialValue: _parentCategoryId,
+                    decoration: const InputDecoration(
+                      labelText: 'Parent Category (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                          value: null, child: Text('None (top-level)')),
+                      ...filtered.map((p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Row(
+                            children: [
+                              Icon(Icons.folder,
+                                  size: 18,
+                                  color: p.color != null
+                                      ? Color(p.color!)
+                                      : null),
+                              const SizedBox(width: 8),
+                              Text(p.name),
+                            ],
+                          ))),
+                    ],
+                    onChanged: (v) => setState(() => _parentCategoryId = v),
+                  );
+                },
+                error: (e, _) => Text('$e'),
+                loading: () => const SizedBox(),
+              );
+            }),
             const SizedBox(height: 24),
             Text('Type', style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),

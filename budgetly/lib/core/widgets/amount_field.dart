@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/currency_utils.dart';
 
 class AmountField extends StatelessWidget {
   final TextEditingController controller;
@@ -16,7 +17,7 @@ class AmountField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final symbol = currencySymbol;
+    final symbol = CurrencyUtils.symbolFor(currencySymbol) ?? currencySymbol;
     return TextField(
       controller: controller,
       autofocus: autofocus,

@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
+import '../database/repositories/associated_title_repository.dart';
 import '../database/repositories/budget_repository.dart';
 import '../database/repositories/category_repository.dart';
+import '../database/repositories/delete_log_repository.dart';
+import '../database/repositories/objective_repository.dart';
 import '../database/repositories/recurring_repository.dart';
 import '../services/recurring_service.dart';
 import '../database/repositories/settings_repository.dart';
 import '../database/repositories/exchange_rate_repository.dart';
-import '../database/repositories/goal_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
 import '../utils/money_utils.dart';
@@ -16,7 +18,16 @@ import '../utils/money_utils.dart';
 class ThemeConfig {
   final ThemeMode themeMode;
   final Color seedColor;
-  const ThemeConfig({required this.themeMode, required this.seedColor});
+  final String fontFamily;
+  final double animationSpeed;
+  final bool outlinedIcons;
+  const ThemeConfig({
+    required this.themeMode,
+    required this.seedColor,
+    this.fontFamily = 'System',
+    this.animationSpeed = 1.0,
+    this.outlinedIcons = false,
+  });
 }
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
@@ -45,12 +56,21 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(appDatabaseProvider));
 });
 
-final goalRepositoryProvider = Provider<GoalRepository>((ref) {
-  return GoalRepository(ref.watch(appDatabaseProvider));
+final objectiveRepositoryProvider = Provider<ObjectiveRepository>((ref) {
+  return ObjectiveRepository(ref.watch(appDatabaseProvider));
 });
 
 final exchangeRateRepositoryProvider = Provider<ExchangeRateRepository>((ref) {
   return ExchangeRateRepository(ref.watch(appDatabaseProvider));
+});
+
+final associatedTitleRepositoryProvider =
+    Provider<AssociatedTitleRepository>((ref) {
+  return AssociatedTitleRepository(ref.watch(appDatabaseProvider));
+});
+
+final deleteLogRepositoryProvider = Provider<DeleteLogRepository>((ref) {
+  return DeleteLogRepository(ref.watch(appDatabaseProvider));
 });
 
 final recurringServiceProvider = Provider<RecurringService>((ref) {
@@ -73,6 +93,9 @@ final recentTransactionsProvider = StreamProvider<List<Transaction>>(
 final activeCategoriesProvider =
     StreamProvider<List<Category>>((ref) => ref.watch(categoryRepositoryProvider).watchActive());
 
+final parentCategoriesProvider =
+    StreamProvider<List<Category>>((ref) => ref.watch(categoryRepositoryProvider).watchParents());
+
 final expenseCategoriesProvider =
     StreamProvider<List<Category>>((ref) => ref.watch(categoryRepositoryProvider).watchByKind('expense'));
 
@@ -88,6 +111,9 @@ final pinnedBudgetsProvider = Provider<List<Budget>>((ref) {
 final activeRecurringProvider = StreamProvider<List<RecurringTransaction>>(
     (ref) => ref.watch(recurringRepositoryProvider).watchActive());
 
+final upcomingTransactionsProvider = StreamProvider<List<Transaction>>(
+    (ref) => ref.watch(transactionRepositoryProvider).watchUpcoming());
+
 final currencyCodeProvider = FutureProvider<String>((ref) async {
   final repo = ref.watch(settingsRepositoryProvider);
   final currency = await repo.get('currency');
@@ -99,17 +125,34 @@ final formatMoneyProvider = Provider<String Function(int)>((ref) {
   return (int amountMinor) => MoneyUtils.format(amountMinor, currencyCode: code);
 });
 
+final formatMoneyCompactProvider = Provider<String Function(int)>((ref) {
+  final code = ref.watch(currencyCodeProvider).valueOrNull ?? 'USD';
+  return (int amountMinor) => MoneyUtils.formatCompact(amountMinor, currencyCode: code);
+});
+
 final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
   final repo = ref.watch(settingsRepositoryProvider);
   final modeStr = await repo.get('theme_mode');
   final seedStr = await repo.get('theme_seed');
+  final fontStr = await repo.get('font_family');
+  final animStr = await repo.get('animation_speed');
+  final iconStr = await repo.get('outlined_icons');
   final mode = switch (modeStr) {
     'light' => ThemeMode.light,
     'dark' => ThemeMode.dark,
     _ => ThemeMode.system,
   };
   final seed = seedStr != null ? Color(int.parse(seedStr)) : const Color(0xFF1A6D4A);
-  return ThemeConfig(themeMode: mode, seedColor: seed);
+  final font = fontStr ?? 'System';
+  final anim = animStr != null ? double.tryParse(animStr) ?? 1.0 : 1.0;
+  final outlined = iconStr == 'true';
+  return ThemeConfig(
+    themeMode: mode,
+    seedColor: seed,
+    fontFamily: font,
+    animationSpeed: anim,
+    outlinedIcons: outlined,
+  );
 });
 
 final totalBalanceProvider = FutureProvider<int>((ref) async {
@@ -155,8 +198,11 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) asyn
   return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
 });
 
-final allGoalsProvider =
-    StreamProvider<List<Goal>>((ref) => ref.watch(goalRepositoryProvider).watchAll());
+final allObjectivesProvider =
+    StreamProvider<List<Objective>>((ref) => ref.watch(objectiveRepositoryProvider).watchAll());
+
+final pinnedObjectivesProvider =
+    StreamProvider<List<Objective>>((ref) => ref.watch(objectiveRepositoryProvider).watchPinned());
 
 final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) async {
   ref.watch(allTransactionsProvider);
@@ -164,4 +210,12 @@ final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) as
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
   return ref.watch(transactionRepositoryProvider).totalExpenses(start, end);
+});
+
+final deleteLogsProvider =
+    StreamProvider<List<DeleteLog>>((ref) => ref.watch(deleteLogRepositoryProvider).watchAll());
+
+final subcategoriesProvider =
+    StreamProvider.family<List<Category>, int>((ref, parentId) {
+  return ref.watch(categoryRepositoryProvider).watchSubcategories(parentId);
 });

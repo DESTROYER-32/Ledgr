@@ -6,6 +6,18 @@ class WalletRepository {
   final AppDatabase _db;
   WalletRepository(this._db);
 
+  Future<double?> _getRate(String from, String to) async {
+    if (from == to) return 1.0;
+    final rate = await (_db.exchangeRates.select()
+          ..where((r) =>
+              r.fromCurrency.equals(from) & r.toCurrency.equals(to)))
+        .getSingleOrNull();
+    return rate?.rate;
+  }
+
+  int _convert(int amountMinor, double rate) =>
+      (amountMinor * rate).round();
+
   Stream<List<Wallet>> watchAll() => _db.wallets.select().watch();
 
   Future<List<Wallet>> getAll() => _db.wallets.select().get();
@@ -48,20 +60,32 @@ class WalletRepository {
           ..where((w) => w.id.equals(walletId)))
         .getSingle();
 
-    final result = await _db.customSelect(
-      'SELECT '
-      "COALESCE(SUM(CASE WHEN type='expense' AND wallet_id=?1 THEN amount_minor END),0) AS expense_sum, "
-      "COALESCE(SUM(CASE WHEN type='income' AND wallet_id=?1 THEN amount_minor END),0) AS income_sum, "
-      "COALESCE(SUM(CASE WHEN type='transfer' AND transfer_wallet_id=?1 THEN amount_minor END),0) AS transfer_in_sum, "
-      "COALESCE(SUM(CASE WHEN type='transfer' AND wallet_id=?1 THEN amount_minor END),0) AS transfer_out_sum "
-      'FROM transactions WHERE wallet_id=?1 OR transfer_wallet_id=?1',
-      variables: [Variable(walletId)],
-    ).getSingle();
+    final txns = await (_db.transactions.select()
+          ..where((t) =>
+              t.walletId.equals(walletId) |
+              t.transferWalletId.equals(walletId)))
+        .get();
 
-    return wallet.initialBalanceMinor
-        - (result.data['expense_sum'] as int)
-        + (result.data['income_sum'] as int)
-        + (result.data['transfer_in_sum'] as int)
-        - (result.data['transfer_out_sum'] as int);
+    int balance = wallet.initialBalanceMinor;
+    for (final t in txns) {
+      int amount = t.amountMinor;
+      if (t.currencyCode != wallet.currencyCode) {
+        final rate = await _getRate(t.currencyCode, wallet.currencyCode);
+        if (rate == null) {
+          amount = t.amountMinor;
+        } else {
+          amount = _convert(t.amountMinor, rate);
+        }
+      }
+      if (t.type == 'expense' && t.walletId == walletId) {
+        balance -= amount;
+      } else if (t.type == 'income' && t.walletId == walletId) {
+        balance += amount;
+      } else if (t.type == 'transfer') {
+        if (t.walletId == walletId) balance -= amount;
+        if (t.transferWalletId == walletId) balance += amount;
+      }
+    }
+    return balance;
   }
 }

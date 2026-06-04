@@ -89,11 +89,40 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           );
         }
 
+        final expenseBudgets =
+            monthBudgets.where((b) => !b.isIncome).toList();
+        final savingsBudgets =
+            monthBudgets.where((b) => b.isIncome).toList();
+
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            ...monthBudgets.map((b) =>
-                _buildBudgetCard(theme, cs, b)),
+            if (expenseBudgets.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text('Budgets',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant,
+                )),
+              ),
+              ...expenseBudgets
+                  .map((b) => _buildBudgetCard(theme, cs, b, false)),
+            ],
+            if (savingsBudgets.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text('Goals',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant,
+                )),
+              ),
+              ...savingsBudgets
+                  .map((b) => _buildBudgetCard(theme, cs, b, true)),
+            ],
+            if (monthBudgets.isEmpty) ...[],
             _buildAddBudgetCard(theme, cs),
           ],
         );
@@ -106,11 +135,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   Widget _buildBudgetCard(
-      ThemeData theme, ColorScheme cs, Budget budget) {
+      ThemeData theme, ColorScheme cs, Budget budget, bool isGoal) {
     final color = budget.color != null
         ? Color(budget.color!)
         : cs.primary;
-    final isIncome = budget.isIncome;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -144,7 +172,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                           BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      isIncome
+                      isGoal
                           ? Icons.savings
                           : Icons.track_changes,
                       color: color,
@@ -162,9 +190,9 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15)),
                         Text(
-                          isIncome
-                              ? 'Savings'
-                              : 'Expense',
+                          isGoal
+                              ? 'Goal'
+                              : 'Budget',
                           style: TextStyle(
                             fontSize: 11,
                             color: cs.onSurfaceVariant,
@@ -209,7 +237,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                               final repo = ref
                                   .read(
                                       budgetRepositoryProvider);
-                              await repo.deleteWithLimits(budget.id);
+                              await repo.delete(budget.id);
                         }
                       }
                     },

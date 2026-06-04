@@ -6,6 +6,7 @@ import '../../core/providers/providers.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/utils/currency_utils.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -23,9 +24,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
 
-  final _currencies = [
-    'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL',
-  ];
+  final _currencies = CurrencyUtils.codes;
 
   static const _themeSeeds = <int>[
     0xFF1A6D4A, // Green
@@ -256,6 +255,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: const Text(
                   'Restore from backup or import CSV'),
               onTap: () => context.push('/backup'),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Smart Features', [
+            ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('Smart Labels'),
+              subtitle: const Text(
+                  'Auto-categorize transactions by keyword'),
+              onTap: () => context.push('/smart-labels'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.call_split),
+              title: const Text('Bill Splitter'),
+              subtitle: const Text('Split expenses with others'),
+              onTap: () => context.push('/bill-splitter'),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Tracking', [
+            ListTile(
+              leading: const Icon(Icons.subscriptions),
+              title: const Text('Subscriptions'),
+              subtitle: const Text('View subscription transactions'),
+              onTap: () => context.push('/subscriptions'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: const Text('Credit & Debt'),
+              subtitle: const Text('Track lent and borrowed money'),
+              onTap: () => context.push('/credit-debt'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Activity Log'),
+              subtitle: const Text('Recently deleted transactions'),
+              onTap: () => context.push('/activity'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag),
+              title: const Text('Goals & Loans'),
+              subtitle: const Text(
+                  'Savings goals and debt tracking'),
+              onTap: () => context.push('/objectives'),
             ),
           ]),
           const SizedBox(height: 8),

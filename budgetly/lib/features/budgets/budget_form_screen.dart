@@ -22,6 +22,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   final _amountController = TextEditingController();
 
   bool _isIncome = false;
+  bool _specificMode = false;
   int _color = AppColors.categoryColors[0].toARGB32();
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 30));
@@ -56,6 +57,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       setState(() {
         _nameController.text = budget.name;
         _isIncome = budget.isIncome;
+        _specificMode = budget.specificMode;
         _color = budget.color ?? AppColors.categoryColors[0].toARGB32();
         _startDate = budget.periodStart;
         _endDate = budget.periodEnd;
@@ -78,6 +80,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     final companion = BudgetsCompanion(
       name: Value(_nameController.text.trim()),
       isIncome: Value(_isIncome),
+      specificMode: Value(_specificMode),
       color: Value(_color),
       periodStart: Value(_startDate),
       periodEnd: Value(_endDate),
@@ -97,6 +100,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           periodEnd: _endDate,
           currencyCode: currencyCode,
           isIncome: Value(_isIncome),
+          specificMode: Value(_specificMode),
           color: Value(_color),
           plannedAmountMinor: Value(plannedAmountMinor),
         ),
@@ -107,7 +111,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     final existingCats = existing.map((l) => l.categoryId).toSet();
     for (final catId in _selectedCategoryIds) {
       if (!existingCats.contains(catId)) {
-        await repo.setLimit(budgetId, catId, 0);
+        await repo.setLimit(budgetId, catId, amount: 0);
       }
     }
     for (final l in existing) {
@@ -151,11 +155,11 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               segments: const [
                 ButtonSegment(
                     value: false,
-                    label: Text('Expense'),
+                    label: Text('Budget'),
                     icon: Icon(Icons.arrow_upward)),
                 ButtonSegment(
                     value: true,
-                    label: Text('Savings'),
+                    label: Text('Goal'),
                     icon: Icon(Icons.savings)),
               ],
               selected: {_isIncome},
@@ -171,6 +175,19 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Track Mode'),
+              subtitle: Text(
+                _specificMode
+                    ? 'Only transactions you assign to this budget'
+                    : 'All transactions in date range',
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              ),
+              value: _specificMode,
+              onChanged: (v) => setState(() => _specificMode = v),
             ),
             const SizedBox(height: 24),
             Text('Period', style: theme.textTheme.titleSmall),
@@ -277,11 +294,13 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               }).toList(),
             ),
             const SizedBox(height: 24),
-            Text('Categories (optional)',
+            Text(_specificMode ? 'Categories' : 'Categories (optional)',
                 style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
             Text(
-              'Select categories to track in this budget. Leave empty to track all.',
+              _specificMode
+                  ? 'Select categories. Only transactions matching these will be available.'
+                  : 'Select categories to track in this budget. Leave empty to track all.',
               style: TextStyle(
                   fontSize: 12, color: cs.onSurfaceVariant),
             ),

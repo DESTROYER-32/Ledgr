@@ -11,7 +11,7 @@ class CategoriesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final catsAsync = ref.watch(activeCategoriesProvider);
+    final parentsAsync = ref.watch(parentCategoriesProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -24,9 +24,9 @@ class CategoriesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: catsAsync.when(
-        data: (categories) {
-          if (categories.isEmpty) {
+      body: parentsAsync.when(
+        data: (parents) {
+          if (parents.isEmpty) {
             return EmptyState(
               icon: Icons.category,
               title: 'No Categories',
@@ -37,9 +37,29 @@ class CategoriesScreen extends ConsumerWidget {
           }
           return ListView(
             padding: const EdgeInsets.all(16),
-            children: categories
-                .map((c) => _buildTile(context, ref, c, theme))
-                .toList(),
+            children: parents.map((cat) {
+              return FutureBuilder<List<Category>>(
+                future: ref
+                    .read(categoryRepositoryProvider)
+                    .watchSubcategories(cat.id)
+                    .first,
+                builder: (context, snapshot) {
+                  final subs = snapshot.data ?? [];
+                  return Column(
+                    children: [
+                      _buildTile(context, ref, cat, theme),
+                      ...subs.map((sub) => Padding(
+                            padding:
+                                const EdgeInsets.only(left: 32),
+                            child: _buildTile(
+                                context, ref, sub, theme,
+                                isSub: true),
+                          )),
+                    ],
+                  );
+                },
+              );
+            }).toList(),
           );
         },
         error: (e, _) => Center(child: Text('$e')),
@@ -50,7 +70,8 @@ class CategoriesScreen extends ConsumerWidget {
   }
 
   Widget _buildTile(BuildContext context, WidgetRef ref,
-      Category category, ThemeData theme) {
+      Category category, ThemeData theme,
+      {bool isSub = false}) {
     final color = category.color != null
         ? Color(category.color!)
         : theme.colorScheme.primary;
@@ -63,7 +84,8 @@ class CategoriesScreen extends ConsumerWidget {
               color: color, size: 20),
         ),
         title: Text(category.name),
-        subtitle: Text(category.kind),
+        subtitle: Text(
+            '${category.kind}${isSub ? ' \u2022 Subcategory' : ''}'),
         trailing: PopupMenuButton<String>(
           onSelected: (v) async {
             final repo = ref.read(categoryRepositoryProvider);
@@ -73,11 +95,19 @@ class CategoriesScreen extends ConsumerWidget {
               if (context.mounted) {
                 context.push('/categories/edit/${category.id}');
               }
+            } else if (v == 'add_sub') {
+              if (context.mounted) {
+                // Pass parent as extra
+                context.push('/categories/new', extra: {
+                  'parentId': category.id,
+                });
+              }
             }
           },
           itemBuilder: (_) => [
+            const PopupMenuItem(value: 'edit', child: Text('Edit')),
             const PopupMenuItem(
-                value: 'edit', child: Text('Edit')),
+                value: 'add_sub', child: Text('Add Subcategory')),
             const PopupMenuItem(
                 value: 'archive', child: Text('Archive')),
           ],
