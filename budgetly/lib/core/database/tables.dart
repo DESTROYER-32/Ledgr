@@ -98,3 +98,30 @@ class Settings extends Table {
   @override
   Set<Column> get primaryKey => {key};
 }
+
+@DataClassName('Goal')
+class Goals extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get targetAmountMinor => integer()();
+  IntColumn get currentAmountMinor => integer().withDefault(const Constant(0))();
+  TextColumn get currencyCode => text()();
+  DateTimeColumn get deadline => dateTime().nullable()();
+  IntColumn get icon => integer().nullable()();
+  IntColumn get color => integer().nullable()();
+  BoolColumn get archived => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DataClassName('ExchangeRate')
+class ExchangeRates extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get fromCurrency => text()();
+  TextColumn get toCurrency => text()();
+  RealColumn get rate => real()();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column<Object>>>? get uniqueKeys => [{fromCurrency, toCurrency}];
+}

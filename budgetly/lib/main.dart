@@ -54,6 +54,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _lifecycleListener = AppLifecycleListener(onResume: _onResume);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(recurringServiceProvider).processDueRecurrings();
+    });
   }
 
   @override

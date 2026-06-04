@@ -5,7 +5,10 @@ import '../database/app_database.dart';
 import '../database/repositories/budget_repository.dart';
 import '../database/repositories/category_repository.dart';
 import '../database/repositories/recurring_repository.dart';
+import '../services/recurring_service.dart';
 import '../database/repositories/settings_repository.dart';
+import '../database/repositories/exchange_rate_repository.dart';
+import '../database/repositories/goal_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
 import '../utils/money_utils.dart';
@@ -40,6 +43,21 @@ final recurringRepositoryProvider = Provider<RecurringRepository>((ref) {
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(appDatabaseProvider));
+});
+
+final goalRepositoryProvider = Provider<GoalRepository>((ref) {
+  return GoalRepository(ref.watch(appDatabaseProvider));
+});
+
+final exchangeRateRepositoryProvider = Provider<ExchangeRateRepository>((ref) {
+  return ExchangeRateRepository(ref.watch(appDatabaseProvider));
+});
+
+final recurringServiceProvider = Provider<RecurringService>((ref) {
+  return RecurringService(
+    ref.watch(recurringRepositoryProvider),
+    ref.watch(transactionRepositoryProvider),
+  );
 });
 
 // Stream providers for reactive queries
@@ -136,6 +154,9 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) asyn
   final end = DateTime.parse(parts[1]);
   return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
 });
+
+final allGoalsProvider =
+    StreamProvider<List<Goal>>((ref) => ref.watch(goalRepositoryProvider).watchAll());
 
 final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) async {
   ref.watch(allTransactionsProvider);

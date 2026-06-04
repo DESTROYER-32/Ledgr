@@ -38,6 +38,7 @@ class WalletDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildScaffold(BuildContext context, WidgetRef ref, Wallet wallet, ThemeData theme) {
+    final balanceAsync = ref.watch(walletBalancesProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(wallet.name),
@@ -82,25 +83,44 @@ class WalletDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Current Balance',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 4),
-                    Text(
-                      MoneyUtils.format(wallet.initialBalanceMinor),
-                      style: theme.textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+            balanceAsync.when(
+              data: (balances) {
+                final balance = balances[wallet.id] ?? wallet.initialBalanceMinor;
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Current Balance',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant)),
+                        const SizedBox(height: 4),
+                        Text(
+                          MoneyUtils.format(balance, currencyCode: wallet.currencyCode),
+                          style: theme.textTheme.headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${wallet.currencyCode} \u2022 ${wallet.type.replaceAll('_', ' ').toUpperCase()}',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(wallet.type.replaceAll('_', ' ').toUpperCase(),
-                        style: theme.textTheme.bodySmall),
-                  ],
+                  ),
+                );
+              },
+              error: (_, _) => const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('Error loading balance'),
+                ),
+              ),
+              loading: () => const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: LinearProgressIndicator(),
                 ),
               ),
             ),
