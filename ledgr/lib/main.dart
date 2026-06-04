@@ -22,10 +22,9 @@ void main() async {
   final currency = await settingsRepo.get('currency');
   MoneyUtils.setDefaultCurrencyCode(currency ?? 'USD');
 
-  await db.close();
-
   runApp(
     ProviderScope(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
       child: BudgetlyApp(initialRoute: onboarded ? '/' : '/onboarding'),
     ),
   );
@@ -43,6 +42,7 @@ class BudgetlyApp extends ConsumerStatefulWidget {
 class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     with WidgetsBindingObserver {
   bool _authInProgress = false;
+  bool _locked = false;
 
   @override
   void initState() {
@@ -50,8 +50,11 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(recurringServiceProvider).processDueRecurrings();
-      _lockIfNeeded();
     });
+    if (widget.initialRoute != '/onboarding') {
+      _locked = true;
+      _lockIfNeeded();
+    }
   }
 
   @override
@@ -68,14 +71,20 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
   }
 
   Future<void> _lockIfNeeded() async {
-    if (_authInProgress || widget.initialRoute == '/onboarding') return;
+    if (_authInProgress) return;
     _authInProgress = true;
     try {
       final repo = ref.read(settingsRepositoryProvider);
       final appLock = await repo.get('app_lock');
-      if (appLock != 'true') return;
+      if (appLock != 'true') {
+        if (mounted) setState(() => _locked = false);
+        return;
+      }
       final canAuth = await AuthService.canAuthenticate();
-      if (!canAuth) return;
+      if (!canAuth) {
+        if (mounted) setState(() => _locked = false);
+        return;
+      }
       var authed = await AuthService.authenticate();
       while (!authed) {
         if (!mounted) return;
@@ -104,6 +113,7 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
         );
         authed = retry ?? false;
       }
+      if (mounted) setState(() => _locked = false);
     } finally {
       _authInProgress = false;
     }
@@ -111,6 +121,31 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
 
   @override
   Widget build(BuildContext context) {
+    if (_locked) {
+      return Material(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Budgetly',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(),
+            ],
+          ),
+        ),
+      );
+    }
+
     final router = ref.watch(routerProvider);
     final themeAsync = ref.watch(themeConfigProvider);
     return themeAsync.when(

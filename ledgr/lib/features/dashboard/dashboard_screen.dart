@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../core/database/app_database.dart';
+import '../../core/database/repositories/transaction_repository.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
@@ -24,8 +25,12 @@ class DashboardScreen extends ConsumerWidget {
     final recurringAsync = ref.watch(activeRecurringProvider);
     final walletsAsync = ref.watch(activeWalletsProvider);
     final walletBalancesAsync = ref.watch(walletBalancesProvider);
-    final pinnedBudgets = ref.watch(pinnedBudgetsProvider);
     final budgetsAsync = ref.watch(allBudgetsProvider);
+    final activeBudgets =
+        budgetsAsync.valueOrNull
+            ?.where((b) => b.periodEnd.isAfter(DateTime.now()))
+            .toList() ??
+        [];
     final objectivesAsync = ref.watch(allObjectivesProvider);
 
     return Scaffold(
@@ -57,13 +62,19 @@ class DashboardScreen extends ConsumerWidget {
             _buildSetupCard(context, theme, cs, walletsAsync, ref),
             _buildBalanceCard(context, theme, cs, totalBalanceAsync),
             const SizedBox(height: 20),
-            _buildWalletCards(context, theme, cs, walletsAsync, walletBalancesAsync),
+            _buildWalletCards(
+              context,
+              theme,
+              cs,
+              walletsAsync,
+              walletBalancesAsync,
+            ),
             const SizedBox(height: 20),
             _buildMonthlySummary(context, theme, cs, ref),
             const SizedBox(height: 24),
             _buildQuickActions(context, cs),
             const SizedBox(height: 24),
-            _buildBudgetCards(context, theme, cs, pinnedBudgets, budgetsAsync),
+            _buildBudgetCards(context, theme, cs, activeBudgets),
             const SizedBox(height: 24),
             _buildGoalsSection(context, theme, cs, objectivesAsync),
             const SizedBox(height: 24),
@@ -78,8 +89,13 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSetupCard(BuildContext context, ThemeData theme,
-      ColorScheme cs, AsyncValue<List<Wallet>> walletsAsync, WidgetRef ref) {
+  Widget _buildSetupCard(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    AsyncValue<List<Wallet>> walletsAsync,
+    WidgetRef ref,
+  ) {
     return walletsAsync.when(
       data: (wallets) {
         if (wallets.isNotEmpty) return const SizedBox.shrink();
@@ -94,18 +110,26 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.rocket_launch, color: cs.onPrimaryContainer, size: 24),
-                      const SizedBox(width: 12),
-                      Text('Welcome to Budgetly!',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      Icon(
+                        Icons.rocket_launch,
                         color: cs.onPrimaryContainer,
-                      )),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Welcome to Budgetly!',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: cs.onPrimaryContainer,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text('Set up your first account and categories to get started.',
-                      style: TextStyle(color: cs.onPrimaryContainer)),
+                  Text(
+                    'Set up your first account and categories to get started.',
+                    style: TextStyle(color: cs.onPrimaryContainer),
+                  ),
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 8,
@@ -113,7 +137,10 @@ class DashboardScreen extends ConsumerWidget {
                     children: [
                       FilledButton.tonalIcon(
                         onPressed: () => context.push('/wallets/new'),
-                        icon: const Icon(Icons.account_balance_wallet, size: 16),
+                        icon: const Icon(
+                          Icons.account_balance_wallet,
+                          size: 16,
+                        ),
                         label: const Text('Add Account'),
                       ),
                       FilledButton.tonalIcon(
@@ -134,8 +161,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context, ThemeData theme,
-      ColorScheme cs, AsyncValue<int> totalBalanceAsync) {
+  Widget _buildBalanceCard(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    AsyncValue<int> totalBalanceAsync,
+  ) {
     return totalBalanceAsync.when(
       data: (total) {
         return BalanceCard(
@@ -148,44 +179,46 @@ class DashboardScreen extends ConsumerWidget {
             runSpacing: 8,
             children: [
               ActionChip(
-                avatar: Icon(Icons.account_balance,
-                    size: 14, color: cs.primary),
-                label: const Text('Accounts',
-                    style: TextStyle(fontSize: 12)),
+                avatar: Icon(
+                  Icons.account_balance,
+                  size: 14,
+                  color: cs.primary,
+                ),
+                label: const Text('Accounts', style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/wallets'),
               ),
               ActionChip(
-                avatar: Icon(Icons.track_changes,
-                    size: 14, color: cs.primary),
-                label: const Text('Budgets',
-                    style: TextStyle(fontSize: 12)),
+                avatar: Icon(Icons.track_changes, size: 14, color: cs.primary),
+                label: const Text('Budgets', style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/budgets'),
               ),
               ActionChip(
-                avatar: Icon(Icons.category,
-                    size: 14, color: cs.primary),
-                label: const Text('Categories',
-                    style: TextStyle(fontSize: 12)),
+                avatar: Icon(Icons.category, size: 14, color: cs.primary),
+                label: const Text('Categories', style: TextStyle(fontSize: 12)),
                 onPressed: () => context.push('/categories'),
               ),
             ],
           ),
         );
       },
-      error: (e, _) => const BalanceCard(
-          label: 'Total Balance', amount: 'Error'),
+      error: (e, _) =>
+          const BalanceCard(label: 'Total Balance', amount: 'Error'),
       loading: () => const Card(
-          child: Padding(
-              padding: EdgeInsets.all(20),
-              child: SizedBox(
-                  height: 100,
-                  child: LinearProgressIndicator()))),
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: SizedBox(height: 100, child: LinearProgressIndicator()),
+        ),
+      ),
     );
   }
 
-  Widget _buildWalletCards(BuildContext context, ThemeData theme,
-      ColorScheme cs, AsyncValue<List<Wallet>> walletsAsync,
-      AsyncValue<Map<int, int>> balancesAsync) {
+  Widget _buildWalletCards(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    AsyncValue<List<Wallet>> walletsAsync,
+    AsyncValue<Map<int, int>> balancesAsync,
+  ) {
     final balances = balancesAsync.valueOrNull ?? {};
     return walletsAsync.when(
       data: (wallets) {
@@ -195,16 +228,17 @@ class DashboardScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text('Accounts',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurfaceVariant,
-                )),
+                Text(
+                  'Accounts',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
                 const Spacer(),
                 TextButton(
                   onPressed: () => context.push('/wallets'),
-                  child: const Text('View All',
-                      style: TextStyle(fontSize: 12)),
+                  child: const Text('View All', style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
@@ -220,10 +254,10 @@ class DashboardScreen extends ConsumerWidget {
                   final icon = w.type == 'cash'
                       ? Icons.money
                       : w.type == 'credit_card'
-                          ? Icons.credit_card
-                          : w.type == 'savings'
-                              ? Icons.savings
-                              : Icons.account_balance;
+                      ? Icons.credit_card
+                      : w.type == 'savings'
+                      ? Icons.savings
+                      : Icons.account_balance;
                   return _miniWalletCard(context, cs, w, icon, balance);
                 },
               ),
@@ -236,8 +270,13 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _miniWalletCard(BuildContext context, ColorScheme cs, Wallet w,
-      IconData icon, int balance) {
+  Widget _miniWalletCard(
+    BuildContext context,
+    ColorScheme cs,
+    Wallet w,
+    IconData icon,
+    int balance,
+  ) {
     final color = w.color != null ? Color(w.color!) : cs.primary;
     return Card(
       child: InkWell(
@@ -253,14 +292,19 @@ class DashboardScreen extends ConsumerWidget {
                   Icon(icon, size: 22, color: color),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(w.name,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      w.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  Text(w.currencyCode,
-                      style: TextStyle(
-                          fontSize: 12, color: cs.onSurfaceVariant)),
+                  Text(
+                    w.currencyCode,
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
                 ],
               ),
               const Spacer(),
@@ -273,8 +317,10 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(w.type.replaceAll('_', ' '),
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              Text(
+                w.type.replaceAll('_', ' '),
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -282,8 +328,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGoalsSection(BuildContext context, ThemeData theme,
-      ColorScheme cs, AsyncValue<List<Objective>> objectivesAsync) {
+  Widget _buildGoalsSection(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    AsyncValue<List<Objective>> objectivesAsync,
+  ) {
     return objectivesAsync.when(
       data: (objectives) {
         final active = objectives.where((o) => !o.archived).toList();
@@ -295,16 +345,17 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 Icon(Icons.flag, size: 16, color: cs.primary),
                 const SizedBox(width: 6),
-                Text('Goals & Loans',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurfaceVariant,
-                )),
+                Text(
+                  'Goals & Loans',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
                 const Spacer(),
                 TextButton(
                   onPressed: () => context.push('/objectives'),
-                  child: const Text('View All',
-                      style: TextStyle(fontSize: 12)),
+                  child: const Text('View All', style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
@@ -325,95 +376,118 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _objectiveCard(BuildContext context, ColorScheme cs, Objective objective) {
-    final color = objective.color != null ? Color(objective.color!) : cs.primary;
+  Widget _objectiveCard(
+    BuildContext context,
+    ColorScheme cs,
+    Objective objective,
+  ) {
+    final color = objective.color != null
+        ? Color(objective.color!)
+        : cs.primary;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => context.push('/objectives/${objective.id}'),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Consumer(builder: (context, ref, _) {
-            final txRepo = ref.watch(transactionRepositoryProvider);
-            return FutureBuilder<List<Transaction>>(
-              future: txRepo.getByObjective(objective.id),
-              builder: (context, snap) {
-                final total = (snap.data ?? const <Transaction>[])
-                    .fold<int>(0, (sum, t) => sum + t.amountMinor);
-                final progress = objective.amountMinor > 0
-                    ? (total / objective.amountMinor).clamp(0.0, 1.0)
-                    : 0.0;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          objective.type == 'loan' ? Icons.swap_horiz : Icons.flag,
-                          color: color,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(objective.name,
+          child: Consumer(
+            builder: (context, ref, _) {
+              final txRepo = ref.watch(transactionRepositoryProvider);
+              return FutureBuilder<List<Transaction>>(
+                future: txRepo.getByObjective(objective.id),
+                builder: (context, snap) {
+                  final total = (snap.data ?? const <Transaction>[]).fold<int>(
+                    0,
+                    (sum, t) => sum + t.amountMinor,
+                  );
+                  final progress = objective.amountMinor > 0
+                      ? (total / objective.amountMinor).clamp(0.0, 1.0)
+                      : 0.0;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            objective.type == 'loan'
+                                ? Icons.swap_horiz
+                                : Icons.flag,
+                            color: color,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              objective.name,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w700, fontSize: 15),
-                              overflow: TextOverflow.ellipsis),
-                        ),
-                        Text(objective.type == 'loan' ? 'Loan' : 'Goal',
-                            style: TextStyle(fontSize: 12, color: color)),
-                      ],
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${MoneyUtils.format(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.format(objective.amountMinor, currencyCode: objective.currencyCode)}',
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: cs.surfaceContainerHighest,
-                        color: color,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            objective.type == 'loan' ? 'Loan' : 'Goal',
+                            style: TextStyle(fontSize: 12, color: color),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                );
-              },
-            );
-          }),
+                      if (objective.type == 'goal') ...[
+                        const Spacer(),
+                        Text(
+                          '${MoneyUtils.format(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.format(objective.amountMinor, currencyCode: objective.currencyCode)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 6,
+                            backgroundColor: cs.surfaceContainerHighest,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
   Widget _buildBudgetCards(
-      BuildContext context,
-      ThemeData theme,
-      ColorScheme cs,
-      List<Budget> pinnedBudgets,
-      AsyncValue<List<Budget>> budgetsAsync) {
-    if (pinnedBudgets.isEmpty) return const SizedBox.shrink();
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    List<Budget> activeBudgets,
+  ) {
+    if (activeBudgets.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(Icons.track_changes,
-                size: 16, color: cs.primary),
+            Icon(Icons.track_changes, size: 16, color: cs.primary),
             const SizedBox(width: 6),
-            Text('Budgets',
-                style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: cs.onSurfaceVariant,
-            )),
+            Text(
+              'Budgets',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
             const Spacer(),
             TextButton(
               onPressed: () => context.push('/budgets'),
-              child: const Text('View All',
-                  style: TextStyle(fontSize: 12)),
+              child: const Text('View All', style: TextStyle(fontSize: 12)),
             ),
           ],
         ),
@@ -422,12 +496,12 @@ class DashboardScreen extends ConsumerWidget {
           height: 138,
           child: PageView.builder(
             clipBehavior: Clip.none,
-            itemCount: pinnedBudgets.length + 1,
+            itemCount: activeBudgets.length + 1,
             itemBuilder: (_, i) {
-              if (i == pinnedBudgets.length) {
+              if (i == activeBudgets.length) {
                 return _addBudgetCard(context, cs);
               }
-              return _budgetCardPreview(context, cs, pinnedBudgets[i]);
+              return _budgetCardPreview(context, cs, activeBudgets[i]);
             },
           ),
         ),
@@ -436,10 +510,11 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _budgetCardPreview(
-      BuildContext context, ColorScheme cs, Budget budget) {
-    final color = budget.color != null
-        ? Color(budget.color!)
-        : cs.primary;
+    BuildContext context,
+    ColorScheme cs,
+    Budget budget,
+  ) {
+    final color = budget.color != null ? Color(budget.color!) : cs.primary;
     final isGoal = budget.isIncome;
     return GestureDetector(
       onTap: () => context.push('/budgets/${budget.id}'),
@@ -452,10 +527,7 @@ class DashboardScreen extends ConsumerWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                color.withValues(alpha: 0.08),
-                cs.surface,
-              ],
+              colors: [color.withValues(alpha: 0.08), cs.surface],
             ),
           ),
           child: Column(
@@ -464,65 +536,75 @@ class DashboardScreen extends ConsumerWidget {
               Row(
                 children: [
                   Icon(
-                      isGoal
-                          ? Icons.savings
-                          : Icons.track_changes,
-                      size: 20, color: color),
+                    isGoal ? Icons.savings : Icons.track_changes,
+                    size: 20,
+                    color: color,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(budget.name,
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: color),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      budget.name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  Text(isGoal ? 'Goal' : 'Budget',
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  Text(
+                    isGoal ? 'Goal' : 'Budget',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
                 ],
               ),
               const Spacer(),
-              if (isGoal && budget.plannedAmountMinor > 0)
-                Consumer(builder: (context, ref, _) {
+              Consumer(
+                builder: (context, ref, _) {
                   final txRepo = ref.watch(transactionRepositoryProvider);
                   return FutureBuilder<int>(
-                    future: txRepo.totalIncome(budget.periodStart,
-                        budget.periodEnd,
-                        targetCurrency: budget.currencyCode),
+                    future: _getBudgetPreviewTotal(txRepo, budget, isGoal),
                     builder: (context, snap) {
-                      final saved = snap.data ?? 0;
-                      final pct = (saved / budget.plannedAmountMinor)
-                          .clamp(0.0, 1.0);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${MoneyUtils.format(saved, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
-                            style: TextStyle(
+                      final total = snap.data ?? 0;
+                      if (budget.plannedAmountMinor > 0) {
+                        final pct = (total / budget.plannedAmountMinor).clamp(
+                          0.0,
+                          1.0,
+                        );
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${MoneyUtils.format(total, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: cs.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: pct,
-                              minHeight: 6,
-                              backgroundColor: cs.surfaceContainerHighest,
-                              color: AppColors.income,
+                                color: cs.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: pct,
+                                minHeight: 6,
+                                backgroundColor: cs.surfaceContainerHighest,
+                                color: isGoal ? AppColors.income : cs.primary,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Text(
+                        '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
                       );
                     },
                   );
-                })
-              else
-                Text(
-                  '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                  style: TextStyle(
-                      fontSize: 12, color: cs.onSurfaceVariant),
-                ),
+                },
+              ),
             ],
           ),
         ),
@@ -540,14 +622,16 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_circle_outline,
-                  size: 28, color: cs.onSurfaceVariant),
+              Icon(
+                Icons.add_circle_outline,
+                size: 28,
+                color: cs.onSurfaceVariant,
+              ),
               const SizedBox(height: 8),
-              Text('Add Budget',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: cs.onSurfaceVariant,
-                  )),
+              Text(
+                'Add Budget',
+                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -555,8 +639,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMonthlySummary(BuildContext context, ThemeData theme,
-      ColorScheme cs, WidgetRef ref) {
+  Widget _buildMonthlySummary(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    WidgetRef ref,
+  ) {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 0);
@@ -574,11 +662,13 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('This Month',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurfaceVariant,
-                    )),
+                    Text(
+                      'This Month',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -591,9 +681,10 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                            width: 1,
-                            height: 40,
-                            color: cs.outlineVariant),
+                          width: 1,
+                          height: 40,
+                          color: cs.outlineVariant,
+                        ),
                         Expanded(
                           child: StatTile(
                             icon: Icons.arrow_upward,
@@ -603,9 +694,10 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                            width: 1,
-                            height: 40,
-                            color: cs.outlineVariant),
+                          width: 1,
+                          height: 40,
+                          color: cs.outlineVariant,
+                        ),
                         Expanded(
                           child: StatTile(
                             icon: Icons.account_balance_wallet,
@@ -623,19 +715,60 @@ class DashboardScreen extends ConsumerWidget {
               ),
             );
           },
-          error: (_, _) => const Card(child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Text('Error loading expenses'),
-          )),
+          error: (_, _) => const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Text('Error loading expenses'),
+            ),
+          ),
           loading: () => _loadingCard,
         );
       },
-      error: (_, _) => const Card(child: Padding(
-        padding: EdgeInsets.all(20),
-        child: Text('Error loading income'),
-      )),
+      error: (_, _) => const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Text('Error loading income'),
+        ),
+      ),
       loading: () => _loadingCard,
     );
+  }
+
+  static Future<int> _getBudgetPreviewTotal(
+    TransactionRepository txRepo,
+    Budget budget,
+    bool isGoal,
+  ) async {
+    if (budget.specificMode) {
+      final txns = await txRepo.search(
+        startDate: budget.periodStart,
+        endDate: budget.periodEnd,
+        type: isGoal ? 'income' : 'expense',
+      );
+      return txns
+          .where((t) {
+            if (t.budgetFks == null) return false;
+            final fks = t.budgetFks!
+                .split(',')
+                .map((s) => int.tryParse(s.trim()))
+                .where((n) => n != null)
+                .cast<int>()
+                .toList();
+            return fks.contains(budget.id);
+          })
+          .fold<int>(0, (sum, t) => sum + t.amountMinor);
+    }
+    return isGoal
+        ? txRepo.totalIncome(
+            budget.periodStart,
+            budget.periodEnd,
+            targetCurrency: budget.currencyCode,
+          )
+        : txRepo.totalExpenses(
+            budget.periodStart,
+            budget.periodEnd,
+            targetCurrency: budget.currencyCode,
+          );
   }
 
   static const _loadingCard = Card(
@@ -653,8 +786,10 @@ class DashboardScreen extends ConsumerWidget {
             context,
             Icons.arrow_upward,
             'Expense',
-            () => context.push('/transactions/new',
-                extra: <String, dynamic>{'type': 'expense'}),
+            () => context.push(
+              '/transactions/new',
+              extra: <String, dynamic>{'type': 'expense'},
+            ),
             AppColors.expense,
           ),
         ),
@@ -664,8 +799,10 @@ class DashboardScreen extends ConsumerWidget {
             context,
             Icons.arrow_downward,
             'Income',
-            () => context.push('/transactions/new',
-                extra: <String, dynamic>{'type': 'income'}),
+            () => context.push(
+              '/transactions/new',
+              extra: <String, dynamic>{'type': 'income'},
+            ),
             AppColors.income,
           ),
         ),
@@ -675,8 +812,10 @@ class DashboardScreen extends ConsumerWidget {
             context,
             Icons.swap_horiz,
             'Transfer',
-            () => context.push('/transactions/new',
-                extra: <String, dynamic>{'type': 'transfer'}),
+            () => context.push(
+              '/transactions/new',
+              extra: <String, dynamic>{'type': 'transfer'},
+            ),
             AppColors.transfer,
           ),
         ),
@@ -684,8 +823,13 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _actionButton(BuildContext context, IconData icon,
-      String label, VoidCallback onTap, Color color) {
+  Widget _actionButton(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+    Color color,
+  ) {
     return Material(
       color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(14),
@@ -698,11 +842,14 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               Icon(icon, color: color, size: 24),
               const SizedBox(height: 4),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: color)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
             ],
           ),
         ),
@@ -710,8 +857,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSpendingChart(BuildContext context, ThemeData theme,
-      ColorScheme cs, WidgetRef ref) {
+  Widget _buildSpendingChart(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    WidgetRef ref,
+  ) {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 0);
@@ -728,8 +879,7 @@ class DashboardScreen extends ConsumerWidget {
             final sorted = data.entries.toList()
               ..sort((a, b) => b.value.compareTo(a.value));
             final top = sorted.take(5).toList();
-            final totalSpent =
-                data.values.fold<int>(0, (s, v) => s + v);
+            final totalSpent = data.values.fold<int>(0, (s, v) => s + v);
 
             return Card(
               child: Padding(
@@ -737,12 +887,13 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Top Spending',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurfaceVariant,
-                    )),
+                    Text(
+                      'Top Spending',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     SizedBox(
                       height: 140,
@@ -756,19 +907,15 @@ class DashboardScreen extends ConsumerWidget {
                                   final color = cat?.color != null
                                       ? Color(cat!.color!)
                                       : cs.primary;
-                                  final pct = e.value /
-                                      totalSpent;
+                                  final pct = e.value / totalSpent;
                                   return PieChartSectionData(
                                     value: pct * 100,
                                     color: color,
                                     radius: 28,
-                                    title:
-                                        '${(pct * 100).toStringAsFixed(0)}%',
-                                    titleStyle:
-                                        const TextStyle(
+                                    title: '${(pct * 100).toStringAsFixed(0)}%',
+                                    titleStyle: const TextStyle(
                                       fontSize: 10,
-                                      fontWeight:
-                                          FontWeight.bold,
+                                      fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   );
@@ -781,18 +928,17 @@ class DashboardScreen extends ConsumerWidget {
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.center,
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: top.map((e) {
                                 final cat = catMap[e.key];
                                 final color = cat?.color != null
                                     ? Color(cat!.color!)
                                     : cs.primary;
                                 return Padding(
-                                  padding: const EdgeInsets
-                                      .symmetric(vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
                                   child: Row(
                                     children: [
                                       Container(
@@ -800,22 +946,15 @@ class DashboardScreen extends ConsumerWidget {
                                         height: 8,
                                         decoration: BoxDecoration(
                                           color: color,
-                                          shape:
-                                              BoxShape.circle,
+                                          shape: BoxShape.circle,
                                         ),
                                       ),
-                                      const SizedBox(
-                                          width: 6),
+                                      const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          cat?.name ??
-                                              'Cat ${e.key}',
-                                          style:
-                                              const TextStyle(
-                                                  fontSize:
-                                                      11),
-                                          overflow: TextOverflow
-                                              .ellipsis,
+                                          cat?.name ?? 'Cat ${e.key}',
+                                          style: const TextStyle(fontSize: 11),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -842,14 +981,14 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildUpcomingRecurring(
-      BuildContext context,
-      ThemeData theme,
-      ColorScheme cs,
-      AsyncValue<List<RecurringTransaction>> recurringAsync) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    AsyncValue<List<RecurringTransaction>> recurringAsync,
+  ) {
     return recurringAsync.when(
       data: (items) {
-        final active =
-            items.where((r) => r.active).take(3).toList();
+        final active = items.where((r) => r.active).take(3).toList();
         if (active.isEmpty) return const SizedBox.shrink();
 
         return Card(
@@ -860,68 +999,62 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.repeat,
-                        size: 18, color: cs.primary),
+                    Icon(Icons.repeat, size: 18, color: cs.primary),
                     const SizedBox(width: 8),
-                    Text('Upcoming',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurfaceVariant,
-                    )),
+                    Text(
+                      'Upcoming',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                     const Spacer(),
                     TextButton(
-                      onPressed: () =>
-                          context.push('/recurring'),
-                      child: const Text('Manage',
-                          style: TextStyle(fontSize: 12)),
+                      onPressed: () => context.push('/recurring'),
+                      child: const Text(
+                        'Manage',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 ...active.map((r) {
-                  final isExpense =
-                      r.transactionType == 'expense';
-                  final isIncome =
-                      r.transactionType == 'income';
+                  final isExpense = r.transactionType == 'expense';
+                  final isIncome = r.transactionType == 'income';
                   final color = isExpense
                       ? AppColors.expense
-                      : (isIncome
-                          ? AppColors.income
-                          : AppColors.transfer);
+                      : (isIncome ? AppColors.income : AppColors.transfer);
                   return Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color:
-                                color.withValues(alpha: 0.1),
-                            borderRadius:
-                                BorderRadius.circular(8),
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             isExpense
                                 ? Icons.arrow_upward
                                 : (isIncome
-                                    ? Icons.arrow_downward
-                                    : Icons.swap_horiz),
+                                      ? Icons.arrow_downward
+                                      : Icons.swap_horiz),
                             color: color,
                             size: 14,
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(r.title ?? '',
-                              style:
-                                  const TextStyle(fontSize: 13)),
+                          child: Text(
+                            r.title ?? '',
+                            style: const TextStyle(fontSize: 13),
+                          ),
                         ),
                         if (r.nextDueDate != null)
                           Text(
-                            MoneyUtils.formatDateShort(
-                                r.nextDueDate!),
+                            MoneyUtils.formatDateShort(r.nextDueDate!),
                             style: TextStyle(
                               fontSize: 11,
                               color: cs.onSurfaceVariant,
@@ -950,8 +1083,11 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentTransactions(BuildContext context,
-      ThemeData theme, AsyncValue<List<Transaction>> recentAsync) {
+  Widget _buildRecentTransactions(
+    BuildContext context,
+    ThemeData theme,
+    AsyncValue<List<Transaction>> recentAsync,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -969,17 +1105,16 @@ class DashboardScreen extends ConsumerWidget {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.receipt_long,
-                            size: 40,
-                            color:
-                                theme.colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.receipt_long,
+                          size: 40,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'No transactions yet. Tap + to add one.',
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(
-                            color: theme
-                                .colorScheme.onSurfaceVariant,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -990,49 +1125,64 @@ class DashboardScreen extends ConsumerWidget {
             }
             final grouped = <String, List<Transaction>>{};
             for (final t in transactions) {
-              final key = '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
+              final key =
+                  '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
               grouped.putIfAbsent(key, () => []).add(t);
             }
             final sortedKeys = grouped.keys.toList()
               ..sort((a, b) => b.compareTo(a));
             final monthNames = [
-              '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+              '',
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec',
             ];
             return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: sortedKeys.take(3).expand((key) {
-              final parts = key.split('-');
-              final year = int.parse(parts[0]);
-              final month = int.parse(parts[1]);
-              final txns = grouped[key]!;
-              return [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-                  child: Text(
-                    '${monthNames[month]} $year',
-                    style: TextStyle(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: sortedKeys.take(3).expand((key) {
+                final parts = key.split('-');
+                final year = int.parse(parts[0]);
+                final month = int.parse(parts[1]);
+                final txns = grouped[key]!;
+                return [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+                    child: Text(
+                      '${monthNames[month]} $year',
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurfaceVariant),
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
-                ...txns.take(10).map((t) => TransactionTile(
-                      id: t.id,
-                      type: t.type,
-                      amountMinor: t.amountMinor,
-                      title: t.title,
-                      date: t.date,
-                      onTap: () =>
-                          context.push('/transactions/${t.id}'),
-                    )),
-              ];
-            }).toList());
+                  ...txns
+                      .take(10)
+                      .map(
+                        (t) => TransactionTile(
+                          id: t.id,
+                          type: t.type,
+                          amountMinor: t.amountMinor,
+                          title: t.title,
+                          date: t.date,
+                          onTap: () => context.push('/transactions/${t.id}'),
+                        ),
+                      ),
+                ];
+              }).toList(),
+            );
           },
-          error: (e, _) =>
-              Center(child: Text('$e')),
-          loading: () => const Center(
-              child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('$e')),
+          loading: () => const Center(child: CircularProgressIndicator()),
         ),
       ],
     );

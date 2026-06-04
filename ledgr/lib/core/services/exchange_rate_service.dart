@@ -36,7 +36,7 @@ class ExchangeRateService {
 
   Future<void> _fetchAndStoreRates(String base) async {
     final uri = Uri.parse('https://open.er-api.com/v6/latest/$base');
-    final response = await http.get(uri);
+    final response = await http.get(uri).timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) {
       throw Exception('Failed to fetch rates: ${response.statusCode}');
     }

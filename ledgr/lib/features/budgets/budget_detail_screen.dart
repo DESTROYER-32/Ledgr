@@ -16,8 +16,7 @@ class BudgetDetailScreen extends ConsumerStatefulWidget {
   const BudgetDetailScreen({super.key, required this.budgetId});
 
   @override
-  ConsumerState<BudgetDetailScreen> createState() =>
-      _BudgetDetailScreenState();
+  ConsumerState<BudgetDetailScreen> createState() => _BudgetDetailScreenState();
 }
 
 class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
@@ -52,36 +51,92 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
 
     Map<int, int> byCategory;
     int totalSpent;
-    if (budget.isIncome) {
+    if (budget.specificMode) {
+      final txns = await txRepo.search(
+        startDate: _currentStart!,
+        endDate: budget.periodEnd,
+        type: budget.isIncome ? 'income' : 'expense',
+      );
+      final filtered = txns.where((t) {
+        if (t.budgetFks == null) return false;
+        final fks = t.budgetFks!
+            .split(',')
+            .map((s) => int.tryParse(s.trim()))
+            .where((n) => n != null)
+            .cast<int>()
+            .toList();
+        return fks.contains(budget.id);
+      }).toList();
+      byCategory = <int, int>{};
+      for (final t in filtered) {
+        if (t.categoryId != null) {
+          byCategory.update(
+            t.categoryId!,
+            (v) => v + t.amountMinor,
+            ifAbsent: () => t.amountMinor,
+          );
+        }
+      }
+      totalSpent = filtered.fold<int>(0, (s, t) => s + t.amountMinor);
+    } else if (budget.isIncome) {
       byCategory = await txRepo.incomeByCategory(
-          _currentStart!, budget.periodEnd,
-          targetCurrency: budget.currencyCode);
-      totalSpent =
-          byCategory.values.fold<int>(0, (s, v) => s + v);
+        _currentStart!,
+        budget.periodEnd,
+        targetCurrency: budget.currencyCode,
+      );
+      totalSpent = byCategory.values.fold<int>(0, (s, v) => s + v);
     } else {
       byCategory = await txRepo.spentByCategory(
-          _currentStart!, budget.periodEnd,
-          targetCurrency: budget.currencyCode);
-      totalSpent =
-          byCategory.values.fold<int>(0, (s, v) => s + v);
+        _currentStart!,
+        budget.periodEnd,
+        targetCurrency: budget.currencyCode,
+      );
+      totalSpent = byCategory.values.fold<int>(0, (s, v) => s + v);
     }
 
     final filteredSpent = limits.isNotEmpty
-        ? Map.fromEntries(byCategory.entries
-            .where((e) => limits.any((l) => l.categoryId == e.key)))
+        ? Map.fromEntries(
+            byCategory.entries.where(
+              (e) => limits.any((l) => l.categoryId == e.key),
+            ),
+          )
         : byCategory;
 
     final duration = budget.periodEnd.difference(budget.periodStart);
     final prevEnd = budget.periodStart.subtract(const Duration(days: 1));
     final prevStart = prevEnd.subtract(duration);
     int prevTotalSpent;
-    if (budget.isIncome) {
-      final prevByCategory = await txRepo.incomeByCategory(prevStart, prevEnd,
-          targetCurrency: budget.currencyCode);
+    if (budget.specificMode) {
+      final prevTxns = await txRepo.search(
+        startDate: prevStart,
+        endDate: prevEnd,
+        type: budget.isIncome ? 'income' : 'expense',
+      );
+      prevTotalSpent = prevTxns
+          .where((t) {
+            if (t.budgetFks == null) return false;
+            final fks = t.budgetFks!
+                .split(',')
+                .map((s) => int.tryParse(s.trim()))
+                .where((n) => n != null)
+                .cast<int>()
+                .toList();
+            return fks.contains(budget.id);
+          })
+          .fold<int>(0, (sum, t) => sum + t.amountMinor);
+    } else if (budget.isIncome) {
+      final prevByCategory = await txRepo.incomeByCategory(
+        prevStart,
+        prevEnd,
+        targetCurrency: budget.currencyCode,
+      );
       prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
     } else {
-      final prevByCategory = await txRepo.spentByCategory(prevStart, prevEnd,
-          targetCurrency: budget.currencyCode);
+      final prevByCategory = await txRepo.spentByCategory(
+        prevStart,
+        prevEnd,
+        targetCurrency: budget.currencyCode,
+      );
       prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
     }
 
@@ -90,7 +145,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
         _budget = budget;
         _limits = limits;
         _spentByCategory = filteredSpent;
-        _totalSpent = totalSpent;
+        _totalSpent = limits.isNotEmpty
+            ? filteredSpent.values.fold<int>(0, (s, v) => s + v)
+            : totalSpent;
         _totalPlanned = totalPlanned;
         _prevTotalSpent = prevTotalSpent;
         _loading = false;
@@ -103,10 +160,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     if (!mounted) return;
     final cat = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => _LimitDialog(
-        categories: cats,
-        isIncome: _budget!.isIncome,
-      ),
+      builder: (ctx) =>
+          _LimitDialog(categories: cats, isIncome: _budget!.isIncome),
     );
     if (cat == null) return;
     final repo = ref.read(budgetRepositoryProvider);
@@ -125,19 +180,46 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Future<void> _addMoneyToGoal(Budget budget) async {
-    final wallets =
-        await ref.read(walletRepositoryProvider).watchActive().first;
+    final wallets = await ref
+        .read(walletRepositoryProvider)
+        .watchActive()
+        .first;
     if (!mounted) return;
-    final walletId = await showDialog<int>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => _AddMoneyDialog(wallets: wallets, budget: budget),
     );
-    if (walletId == null || !mounted) return;
-    context.push('/transactions/new', extra: <String, dynamic>{
-      'type': 'income',
-      'walletId': walletId,
-    });
+    if (result == null || !mounted) return;
+    final walletId = result['walletId'] as int;
+    final amount = ((result['amount'] as double) * 100).round();
+    final date = result['date'] as DateTime;
+
+    final wallet = await ref.read(walletRepositoryProvider).getById(walletId);
+    if (wallet == null || !mounted) return;
+
+    await ref
+        .read(transactionRepositoryProvider)
+        .insert(
+          TransactionsCompanion.insert(
+            type: 'income',
+            specialType: const Value('none'),
+            amountMinor: amount,
+            currencyCode: wallet.currencyCode,
+            date: date,
+            walletId: walletId,
+            budgetFks: Value(budget.id.toString()),
+          ),
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${MoneyUtils.format(amount, currencyCode: wallet.currencyCode)} added to ${budget.name}',
+        ),
+      ),
+    );
+    _load();
   }
 
   @override
@@ -153,9 +235,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     }
 
     final budget = _budget!;
-    final color = budget.color != null
-        ? Color(budget.color!)
-        : cs.primary;
+    final color = budget.color != null ? Color(budget.color!) : cs.primary;
     final pct = _totalPlanned > 0
         ? (_totalSpent / _totalPlanned).clamp(0.0, 2.0)
         : 0.0;
@@ -185,28 +265,28 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 );
                 _load();
               } else if (v == 'delete') {
-                  final nav = Navigator.of(context);
-                  final ok = await showDialog<bool>(
+                final nav = Navigator.of(context);
+                final ok = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: const Text('Delete budget?'),
                     content: Text(
-                        'Delete "${budget.name}" and all its limits?'),
+                      'Delete "${budget.name}" and all its limits?',
+                    ),
                     actions: [
                       TextButton(
-                          onPressed: () =>
-                              Navigator.pop(ctx, false),
-                          child: const Text('Cancel')),
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
                       FilledButton(
-                          onPressed: () =>
-                              Navigator.pop(ctx, true),
-                          child: const Text('Delete')),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Delete'),
+                      ),
                     ],
                   ),
                 );
                 if (ok == true && mounted) {
-                  final repo =
-                      ref.read(budgetRepositoryProvider);
+                  final repo = ref.read(budgetRepositoryProvider);
                   await repo.delete(budget.id);
                   nav.pop();
                 }
@@ -214,29 +294,34 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             },
             itemBuilder: (_) => [
               const PopupMenuItem(
-                  value: 'edit',
-                  child: ListTile(
-                      leading: Icon(Icons.edit),
-                      title: Text('Edit'),
-                      contentPadding: EdgeInsets.zero)),
+                value: 'edit',
+                child: ListTile(
+                  leading: Icon(Icons.edit),
+                  title: Text('Edit'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               PopupMenuItem(
-                  value: 'pin',
-                  child: ListTile(
-                      leading: Icon(budget.pinned
-                          ? Icons.push_pin
-                          : Icons.push_pin_outlined),
-                      title: Text(
-                          budget.pinned ? 'Unpin' : 'Pin to dashboard'),
-                      contentPadding: EdgeInsets.zero)),
+                value: 'pin',
+                child: ListTile(
+                  leading: Icon(
+                    budget.pinned ? Icons.push_pin : Icons.push_pin_outlined,
+                  ),
+                  title: Text(budget.pinned ? 'Unpin' : 'Pin to dashboard'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               const PopupMenuItem(
-                  value: 'delete',
-                  child: ListTile(
-                      leading: Icon(Icons.delete,
-                          color: AppColors.expense),
-                      title: Text('Delete',
-                          style: TextStyle(
-                              color: AppColors.expense)),
-                      contentPadding: EdgeInsets.zero)),
+                value: 'delete',
+                child: ListTile(
+                  leading: Icon(Icons.delete, color: AppColors.expense),
+                  title: Text(
+                    'Delete',
+                    style: TextStyle(color: AppColors.expense),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
             ],
           ),
         ],
@@ -263,8 +348,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     );
   }
 
-  Widget _buildHeader(ThemeData theme, ColorScheme cs,
-      Budget budget, Color color) {
+  Widget _buildHeader(
+    ThemeData theme,
+    ColorScheme cs,
+    Budget budget,
+    Color color,
+  ) {
     return Card(
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -273,10 +362,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              color.withValues(alpha: 0.08),
-              cs.surface,
-            ],
+            colors: [color.withValues(alpha: 0.08), cs.surface],
           ),
         ),
         child: Column(
@@ -291,9 +377,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    budget.isIncome
-                        ? Icons.savings
-                        : Icons.track_changes,
+                    budget.isIncome ? Icons.savings : Icons.track_changes,
                     color: color,
                     size: 20,
                   ),
@@ -302,9 +386,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(budget.name,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      budget.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Text(
                       budget.isIncome ? 'Goal' : 'Budget',
                       style: TextStyle(
@@ -316,20 +403,17 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 ),
                 const Spacer(),
                 if (budget.pinned)
-                  Icon(Icons.push_pin,
-                      size: 16, color: cs.onSurfaceVariant),
+                  Icon(Icons.push_pin, size: 16, color: cs.onSurfaceVariant),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.date_range,
-                    size: 14, color: cs.onSurfaceVariant),
+                Icon(Icons.date_range, size: 14, color: cs.onSurfaceVariant),
                 const SizedBox(width: 6),
                 Text(
                   '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                  style: TextStyle(
-                      fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
               ],
             ),
@@ -354,17 +438,21 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('vs Previous Period',
-                style: theme.textTheme.titleSmall?.copyWith(
-              color: cs.onSurfaceVariant,
-            )),
+            Text(
+              'vs Previous Period',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
                 Icon(
                   increased
                       ? (isIncome ? Icons.arrow_upward : Icons.arrow_upward)
-                      : (isIncome ? Icons.arrow_downward : Icons.arrow_downward),
+                      : (isIncome
+                            ? Icons.arrow_downward
+                            : Icons.arrow_downward),
                   size: 20,
                   color: isIncome
                       ? (increased ? AppColors.income : AppColors.expense)
@@ -378,11 +466,17 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       isIncome
                           ? '${MoneyUtils.format(_prevTotalSpent)} \u2192 ${MoneyUtils.format(_totalSpent)}'
                           : '${MoneyUtils.format(_prevTotalSpent)} \u2192 ${MoneyUtils.format(_totalSpent)}',
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                     Text(
                       '${increased ? '+' : ''}$pctChange% ${isIncome ? (increased ? 'more saved' : 'less saved') : (increased ? 'more spent' : 'less spent')}',
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -395,13 +489,14 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Widget _buildProgressCard(
-      ThemeData theme,
-      ColorScheme cs,
-      Budget budget,
-      Color color,
-      double pct,
-      int remaining,
-      bool isOver) {
+    ThemeData theme,
+    ColorScheme cs,
+    Budget budget,
+    Color color,
+    double pct,
+    int remaining,
+    bool isOver,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -421,7 +516,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   Text(
                     '${MoneyUtils.format(_totalSpent)} / ${MoneyUtils.format(_totalPlanned)}',
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 13),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
               ],
             ),
@@ -432,13 +529,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 child: LinearProgressIndicator(
                   value: pct.clamp(0.0, 1.0),
                   minHeight: 10,
-                  backgroundColor:
-                      cs.surfaceContainerHighest,
+                  backgroundColor: cs.surfaceContainerHighest,
                   color: isOver
                       ? AppColors.expense
-                      : (budget.isIncome
-                          ? AppColors.income
-                          : color),
+                      : (budget.isIncome ? AppColors.income : color),
                 ),
               ),
               const SizedBox(height: 8),
@@ -450,21 +544,14 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                         : '${MoneyUtils.format(remaining)} ${budget.isIncome ? 'left to save' : 'remaining'}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isOver
-                          ? AppColors.expense
-                          : cs.onSurfaceVariant,
-                      fontWeight: isOver
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      color: isOver ? AppColors.expense : cs.onSurfaceVariant,
+                      fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     '${(pct * 100).toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -476,8 +563,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   budget.isIncome
                       ? 'Saved ${MoneyUtils.format(_totalSpent)} (no goal set)'
                       : 'Spent ${MoneyUtils.format(_totalSpent)} (no limit set)',
-                  style: TextStyle(
-                      fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
               ),
           ],
@@ -486,19 +572,25 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     );
   }
 
-  Widget _buildCategoryBreakdown(ThemeData theme, ColorScheme cs,
-      Budget budget, Color color) {
+  Widget _buildCategoryBreakdown(
+    ThemeData theme,
+    ColorScheme cs,
+    Budget budget,
+    Color color,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Category Breakdown',
-                style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: cs.onSurfaceVariant,
-            )),
+            Text(
+              'Category Breakdown',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             ..._limits.map((limit) {
               final spent = _spentByCategory[limit.categoryId] ?? 0;
@@ -521,8 +613,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             OutlinedButton.icon(
               onPressed: _addLimit,
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add Limit',
-                  style: TextStyle(fontSize: 13)),
+              label: const Text('Add Limit', style: TextStyle(fontSize: 13)),
             ),
           ],
         ),
@@ -530,14 +621,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     );
   }
 
-  Widget _buildPieChart(ThemeData theme, ColorScheme cs,
-      Budget budget) {
+  Widget _buildPieChart(ThemeData theme, ColorScheme cs, Budget budget) {
     final cats = ref.watch(activeCategoriesProvider).valueOrNull ?? [];
     final catMap = {for (final c in cats) c.id: c};
     final sorted = _spentByCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final total =
-        _spentByCategory.values.fold<int>(0, (s, v) => s + v);
+    final total = _spentByCategory.values.fold<int>(0, (s, v) => s + v);
 
     if (total == 0) return const SizedBox.shrink();
 
@@ -547,11 +636,13 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(budget.isIncome ? 'Income Breakdown' : 'Spending Breakdown',
-                style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: cs.onSurfaceVariant,
-            )),
+            Text(
+              budget.isIncome ? 'Income Breakdown' : 'Spending Breakdown',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             SizedBox(
               height: 140,
@@ -570,8 +661,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                             value: pct * 100,
                             color: c,
                             radius: 28,
-                            title:
-                                '${(pct * 100).toStringAsFixed(0)}%',
+                            title: '${(pct * 100).toStringAsFixed(0)}%',
                             titleStyle: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -588,16 +678,14 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: sorted.take(5).map((e) {
                         final cat = catMap[e.key];
                         final c = cat?.color != null
                             ? Color(cat!.color!)
                             : cs.primary;
                         return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Row(
                             children: [
                               Container(
@@ -612,10 +700,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                               Expanded(
                                 child: Text(
                                   cat?.name ?? 'Cat ${e.key}',
-                                  style: const TextStyle(
-                                      fontSize: 11),
-                                  overflow:
-                                      TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -633,59 +719,64 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     );
   }
 
-  Widget _buildTransactions(ThemeData theme, ColorScheme cs,
-      Budget budget) {
-    return ref.watch(allTransactionsProvider).when(
-      data: (txns) {
-        final filtered = txns.where((t) {
-          final inDateRange = !t.date.isBefore(budget.periodStart) &&
-              !t.date.isAfter(budget.periodEnd);
-          if (!inDateRange) return false;
-          if (budget.specificMode) {
-            if (t.budgetFks == null) return false;
-            final fks = (t.budgetFks!.isNotEmpty
-                    ? t.budgetFks!.split(',')
-                    : <String>[])
-                .map((s) => int.tryParse(s))
-                .where((n) => n != null)
-                .cast<int>()
-                .toList();
-            return fks.contains(budget.id);
-          }
-          if (_limits.isNotEmpty &&
-              t.type == 'expense' &&
-              t.categoryId != null) {
-            return _limits.any((l) => l.categoryId == t.categoryId);
-          }
-          return true;
-        }).toList()
-          ..sort((a, b) => b.date.compareTo(a.date));
+  Widget _buildTransactions(ThemeData theme, ColorScheme cs, Budget budget) {
+    return ref
+        .watch(allTransactionsProvider)
+        .when(
+          data: (txns) {
+            final filtered = txns.where((t) {
+              final inDateRange =
+                  !t.date.isBefore(budget.periodStart) &&
+                  !t.date.isAfter(budget.periodEnd);
+              if (!inDateRange) return false;
+              if (budget.specificMode) {
+                if (t.budgetFks == null) return false;
+                final fks =
+                    (t.budgetFks!.isNotEmpty
+                            ? t.budgetFks!.split(',')
+                            : <String>[])
+                        .map((s) => int.tryParse(s))
+                        .where((n) => n != null)
+                        .cast<int>()
+                        .toList();
+                return fks.contains(budget.id);
+              }
+              if (_limits.isNotEmpty &&
+                  t.type == 'expense' &&
+                  t.categoryId != null) {
+                return _limits.any((l) => l.categoryId == t.categoryId);
+              }
+              return true;
+            }).toList()..sort((a, b) => b.date.compareTo(a.date));
 
-        if (filtered.isEmpty) return const SizedBox.shrink();
+            if (filtered.isEmpty) return const SizedBox.shrink();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionHeader(
-              title: 'Transactions',
-              actionLabel: null,
-              onAction: null,
-            ),
-            ...filtered.take(10).map((t) => TransactionTile(
-                  id: t.id,
-                  type: t.type,
-                  amountMinor: t.amountMinor,
-                  title: t.title,
-                  date: t.date,
-                  onTap: () =>
-                      context.push('/transactions/${t.id}'),
-                )),
-          ],
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(
+                  title: 'Transactions',
+                  actionLabel: null,
+                  onAction: null,
+                ),
+                ...filtered
+                    .take(10)
+                    .map(
+                      (t) => TransactionTile(
+                        id: t.id,
+                        type: t.type,
+                        amountMinor: t.amountMinor,
+                        title: t.title,
+                        date: t.date,
+                        onTap: () => context.push('/transactions/${t.id}'),
+                      ),
+                    ),
+              ],
+            );
+          },
+          error: (_, _) => const SizedBox.shrink(),
+          loading: () => const SizedBox.shrink(),
         );
-      },
-      error: (_, _) => const SizedBox.shrink(),
-      loading: () => const SizedBox.shrink(),
-    );
   }
 }
 
@@ -717,26 +808,24 @@ class _CategoryLimitRow extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.close, size: 14,
-                      color: cs.onSurfaceVariant),
-                  Consumer(builder: (context, ref, _) {
-                    final cats = ref
-                            .watch(activeCategoriesProvider)
-                            .valueOrNull ??
-                        [];
-                    final cat = cats
-                        .where((c) => c.id == limit.categoryId)
-                        .firstOrNull;
-                    return Text(
-                      cat?.name ?? 'Category ${limit.categoryId}',
-                      style: const TextStyle(fontSize: 13),
-                    );
-                  }),
+                  Icon(Icons.close, size: 14, color: cs.onSurfaceVariant),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final cats =
+                          ref.watch(activeCategoriesProvider).valueOrNull ?? [];
+                      final cat = cats
+                          .where((c) => c.id == limit.categoryId)
+                          .firstOrNull;
+                      return Text(
+                        cat?.name ?? 'Category ${limit.categoryId}',
+                        style: const TextStyle(fontSize: 13),
+                      );
+                    },
+                  ),
                   const Spacer(),
                   Text(
                     '${spent > 0 ? MoneyUtils.format(spent) : ''} / ${MoneyUtils.format(limit.plannedAmountMinor)}',
-                    style: TextStyle(
-                        fontSize: 11, color: cs.onSurfaceVariant),
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -747,9 +836,7 @@ class _CategoryLimitRow extends StatelessWidget {
                   value: pct.clamp(0.0, 1.0),
                   minHeight: 6,
                   backgroundColor: cs.surfaceContainerHighest,
-                  color: over
-                      ? AppColors.expense
-                      : cs.primary,
+                  color: over ? AppColors.expense : cs.primary,
                 ),
               ),
             ],
@@ -759,8 +846,7 @@ class _CategoryLimitRow extends StatelessWidget {
           width: 32,
           height: 32,
           child: IconButton(
-            icon: Icon(Icons.close, size: 14,
-                color: cs.onSurfaceVariant),
+            icon: Icon(Icons.close, size: 14, color: cs.onSurfaceVariant),
             onPressed: onRemove,
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
@@ -800,14 +886,20 @@ class _LimitDialogState extends State<_LimitDialog> {
           DropdownButtonFormField<int>(
             initialValue: _selectedCatId,
             decoration: const InputDecoration(
-                labelText: 'Category',
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              labelText: 'Category',
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
             isExpanded: true,
             items: widget.categories
-                .where((c) => widget.isIncome ? (c.kind == 'income' || c.kind == 'both') : (c.kind == 'expense' || c.kind == 'both'))
-                .map((c) => DropdownMenuItem<int>(
-                    value: c.id, child: Text(c.name)))
+                .where(
+                  (c) => widget.isIncome
+                      ? (c.kind == 'income' || c.kind == 'both')
+                      : (c.kind == 'expense' || c.kind == 'both'),
+                )
+                .map(
+                  (c) =>
+                      DropdownMenuItem<int>(value: c.id, child: Text(c.name)),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedCatId = v),
           ),
@@ -816,24 +908,23 @@ class _LimitDialogState extends State<_LimitDialog> {
             controller: _amountController,
             decoration: const InputDecoration(
               labelText: 'Amount',
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ],
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () {
-            if (_selectedCatId == null ||
-                _amountController.text.isEmpty) { return; }
-            final amt =
-                (double.tryParse(_amountController.text) ?? 0) * 100;
+            if (_selectedCatId == null || _amountController.text.isEmpty) {
+              return;
+            }
+            final amt = (double.tryParse(_amountController.text) ?? 0) * 100;
             Navigator.pop(context, {
               'categoryId': _selectedCatId!,
               'amount': amt.round(),
@@ -877,15 +968,16 @@ class _AddMoneyDialogState extends State<_AddMoneyDialog> {
             initialValue: _selectedWalletId,
             decoration: const InputDecoration(
               labelText: 'Account',
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             isExpanded: true,
             items: widget.wallets
-                .map((w) => DropdownMenuItem<int>(
+                .map(
+                  (w) => DropdownMenuItem<int>(
                     value: w.id,
-                    child: Text(
-                        '${w.name} (${w.currencyCode})')))
+                    child: Text('${w.name} (${w.currencyCode})'),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedWalletId = v),
           ),
@@ -894,11 +986,9 @@ class _AddMoneyDialogState extends State<_AddMoneyDialog> {
             controller: _amountController,
             decoration: const InputDecoration(
               labelText: 'Amount',
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
@@ -920,13 +1010,27 @@ class _AddMoneyDialogState extends State<_AddMoneyDialog> {
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () {
-            if (_selectedWalletId == null ||
-                _amountController.text.isEmpty) { return; }
-            Navigator.pop(context, _selectedWalletId);
+            final amount = double.tryParse(_amountController.text);
+            if (_selectedWalletId == null || amount == null || amount <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Please select an account and enter a valid amount.',
+                  ),
+                ),
+              );
+              return;
+            }
+            Navigator.pop(context, {
+              'walletId': _selectedWalletId,
+              'amount': amount,
+              'date': _date,
+            });
           },
           child: const Text('Add'),
         ),
