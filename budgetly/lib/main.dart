@@ -26,9 +26,7 @@ void main() async {
 
   runApp(
     ProviderScope(
-      child: BudgetlyApp(
-        initialRoute: onboarded ? '/' : '/onboarding',
-      ),
+      child: BudgetlyApp(initialRoute: onboarded ? '/' : '/onboarding'),
     ),
   );
 }
@@ -36,10 +34,7 @@ void main() async {
 class BudgetlyApp extends ConsumerStatefulWidget {
   final String initialRoute;
 
-  const BudgetlyApp({
-    super.key,
-    required this.initialRoute,
-  });
+  const BudgetlyApp({super.key, required this.initialRoute});
 
   @override
   ConsumerState<BudgetlyApp> createState() => _BudgetlyAppState();
@@ -47,14 +42,12 @@ class BudgetlyApp extends ConsumerStatefulWidget {
 
 class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     with WidgetsBindingObserver {
-  AppLifecycleListener? _lifecycleListener;
   bool _authInProgress = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _lifecycleListener = AppLifecycleListener(onResume: _onResume);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(recurringServiceProvider).processDueRecurrings();
       _lockIfNeeded();
@@ -63,12 +56,16 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
 
   @override
   void dispose() {
-    _lifecycleListener?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  Future<void> _onResume() => _lockIfNeeded();
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _lockIfNeeded();
+    }
+  }
 
   Future<void> _lockIfNeeded() async {
     if (_authInProgress || widget.initialRoute == '/onboarding') return;
@@ -87,7 +84,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
             title: const Text('App Locked'),
-            content: const Text('Authentication is required to access Budgetly.'),
+            content: const Text(
+              'Authentication is required to access Budgetly.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => SystemNavigator.pop(),

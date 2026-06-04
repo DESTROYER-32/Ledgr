@@ -25,8 +25,7 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
       _TransactionFormScreenState();
 }
 
-class _TransactionFormScreenState
-    extends ConsumerState<TransactionFormScreen> {
+class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
@@ -62,7 +61,9 @@ class _TransactionFormScreenState
   Future<void> _loadDefaultWallet() async {
     final defaultWalletId = await ref.read(defaultWalletIdProvider.future);
     if (defaultWalletId != null && mounted && _walletId == null) {
-      final wallet = await ref.read(walletRepositoryProvider).getById(defaultWalletId);
+      final wallet = await ref
+          .read(walletRepositoryProvider)
+          .getById(defaultWalletId);
       if (wallet != null && !wallet.archived && mounted) {
         setState(() => _walletId = defaultWalletId);
       }
@@ -93,8 +94,7 @@ class _TransactionFormScreenState
         _titleController.text = t.title ?? '';
         _noteController.text = t.note ?? '';
         _tagsController.text = t.tags ?? '';
-        _amountController.text =
-            (t.amountMinor / 100).toStringAsFixed(2);
+        _amountController.text = (t.amountMinor / 100).toStringAsFixed(2);
       });
     }
   }
@@ -113,10 +113,13 @@ class _TransactionFormScreenState
   }
 
   Future<void> _convertAmount(
-      String fromCurrency, String toCurrency, double amount) async {
+    String fromCurrency,
+    String toCurrency,
+    double amount,
+  ) async {
     if (amount <= 0 || fromCurrency == toCurrency) return;
-    final repo = ref.read(exchangeRateRepositoryProvider);
-    final rate = await repo.getConversionRate(fromCurrency, toCurrency);
+    final service = ref.read(exchangeRateServiceProvider);
+    final rate = await service.getConversionRate(fromCurrency, toCurrency);
     if (rate != null && mounted) {
       final converted = amount * rate;
       _amountController.text = converted.toStringAsFixed(2);
@@ -126,9 +129,10 @@ class _TransactionFormScreenState
         builder: (ctx) => AlertDialog(
           title: const Text('Rate Not Found'),
           content: Text(
-              'No exchange rate found for $fromCurrency → $toCurrency.\n'
-              'Enter the converted amount manually, or cancel to keep the '
-              'original value.'),
+            'No exchange rate found for $fromCurrency → $toCurrency.\n'
+            'Enter the converted amount manually, or cancel to keep the '
+            'original value.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -163,7 +167,8 @@ class _TransactionFormScreenState
     final repo = ref.read(transactionRepositoryProvider);
     final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
     final wallet = await ref.read(walletRepositoryProvider).getById(_walletId!);
-    final walletCurrency = wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final walletCurrency =
+        wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
     final currencyCode = _currencyCode ?? walletCurrency;
 
     final companion = TransactionsCompanion(
@@ -175,15 +180,11 @@ class _TransactionFormScreenState
       walletId: Value(_walletId!),
       transferWalletId: Value(_transferWalletId),
       categoryId: Value(_categoryId),
-      title: Value(_titleController.text.isEmpty
-          ? null
-          : _titleController.text),
-      note: Value(_noteController.text.isEmpty
-          ? null
-          : _noteController.text),
-      tags: Value(_tagsController.text.isEmpty
-          ? null
-          : _tagsController.text),
+      title: Value(
+        _titleController.text.isEmpty ? null : _titleController.text,
+      ),
+      note: Value(_noteController.text.isEmpty ? null : _noteController.text),
+      tags: Value(_tagsController.text.isEmpty ? null : _tagsController.text),
       budgetFks: _budgetIds.isNotEmpty
           ? Value(_budgetIds.join(','))
           : const Value(null),
@@ -195,31 +196,33 @@ class _TransactionFormScreenState
     if (_isEditing) {
       await repo.update(widget.transactionId!, companion);
     } else {
-      await repo.insert(TransactionsCompanion.insert(
-        type: _type,
-        specialType: Value(_specialType),
-        amountMinor: amount.round(),
-        currencyCode: currencyCode,
-        date: _date,
-        walletId: _walletId!,
-        transferWalletId: Value(_transferWalletId),
-        categoryId: Value(_categoryId),
-        title: Value(_titleController.text.isEmpty
-            ? null
-            : _titleController.text),
-        note: Value(_noteController.text.isEmpty
-            ? null
-            : _noteController.text),
-        tags: Value(_tagsController.text.isEmpty
-            ? null
-            : _tagsController.text),
-        budgetFks: _budgetIds.isNotEmpty
-            ? Value(_budgetIds.join(','))
-            : const Value(null),
-        objectiveFk: _objectiveId != null
-            ? Value(_objectiveId!)
-            : const Value(null),
-      ));
+      await repo.insert(
+        TransactionsCompanion.insert(
+          type: _type,
+          specialType: Value(_specialType),
+          amountMinor: amount.round(),
+          currencyCode: currencyCode,
+          date: _date,
+          walletId: _walletId!,
+          transferWalletId: Value(_transferWalletId),
+          categoryId: Value(_categoryId),
+          title: Value(
+            _titleController.text.isEmpty ? null : _titleController.text,
+          ),
+          note: Value(
+            _noteController.text.isEmpty ? null : _noteController.text,
+          ),
+          tags: Value(
+            _tagsController.text.isEmpty ? null : _tagsController.text,
+          ),
+          budgetFks: _budgetIds.isNotEmpty
+              ? Value(_budgetIds.join(','))
+              : const Value(null),
+          objectiveFk: _objectiveId != null
+              ? Value(_objectiveId!)
+              : const Value(null),
+        ),
+      );
     }
 
     if (mounted) context.pop();
@@ -233,13 +236,13 @@ class _TransactionFormScreenState
     final theme = Theme.of(context);
     final wallets = walletsAsync.valueOrNull ?? [];
     final selectedWallet = wallets.where((w) => w.id == _walletId).firstOrNull;
-    final walletCurrency = selectedWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final walletCurrency =
+        selectedWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
     final displayCurrency = _currencyCode ?? walletCurrency;
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(_isEditing ? 'Edit Transaction' : 'New Transaction'),
+        title: Text(_isEditing ? 'Edit Transaction' : 'New Transaction'),
         actions: [
           if (_isEditing)
             IconButton(
@@ -263,17 +266,20 @@ class _TransactionFormScreenState
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
-                    value: 'expense',
-                    label: Text('Expense'),
-                    icon: Icon(Icons.arrow_upward)),
+                  value: 'expense',
+                  label: Text('Expense'),
+                  icon: Icon(Icons.arrow_upward),
+                ),
                 ButtonSegment(
-                    value: 'income',
-                    label: Text('Income'),
-                    icon: Icon(Icons.arrow_downward)),
+                  value: 'income',
+                  label: Text('Income'),
+                  icon: Icon(Icons.arrow_downward),
+                ),
                 ButtonSegment(
-                    value: 'transfer',
-                    label: Text('Transfer'),
-                    icon: Icon(Icons.swap_horiz)),
+                  value: 'transfer',
+                  label: Text('Transfer'),
+                  icon: Icon(Icons.swap_horiz),
+                ),
               ],
               selected: {_type},
               onSelectionChanged: (v) => setState(() {
@@ -298,7 +304,10 @@ class _TransactionFormScreenState
               ),
             ),
             const SizedBox(height: 20),
-            AmountField(controller: _amountController, currencySymbol: displayCurrency),
+            AmountField(
+              controller: _amountController,
+              currencySymbol: displayCurrency,
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -312,7 +321,9 @@ class _TransactionFormScreenState
             TextFormField(
               controller: _noteController,
               decoration: const InputDecoration(
-                  labelText: 'Note', hintText: 'Optional'),
+                labelText: 'Note',
+                hintText: 'Optional',
+              ),
               maxLines: 2,
             ),
             const SizedBox(height: 16),
@@ -342,14 +353,14 @@ class _TransactionFormScreenState
             ),
             const SizedBox(height: 16),
             walletsAsync.when(
-                data: (wallets) => DropdownButtonFormField<int>(
+              data: (wallets) => DropdownButtonFormField<int>(
                 isExpanded: true,
                 initialValue: _walletId,
-                decoration:
-                    const InputDecoration(labelText: 'Account'),
+                decoration: const InputDecoration(labelText: 'Account'),
                 items: wallets
-                    .map((w) => DropdownMenuItem(
-                        value: w.id, child: Text(w.name)))
+                    .map(
+                      (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
+                    )
                     .toList(),
                 onChanged: (v) async {
                   final oldWalletId = _walletId;
@@ -372,7 +383,10 @@ class _TransactionFormScreenState
                           double.tryParse(_amountController.text) ?? 0;
                       if (amount > 0) {
                         await _convertAmount(
-                            oldCurrency, newWallet.currencyCode, amount);
+                          oldCurrency,
+                          newWallet.currencyCode,
+                          amount,
+                        );
                       }
                     }
                   }
@@ -388,15 +402,17 @@ class _TransactionFormScreenState
               initialValue: displayCurrency,
               decoration: const InputDecoration(labelText: 'Currency'),
               items: CurrencyUtils.codes
-                  .map((c) => DropdownMenuItem(
+                  .map(
+                    (c) => DropdownMenuItem(
                       value: c,
-                      child: Text('$c  ${CurrencyUtils.symbolFor(c)}')))
+                      child: Text('$c  ${CurrencyUtils.symbolFor(c)}'),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) {
                 if (v != null) {
                   final fromCurrency = _currencyCode ?? walletCurrency;
-                  final amount =
-                      double.tryParse(_amountController.text) ?? 0;
+                  final amount = double.tryParse(_amountController.text) ?? 0;
                   setState(() => _currencyCode = v);
                   if (fromCurrency != v && amount > 0) {
                     _convertAmount(fromCurrency, v, amount);
@@ -410,16 +426,14 @@ class _TransactionFormScreenState
                 data: (cats) => DropdownButtonFormField<int>(
                   isExpanded: true,
                   initialValue: _categoryId,
-                  decoration:
-                      const InputDecoration(labelText: 'Category'),
+                  decoration: const InputDecoration(labelText: 'Category'),
                   items: [
-                    const DropdownMenuItem(
-                        value: null, child: Text('None')),
-                    ...cats.map((c) => DropdownMenuItem(
-                        value: c.id, child: Text(c.name))),
+                    const DropdownMenuItem(value: null, child: Text('None')),
+                    ...cats.map(
+                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                    ),
                   ],
-                  onChanged: (v) =>
-                      setState(() => _categoryId = v),
+                  onChanged: (v) => setState(() => _categoryId = v),
                 ),
                 error: (e, _) => Text('$e'),
                 loading: () => const LinearProgressIndicator(),
@@ -429,15 +443,15 @@ class _TransactionFormScreenState
                 data: (wallets) => DropdownButtonFormField<int>(
                   isExpanded: true,
                   initialValue: _transferWalletId,
-                  decoration:
-                      const InputDecoration(labelText: 'Transfer to'),
+                  decoration: const InputDecoration(labelText: 'Transfer to'),
                   items: wallets
                       .where((w) => w.id != _walletId)
-                      .map((w) => DropdownMenuItem(
-                          value: w.id, child: Text(w.name)))
+                      .map(
+                        (w) =>
+                            DropdownMenuItem(value: w.id, child: Text(w.name)),
+                      )
                       .toList(),
-                  onChanged: (v) =>
-                      setState(() => _transferWalletId = v),
+                  onChanged: (v) => setState(() => _transferWalletId = v),
                 ),
                 error: (e, _) => Text('$e'),
                 loading: () => const LinearProgressIndicator(),
@@ -448,66 +462,83 @@ class _TransactionFormScreenState
                 isExpanded: true,
                 initialValue: _objectiveId,
                 decoration: const InputDecoration(
-                    labelText: 'Link to Goal/Loan (optional)'),
+                  labelText: 'Link to Goal/Loan (optional)',
+                ),
                 items: [
-                  const DropdownMenuItem(
-                      value: null, child: Text('None')),
-                  ...objectives.map((o) => DropdownMenuItem(
+                  const DropdownMenuItem(value: null, child: Text('None')),
+                  ...objectives.map(
+                    (o) => DropdownMenuItem(
                       value: o.id,
                       child: Text(
-                          '${o.name} (${o.type == 'loan' ? 'Loan' : 'Goal'})'))),
+                        '${o.name} (${o.type == 'loan' ? 'Loan' : 'Goal'})',
+                      ),
+                    ),
+                  ),
                 ],
-                onChanged: (v) =>
-                    setState(() => _objectiveId = v),
+                onChanged: (v) => setState(() => _objectiveId = v),
               ),
               error: (e, _) => Text('$e'),
               loading: () => const LinearProgressIndicator(),
             ),
             const SizedBox(height: 16),
-            ref.watch(allBudgetsProvider).when(
-              data: (allBudgets) {
-                final active = allBudgets
-                    .where((b) => b.specificMode && b.periodEnd.isAfter(DateTime.now()))
-                    .toList();
-                if (active.isEmpty) return const SizedBox.shrink();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Assign to Budgets',
-                        style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 4),
-                    Text('Select budgets in tracking mode',
-                        style: TextStyle(
-                            fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: active.map((b) {
-                        final selected = _budgetIds.contains(b.id);
-                        return FilterChip(
-                          label: Text(b.name,
-                              style: const TextStyle(fontSize: 12)),
-                          selected: selected,
-                          onSelected: (v) {
-                            setState(() {
-                              if (v) {
-                                _budgetIds.add(b.id);
-                              } else {
-                                _budgetIds.remove(b.id);
-                              }
-                            });
-                          },
-                          visualDensity: VisualDensity.compact,
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                );
-              },
-              error: (_, _) => const SizedBox.shrink(),
-              loading: () => const SizedBox.shrink(),
-            ),
+            ref
+                .watch(allBudgetsProvider)
+                .when(
+                  data: (allBudgets) {
+                    final active = allBudgets
+                        .where(
+                          (b) =>
+                              b.specificMode &&
+                              b.periodEnd.isAfter(DateTime.now()),
+                        )
+                        .toList();
+                    if (active.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Assign to Budgets',
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Select budgets in tracking mode',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: active.map((b) {
+                            final selected = _budgetIds.contains(b.id);
+                            return FilterChip(
+                              label: Text(
+                                b.name,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              selected: selected,
+                              onSelected: (v) {
+                                setState(() {
+                                  if (v) {
+                                    _budgetIds.add(b.id);
+                                  } else {
+                                    _budgetIds.remove(b.id);
+                                  }
+                                });
+                              },
+                              visualDensity: VisualDensity.compact,
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    );
+                  },
+                  error: (_, _) => const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                ),
             const SizedBox(height: 32),
             FilledButton(
               onPressed: _isLoading ? null : _save,
