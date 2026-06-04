@@ -10,9 +10,21 @@ class GoalDetailScreen extends ConsumerWidget {
   final int goalId;
   const GoalDetailScreen({super.key, required this.goalId});
 
+  static const _goalIcons = <int, IconData>{
+    0xe0b6: Icons.flag,
+    0xe2e7: Icons.savings,
+    0xe1e2: Icons.star,
+    0xe0e0: Icons.favorite,
+    0xe574: Icons.trending_up,
+    0xe227: Icons.school,
+    0xe149: Icons.home,
+    0xe0d2: Icons.card_giftcard,
+    0xe0b9: Icons.flight,
+    0xe0c0: Icons.directions_car,
+  };
+
   static IconData _goalIconData(int? icon) {
-    // ignore: non_const_argument_for_const_parameter
-    if (icon != null) return IconData(icon);
+    if (icon != null && _goalIcons.containsKey(icon)) return _goalIcons[icon]!;
     return Icons.savings;
   }
 
