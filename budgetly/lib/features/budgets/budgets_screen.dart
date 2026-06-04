@@ -209,7 +209,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                               final repo = ref
                                   .read(
                                       budgetRepositoryProvider);
-                              await repo.deleteWithLimits(budget.id);
+                              await repo.delete(budget.id);
                         }
                       }
                     },

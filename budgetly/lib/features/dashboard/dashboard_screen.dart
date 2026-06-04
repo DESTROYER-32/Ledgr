@@ -26,7 +26,7 @@ class DashboardScreen extends ConsumerWidget {
     final walletBalancesAsync = ref.watch(walletBalancesProvider);
     final pinnedBudgets = ref.watch(pinnedBudgetsProvider);
     final budgetsAsync = ref.watch(allBudgetsProvider);
-    final goalsAsync = ref.watch(allGoalsProvider);
+    final objectivesAsync = ref.watch(allObjectivesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,7 +65,7 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             _buildBudgetCards(context, theme, cs, pinnedBudgets, budgetsAsync),
             const SizedBox(height: 24),
-            _buildGoalsSection(context, theme, cs, goalsAsync),
+            _buildGoalsSection(context, theme, cs, objectivesAsync),
             const SizedBox(height: 24),
             _buildSpendingChart(context, theme, cs, ref),
             const SizedBox(height: 24),
@@ -277,10 +277,10 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildGoalsSection(BuildContext context, ThemeData theme,
-      ColorScheme cs, AsyncValue<List<Goal>> goalsAsync) {
-    return goalsAsync.when(
-      data: (goals) {
-        final active = goals.where((g) => !g.archived).take(3).toList();
+      ColorScheme cs, AsyncValue<List<Objective>> objectivesAsync) {
+    return objectivesAsync.when(
+      data: (objectives) {
+        final active = objectives.where((o) => !o.archived).take(3).toList();
         if (active.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,21 +289,21 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 Icon(Icons.flag, size: 16, color: cs.primary),
                 const SizedBox(width: 6),
-                Text('Goals',
+                Text('Goals & Loans',
                     style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: cs.onSurfaceVariant,
                 )),
                 const Spacer(),
                 TextButton(
-                  onPressed: () => context.push('/goals'),
+                  onPressed: () => context.push('/objectives'),
                   child: const Text('View All',
                       style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            ...active.map((g) => _goalRow(context, cs, g)),
+            ...active.map((o) => _objectiveRow(context, cs, o)),
           ],
         );
       },
@@ -312,41 +312,20 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  static const _goalIcons = <int, IconData>{
-    0xe0b6: Icons.flag,
-    0xe2e7: Icons.savings,
-    0xe1e2: Icons.star,
-    0xe0e0: Icons.favorite,
-    0xe574: Icons.trending_up,
-    0xe227: Icons.school,
-    0xe149: Icons.home,
-    0xe0d2: Icons.card_giftcard,
-    0xe0b9: Icons.flight,
-    0xe0c0: Icons.directions_car,
-  };
-
-  static IconData _goalIconData(int? icon) {
-    if (icon != null && _goalIcons.containsKey(icon)) return _goalIcons[icon]!;
-    return Icons.flag;
-  }
-
-  Widget _goalRow(BuildContext context, ColorScheme cs, Goal goal) {
-    final color = goal.color != null ? Color(goal.color!) : cs.primary;
-    final pct = goal.targetAmountMinor > 0
-        ? (goal.currentAmountMinor / goal.targetAmountMinor).clamp(0.0, 1.0)
-        : 0.0;
+  Widget _objectiveRow(BuildContext context, ColorScheme cs, Objective objective) {
+    final color = objective.color != null ? Color(objective.color!) : cs.primary;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => context.push('/goals/${goal.id}'),
+          onTap: () => context.push('/objectives/${objective.id}'),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
                 Icon(
-                  _goalIconData(goal.icon),
+                  objective.type == 'loan' ? Icons.swap_horiz : Icons.flag,
                   color: color, size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -354,23 +333,18 @@ class DashboardScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(goal.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(objective.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: pct,
-                          backgroundColor: color.withValues(alpha: 0.12),
-                          color: color,
-                          minHeight: 5,
-                        ),
+                      Text(
+                        objective.type == 'loan' ? 'Loan' : 'Goal',
+                        style: TextStyle(fontSize: 11,
+                            color: objective.type == 'loan'
+                                ? cs.error : cs.primary),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text('${(pct * 100).toStringAsFixed(0)}%',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
               ],
             ),
           ),

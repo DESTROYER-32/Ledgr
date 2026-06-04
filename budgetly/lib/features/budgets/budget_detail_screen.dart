@@ -109,7 +109,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     await repo.setLimit(
       widget.budgetId,
       cat['categoryId'] as int,
-      cat['amount'] as int,
+      amount: cat['amount'] as int,
     );
     _load();
   }
@@ -180,7 +180,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 if (ok == true && mounted) {
                   final repo =
                       ref.read(budgetRepositoryProvider);
-                  await repo.deleteWithLimits(budget.id);
+                  await repo.delete(budget.id);
                   nav.pop();
                 }
               }

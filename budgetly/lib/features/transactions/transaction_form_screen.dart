@@ -32,9 +32,11 @@ class _TransactionFormScreenState
   final _noteController = TextEditingController();
   final _tagsController = TextEditingController();
   String _type = 'expense';
+  String _specialType = 'none';
   int? _walletId;
   int? _transferWalletId;
   int? _categoryId;
+  int? _objectiveId;
   DateTime _date = DateTime.now();
   bool _isLoading = false;
   bool _isEditing = false;
@@ -56,12 +58,15 @@ class _TransactionFormScreenState
     if (t != null && mounted) {
       setState(() {
         _type = t.type;
+        _specialType = t.specialType;
         _walletId = t.walletId;
         _transferWalletId = t.transferWalletId;
         _categoryId = t.categoryId;
+        _objectiveId = t.objectiveFk;
         _date = t.date;
         _titleController.text = t.title ?? '';
         _noteController.text = t.note ?? '';
+        _tagsController.text = t.tags ?? '';
         _amountController.text =
             (t.amountMinor / 100).toStringAsFixed(2);
       });
@@ -81,6 +86,15 @@ class _TransactionFormScreenState
     context.pushReplacement('/transactions/new', extra: extra);
   }
 
+  Future<void> _autoCategorize(String title) async {
+    if (title.isEmpty) return;
+    final repo = ref.read(associatedTitleRepositoryProvider);
+    final catId = await repo.findCategoryIdForTitle(title);
+    if (catId != null && mounted) {
+      setState(() => _categoryId = catId);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_walletId == null) return;
@@ -93,6 +107,7 @@ class _TransactionFormScreenState
 
     final companion = TransactionsCompanion(
       type: Value(_type),
+      specialType: Value(_specialType),
       amountMinor: Value(amount.round()),
       currencyCode: Value(currencyCode),
       date: Value(_date),
@@ -108,6 +123,9 @@ class _TransactionFormScreenState
       tags: Value(_tagsController.text.isEmpty
           ? null
           : _tagsController.text),
+      objectiveFk: _objectiveId != null
+          ? Value(_objectiveId!)
+          : const Value(null),
     );
 
     if (_isEditing) {
@@ -115,6 +133,7 @@ class _TransactionFormScreenState
     } else {
       await repo.insert(TransactionsCompanion.insert(
         type: _type,
+        specialType: Value(_specialType),
         amountMinor: amount.round(),
         currencyCode: currencyCode,
         date: _date,
@@ -130,6 +149,9 @@ class _TransactionFormScreenState
         tags: Value(_tagsController.text.isEmpty
             ? null
             : _tagsController.text),
+        objectiveFk: _objectiveId != null
+            ? Value(_objectiveId!)
+            : const Value(null),
       ));
     }
 
@@ -140,6 +162,7 @@ class _TransactionFormScreenState
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
+    final objectivesAsync = ref.watch(allObjectivesProvider);
     final wallets = walletsAsync.valueOrNull ?? [];
     final selectedWallet = wallets.where((w) => w.id == _walletId).firstOrNull;
     final displayCurrency = selectedWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
@@ -189,6 +212,22 @@ class _TransactionFormScreenState
                 if (_type == 'transfer') _categoryId = null;
               }),
             ),
+            const SizedBox(height: 12),
+            Text('Type', style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 4),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _specialChip('none', 'Standard'),
+                  _specialChip('upcoming', 'Upcoming'),
+                  _specialChip('subscription', 'Subscription'),
+                  _specialChip('repetitive', 'Repetitive'),
+                  if (_type == 'expense') _specialChip('debt', 'Debt'),
+                  if (_type == 'income') _specialChip('credit', 'Credit'),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
             AmountField(controller: _amountController, currencySymbol: displayCurrency),
             const SizedBox(height: 16),
@@ -198,6 +237,7 @@ class _TransactionFormScreenState
                 labelText: 'Title / Payee',
                 hintText: 'Optional',
               ),
+              onChanged: _autoCategorize,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -286,6 +326,27 @@ class _TransactionFormScreenState
                 error: (e, _) => Text('$e'),
                 loading: () => const LinearProgressIndicator(),
               ),
+            const SizedBox(height: 16),
+            objectivesAsync.when(
+              data: (objectives) => DropdownButtonFormField<int?>(
+                isExpanded: true,
+                initialValue: _objectiveId,
+                decoration: const InputDecoration(
+                    labelText: 'Link to Goal/Loan (optional)'),
+                items: [
+                  const DropdownMenuItem(
+                      value: null, child: Text('None')),
+                  ...objectives.map((o) => DropdownMenuItem(
+                      value: o.id,
+                      child: Text(
+                          '${o.name} (${o.type == 'loan' ? 'Loan' : 'Goal'})'))),
+                ],
+                onChanged: (v) =>
+                    setState(() => _objectiveId = v),
+              ),
+              error: (e, _) => Text('$e'),
+              loading: () => const LinearProgressIndicator(),
+            ),
             const SizedBox(height: 32),
             FilledButton(
               onPressed: _isLoading ? null : _save,
@@ -293,6 +354,19 @@ class _TransactionFormScreenState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _specialChip(String value, String label) {
+    final selected = _specialType == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: FilterChip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        selected: selected,
+        onSelected: (_) => setState(() => _specialType = value),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }

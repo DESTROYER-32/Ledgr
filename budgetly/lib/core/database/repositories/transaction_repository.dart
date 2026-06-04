@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../app_database.dart';
@@ -14,6 +16,22 @@ class TransactionRepository {
               (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)
             ])
             ..limit(limit))
+          .watch();
+
+  Stream<List<Transaction>> watchBySpecialType(String specialType) =>
+      (_db.transactions.select()
+            ..where((t) => t.specialType.equals(specialType))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)
+            ]))
+          .watch();
+
+  Stream<List<Transaction>> watchUpcoming() =>
+      (_db.transactions.select()
+            ..where((t) => t.specialType.equals('upcoming'))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc)
+            ]))
           .watch();
 
   Stream<List<Transaction>> watchByWallet(int walletId) =>
@@ -36,8 +54,28 @@ class TransactionRepository {
   Future<void> update(int id, TransactionsCompanion entry) =>
       (_db.transactions.update()..where((t) => t.id.equals(id))).write(entry);
 
-  Future<void> delete(int id) =>
-      (_db.transactions.delete()..where((t) => t.id.equals(id))).go();
+  Future<void> delete(int id) async {
+    final t = await getById(id);
+    if (t != null) {
+      await _db.into(_db.deleteLogs).insert(DeleteLogsCompanion.insert(
+            type: 'transaction',
+            jsonData: jsonEncode({
+              'type': t.type,
+              'specialType': t.specialType,
+              'amountMinor': t.amountMinor,
+              'currencyCode': t.currencyCode,
+              'date': t.date.toIso8601String(),
+              'walletId': t.walletId,
+              'transferWalletId': t.transferWalletId,
+              'categoryId': t.categoryId,
+              'title': t.title,
+              'note': t.note,
+              'tags': t.tags,
+            }),
+          ));
+    }
+    await (_db.transactions.delete()..where((t) => t.id.equals(id))).go();
+  }
 
   Future<List<Transaction>> search({
     DateTime? startDate,
@@ -45,6 +83,7 @@ class TransactionRepository {
     int? walletId,
     int? categoryId,
     String? type,
+    String? specialType,
     String? query,
     int? minAmount,
     int? maxAmount,
@@ -58,6 +97,7 @@ class TransactionRepository {
     }
     if (categoryId != null) q.where((t) => t.categoryId.equals(categoryId));
     if (type != null) q.where((t) => t.type.equals(type));
+    if (specialType != null) q.where((t) => t.specialType.equals(specialType));
     if (query != null && query.isNotEmpty) {
       q.where((t) => t.title.like('%$query%') | t.note.like('%$query%'));
     }
@@ -77,6 +117,7 @@ class TransactionRepository {
     final rows = await (_db.transactions.select()
           ..where((t) =>
               t.type.equals('expense') &
+              t.specialType.equals('none') &
               t.date.isBiggerOrEqualValue(start) &
               t.date.isSmallerOrEqualValue(end))
           ..orderBy([]))
@@ -125,9 +166,18 @@ class TransactionRepository {
     final rows = await (_db.transactions.select()
           ..where((t) =>
               t.type.equals('expense') &
+              t.specialType.equals('none') &
               t.date.isBiggerOrEqualValue(start) &
               t.date.isSmallerOrEqualValue(end)))
         .get();
     return rows.fold<int>(0, (sum, t) => sum + t.amountMinor);
   }
+
+  Future<List<Transaction>> getByObjective(int objectiveId) =>
+      (_db.transactions.select()
+            ..where((t) => t.objectiveFk.equals(objectiveId))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)
+            ]))
+          .get();
 }

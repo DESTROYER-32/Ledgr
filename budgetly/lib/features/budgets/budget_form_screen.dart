@@ -107,7 +107,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     final existingCats = existing.map((l) => l.categoryId).toSet();
     for (final catId in _selectedCategoryIds) {
       if (!existingCats.contains(catId)) {
-        await repo.setLimit(budgetId, catId, 0);
+        await repo.setLimit(budgetId, catId, amount: 0);
       }
     }
     for (final l in existing) {

@@ -259,6 +259,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
           const SizedBox(height: 8),
+          _section(theme, 'Smart Features', [
+            ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('Smart Labels'),
+              subtitle: const Text(
+                  'Auto-categorize transactions by keyword'),
+              onTap: () => context.push('/smart-labels'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.document_scanner),
+              title: const Text('Scanner Templates'),
+              subtitle: const Text(
+                  'Parse transaction emails automatically'),
+              onTap: () => context.push('/scanner-templates'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.call_split),
+              title: const Text('Bill Splitter'),
+              subtitle: const Text('Split expenses with others'),
+              onTap: () => context.push('/bill-splitter'),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Tracking', [
+            ListTile(
+              leading: const Icon(Icons.subscriptions),
+              title: const Text('Subscriptions'),
+              subtitle: const Text('View subscription transactions'),
+              onTap: () => context.push('/subscriptions'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: const Text('Credit & Debt'),
+              subtitle: const Text('Track lent and borrowed money'),
+              onTap: () => context.push('/credit-debt'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Activity Log'),
+              subtitle: const Text('Recently deleted transactions'),
+              onTap: () => context.push('/activity'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag),
+              title: const Text('Goals & Loans'),
+              subtitle: const Text(
+                  'Savings goals and debt tracking'),
+              onTap: () => context.push('/objectives'),
+            ),
+          ]),
+          const SizedBox(height: 8),
           _section(theme, 'Management', [
             ListTile(
               leading: const Icon(Icons.account_balance),
