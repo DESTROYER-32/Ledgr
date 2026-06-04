@@ -14,6 +14,16 @@ class ExchangeRateRepository {
                 r.fromCurrency.equals(from) & r.toCurrency.equals(to)))
           .getSingleOrNull();
 
+  Future<double?> getConversionRate(String from, String to) async {
+    if (from == to) return 1.0;
+    final direct = await getRate(from, to);
+    if (direct != null) return direct.rate;
+
+    final inverse = await getRate(to, from);
+    if (inverse == null || inverse.rate == 0) return null;
+    return 1 / inverse.rate;
+  }
+
   Future<void> setRate(String from, String to, double rate) async {
     final existing = await getRate(from, to);
     if (existing != null) {

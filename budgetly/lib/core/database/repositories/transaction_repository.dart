@@ -14,7 +14,14 @@ class TransactionRepository {
           ..where((r) =>
               r.fromCurrency.equals(from) & r.toCurrency.equals(to)))
         .getSingleOrNull();
-    return rate?.rate;
+    if (rate != null) return rate.rate;
+
+    final inverse = await (_db.exchangeRates.select()
+          ..where((r) =>
+              r.fromCurrency.equals(to) & r.toCurrency.equals(from)))
+        .getSingleOrNull();
+    if (inverse == null || inverse.rate == 0) return null;
+    return 1 / inverse.rate;
   }
 
   int _convert(int amountMinor, double rate) =>

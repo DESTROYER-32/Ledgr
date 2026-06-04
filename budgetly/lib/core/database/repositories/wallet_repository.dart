@@ -12,7 +12,14 @@ class WalletRepository {
           ..where((r) =>
               r.fromCurrency.equals(from) & r.toCurrency.equals(to)))
         .getSingleOrNull();
-    return rate?.rate;
+    if (rate != null) return rate.rate;
+
+    final inverse = await (_db.exchangeRates.select()
+          ..where((r) =>
+              r.fromCurrency.equals(to) & r.toCurrency.equals(from)))
+        .getSingleOrNull();
+    if (inverse == null || inverse.rate == 0) return null;
+    return 1 / inverse.rate;
   }
 
   int _convert(int amountMinor, double rate) =>
@@ -45,12 +52,17 @@ class WalletRepository {
   Future<void> delete(int id) =>
       (_db.wallets.delete()..where((w) => w.id.equals(id))).go();
 
-  Future<int> totalBalance() async {
+  Future<int> totalBalance({String? targetCurrency}) async {
     final wallets = await _db.wallets.select().get();
     var total = 0;
     for (final w in wallets) {
       if (w.archived) continue;
-      total += await balanceForWallet(w.id);
+      var balance = await balanceForWallet(w.id);
+      if (targetCurrency != null && w.currencyCode != targetCurrency) {
+        final rate = await _getRate(w.currencyCode, targetCurrency);
+        if (rate != null) balance = _convert(balance, rate);
+      }
+      total += balance;
     }
     return total;
   }

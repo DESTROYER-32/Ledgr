@@ -19,6 +19,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _appLock = false;
   bool _notifications = false;
   String _currency = 'USD';
+  int? _defaultWalletId;
   bool _canAuth = false;
   bool _isLoading = true;
   String _themeMode = 'system';
@@ -51,6 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appLock = await repo.get('app_lock');
     final notifications = await repo.get('notifications');
     final currency = await repo.get('currency');
+    final defaultWalletId = await repo.get('default_wallet_id');
     final themeMode = await repo.get('theme_mode');
     final themeSeed = await repo.get('theme_seed');
     final canAuth = await AuthService.canAuthenticate();
@@ -59,6 +61,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _appLock = appLock == 'true';
         _notifications = notifications == 'true';
         _currency = currency ?? 'USD';
+        _defaultWalletId = defaultWalletId == null
+            ? null
+            : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
         _themeSeed = themeSeed != null ? int.parse(themeSeed) : 0xFF1A6D4A;
         _canAuth = canAuth;
@@ -96,6 +101,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _setDefaultWallet(int? walletId) async {
+    setState(() => _defaultWalletId = walletId);
+    final repo = ref.read(settingsRepositoryProvider);
+    if (walletId == null) {
+      await repo.remove('default_wallet_id');
+    } else {
+      await repo.set('default_wallet_id', walletId.toString());
+    }
+    ref.invalidate(defaultWalletIdProvider);
+  }
+
   Future<void> _setCurrency(String currency) async {
     setState(() => _currency = currency);
     MoneyUtils.setDefaultCurrencyCode(currency);
@@ -121,6 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final walletsAsync = ref.watch(activeWalletsProvider);
 
     if (_isLoading) {
       return Scaffold(
@@ -166,6 +183,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   'Alerts for recurring transactions'),
               value: _notifications,
               onChanged: _toggleNotifications,
+            ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Account Defaults', [
+            walletsAsync.when(
+              data: (wallets) {
+                final hasSelected = wallets.any((w) => w.id == _defaultWalletId);
+                final selectedId = hasSelected ? _defaultWalletId : null;
+                return ListTile(
+                  leading: Icon(Icons.account_balance_wallet_outlined,
+                      color: theme.colorScheme.primary),
+                  title: const Text('Default Account'),
+                  subtitle: const Text('Used for quick transaction add'),
+                  trailing: SizedBox(
+                    width: 160,
+                    child: DropdownButton<int?>(
+                      value: selectedId,
+                      isExpanded: true,
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('None'),
+                        ),
+                        ...wallets.map((w) => DropdownMenuItem<int?>(
+                              value: w.id,
+                              child: Text(
+                                w.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )),
+                      ],
+                      onChanged: _setDefaultWallet,
+                      underline: const SizedBox(),
+                    ),
+                  ),
+                );
+              },
+              error: (_, _) => const ListTile(
+                leading: Icon(Icons.error_outline),
+                title: Text('Default Account'),
+                subtitle: Text('Unable to load accounts'),
+              ),
+              loading: () => const ListTile(
+                title: Text('Default Account'),
+                trailing: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
             ),
           ]),
           const SizedBox(height: 8),
