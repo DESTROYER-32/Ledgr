@@ -120,6 +120,12 @@ final currencyCodeProvider = FutureProvider<String>((ref) async {
   return currency ?? 'USD';
 });
 
+final defaultWalletIdProvider = FutureProvider<int?>((ref) async {
+  final repo = ref.watch(settingsRepositoryProvider);
+  final walletId = await repo.get('default_wallet_id');
+  return walletId == null ? null : int.tryParse(walletId);
+});
+
 final formatMoneyProvider = Provider<String Function(int)>((ref) {
   final code = ref.watch(currencyCodeProvider).valueOrNull ?? 'USD';
   return (int amountMinor) => MoneyUtils.format(amountMinor, currencyCode: code);
@@ -158,8 +164,9 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
 final totalBalanceProvider = FutureProvider<int>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allTransactionsProvider);
+  final currency = await ref.watch(currencyCodeProvider.future);
   final repo = ref.watch(walletRepositoryProvider);
-  return repo.totalBalance();
+  return repo.totalBalance(targetCurrency: currency);
 });
 
 final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
@@ -185,9 +192,10 @@ final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>(
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
+  final currency = await ref.watch(currencyCodeProvider.future);
   return ref
       .watch(transactionRepositoryProvider)
-      .spentByCategory(start, end);
+      .spentByCategory(start, end, targetCurrency: currency);
 });
 
 final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) async {
@@ -195,7 +203,10 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((ref, key) asyn
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
-  return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
+  final currency = await ref.watch(currencyCodeProvider.future);
+  return ref
+      .watch(transactionRepositoryProvider)
+      .totalIncome(start, end, targetCurrency: currency);
 });
 
 final allObjectivesProvider =
@@ -209,7 +220,10 @@ final monthlyExpensesProvider = FutureProvider.family<int, String>((ref, key) as
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
-  return ref.watch(transactionRepositoryProvider).totalExpenses(start, end);
+  final currency = await ref.watch(currencyCodeProvider.future);
+  return ref
+      .watch(transactionRepositoryProvider)
+      .totalExpenses(start, end, targetCurrency: currency);
 });
 
 final deleteLogsProvider =

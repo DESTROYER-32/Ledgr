@@ -52,7 +52,21 @@ class _TransactionFormScreenState
       _type = widget.preselectedType!;
     }
     _isEditing = widget.transactionId != null;
-    if (_isEditing) _loadTransaction();
+    if (_isEditing) {
+      _loadTransaction();
+    } else if (_walletId == null) {
+      _loadDefaultWallet();
+    }
+  }
+
+  Future<void> _loadDefaultWallet() async {
+    final defaultWalletId = await ref.read(defaultWalletIdProvider.future);
+    if (defaultWalletId != null && mounted && _walletId == null) {
+      final wallet = await ref.read(walletRepositoryProvider).getById(defaultWalletId);
+      if (wallet != null && !wallet.archived && mounted) {
+        setState(() => _walletId = defaultWalletId);
+      }
+    }
   }
 
   Future<void> _loadTransaction() async {
@@ -102,9 +116,9 @@ class _TransactionFormScreenState
       String fromCurrency, String toCurrency, double amount) async {
     if (amount <= 0 || fromCurrency == toCurrency) return;
     final repo = ref.read(exchangeRateRepositoryProvider);
-    final exchangeRate = await repo.getRate(fromCurrency, toCurrency);
-    if (exchangeRate != null && mounted) {
-      final converted = amount * exchangeRate.rate;
+    final rate = await repo.getConversionRate(fromCurrency, toCurrency);
+    if (rate != null && mounted) {
+      final converted = amount * rate;
       _amountController.text = converted.toStringAsFixed(2);
     } else if (mounted) {
       await showDialog<String>(

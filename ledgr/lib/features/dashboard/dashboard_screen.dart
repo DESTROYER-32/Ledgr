@@ -189,7 +189,7 @@ class DashboardScreen extends ConsumerWidget {
     final balances = balancesAsync.valueOrNull ?? {};
     return walletsAsync.when(
       data: (wallets) {
-        if (wallets.length < 2) return const SizedBox.shrink();
+        if (wallets.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -210,20 +210,20 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
+              height: 148,
+              child: PageView.builder(
+                clipBehavior: Clip.none,
                 itemCount: wallets.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: 10),
                 itemBuilder: (_, i) {
                   final w = wallets[i];
                   final balance = balances[w.id] ?? w.initialBalanceMinor;
                   final icon = w.type == 'cash'
                       ? Icons.money
-                      : w.type == 'credit'
+                      : w.type == 'credit_card'
                           ? Icons.credit_card
-                          : Icons.account_balance;
+                          : w.type == 'savings'
+                              ? Icons.savings
+                              : Icons.account_balance;
                   return _miniWalletCard(context, cs, w, icon, balance);
                 },
               ),
@@ -238,24 +238,29 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _miniWalletCard(BuildContext context, ColorScheme cs, Wallet w,
       IconData icon, int balance) {
-    return GestureDetector(
-      onTap: () => context.push('/wallets/${w.id}'),
-      child: Card(
-        child: Container(
-          width: 140,
-          padding: const EdgeInsets.all(14),
+    final color = w.color != null ? Color(w.color!) : cs.primary;
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/wallets/${w.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 16, color: cs.primary),
-                  const SizedBox(width: 6),
+                  Icon(icon, size: 22, color: color),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(w.name,
-                        style: const TextStyle(fontSize: 12),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700),
                         overflow: TextOverflow.ellipsis),
                   ),
+                  Text(w.currencyCode,
+                      style: TextStyle(
+                          fontSize: 12, color: cs.onSurfaceVariant)),
                 ],
               ),
               const Spacer(),
@@ -263,12 +268,13 @@ class DashboardScreen extends ConsumerWidget {
                 MoneyUtils.format(balance, currencyCode: w.currencyCode),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 24,
                   color: cs.onSurface,
                 ),
               ),
-              Text(w.currencyCode,
-                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+              const SizedBox(height: 4),
+              Text(w.type.replaceAll('_', ' '),
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             ],
           ),
         ),
@@ -280,7 +286,7 @@ class DashboardScreen extends ConsumerWidget {
       ColorScheme cs, AsyncValue<List<Objective>> objectivesAsync) {
     return objectivesAsync.when(
       data: (objectives) {
-        final active = objectives.where((o) => !o.archived).take(3).toList();
+        final active = objectives.where((o) => !o.archived).toList();
         if (active.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +309,14 @@ class DashboardScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            ...active.map((o) => _objectiveRow(context, cs, o)),
+            SizedBox(
+              height: 138,
+              child: PageView.builder(
+                clipBehavior: Clip.none,
+                itemCount: active.length,
+                itemBuilder: (_, i) => _objectiveCard(context, cs, active[i]),
+              ),
+            ),
           ],
         );
       },
@@ -312,42 +325,65 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _objectiveRow(BuildContext context, ColorScheme cs, Objective objective) {
+  Widget _objectiveCard(BuildContext context, ColorScheme cs, Objective objective) {
     final color = objective.color != null ? Color(objective.color!) : cs.primary;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Card(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => context.push('/objectives/${objective.id}'),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Icon(
-                  objective.type == 'loan' ? Icons.swap_horiz : Icons.flag,
-                  color: color, size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(objective.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      Text(
-                        objective.type == 'loan' ? 'Loan' : 'Goal',
-                        style: TextStyle(fontSize: 11,
-                            color: objective.type == 'loan'
-                                ? cs.error : cs.primary),
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/objectives/${objective.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Consumer(builder: (context, ref, _) {
+            final txRepo = ref.watch(transactionRepositoryProvider);
+            return FutureBuilder<List<Transaction>>(
+              future: txRepo.getByObjective(objective.id),
+              builder: (context, snap) {
+                final total = (snap.data ?? const <Transaction>[])
+                    .fold<int>(0, (sum, t) => sum + t.amountMinor);
+                final progress = objective.amountMinor > 0
+                    ? (total / objective.amountMinor).clamp(0.0, 1.0)
+                    : 0.0;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          objective.type == 'loan' ? Icons.swap_horiz : Icons.flag,
+                          color: color,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(objective.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700, fontSize: 15),
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        Text(objective.type == 'loan' ? 'Loan' : 'Goal',
+                            style: TextStyle(fontSize: 12, color: color)),
+                      ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${MoneyUtils.format(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.format(objective.amountMinor, currencyCode: objective.currencyCode)}',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 6,
+                        backgroundColor: cs.surfaceContainerHighest,
+                        color: color,
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-            ),
-          ),
+                    ),
+                  ],
+                );
+              },
+            );
+          }),
         ),
       ),
     );
@@ -383,18 +419,15 @@ class DashboardScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
+          height: 138,
+          child: PageView.builder(
+            clipBehavior: Clip.none,
             itemCount: pinnedBudgets.length + 1,
-            separatorBuilder: (_, _) =>
-                const SizedBox(width: 10),
             itemBuilder: (_, i) {
               if (i == pinnedBudgets.length) {
                 return _addBudgetCard(context, cs);
               }
-              final b = pinnedBudgets[i];
-              return _budgetCardPreview(context, cs, b);
+              return _budgetCardPreview(context, cs, pinnedBudgets[i]);
             },
           ),
         ),
@@ -412,8 +445,8 @@ class DashboardScreen extends ConsumerWidget {
       onTap: () => context.push('/budgets/${budget.id}'),
       child: Card(
         child: Container(
-          width: 160,
-          padding: const EdgeInsets.all(14),
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
@@ -434,55 +467,48 @@ class DashboardScreen extends ConsumerWidget {
                       isGoal
                           ? Icons.savings
                           : Icons.track_changes,
-                      size: 14, color: color),
-                  const SizedBox(width: 6),
+                      size: 20, color: color),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(budget.name,
                         style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
                             color: color),
                         overflow: TextOverflow.ellipsis),
                   ),
+                  Text(isGoal ? 'Goal' : 'Budget',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                isGoal ? 'Goal' : 'Budget',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-              if (isGoal && budget.plannedAmountMinor > 0) ...[
-                const Spacer(),
+              const Spacer(),
+              if (isGoal && budget.plannedAmountMinor > 0)
                 Consumer(builder: (context, ref, _) {
-                  final txRepo =
-                      ref.watch(transactionRepositoryProvider);
+                  final txRepo = ref.watch(transactionRepositoryProvider);
                   return FutureBuilder<int>(
-                    future: txRepo.totalIncome(
-                        budget.periodStart, budget.periodEnd),
+                    future: txRepo.totalIncome(budget.periodStart,
+                        budget.periodEnd,
+                        targetCurrency: budget.currencyCode),
                     builder: (context, snap) {
                       final saved = snap.data ?? 0;
                       final pct = (saved / budget.plannedAmountMinor)
                           .clamp(0.0, 1.0);
                       return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${MoneyUtils.format(saved)} / ${MoneyUtils.format(budget.plannedAmountMinor)}',
+                            '${MoneyUtils.format(saved, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
                             style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 12,
                                 color: cs.onSurfaceVariant),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 8),
                           ClipRRect(
-                            borderRadius:
-                                BorderRadius.circular(3),
+                            borderRadius: BorderRadius.circular(4),
                             child: LinearProgressIndicator(
                               value: pct,
-                              minHeight: 4,
-                              backgroundColor:
-                                  cs.surfaceContainerHighest,
+                              minHeight: 6,
+                              backgroundColor: cs.surfaceContainerHighest,
                               color: AppColors.income,
                             ),
                           ),
@@ -490,15 +516,13 @@ class DashboardScreen extends ConsumerWidget {
                       );
                     },
                   );
-                }),
-              ] else ...[
-                const Spacer(),
+                })
+              else
                 Text(
                   '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
                   style: TextStyle(
-                      fontSize: 10, color: cs.onSurfaceVariant),
+                      fontSize: 12, color: cs.onSurfaceVariant),
                 ),
-              ],
             ],
           ),
         ),
@@ -511,17 +535,17 @@ class DashboardScreen extends ConsumerWidget {
       onTap: () => context.push('/budgets/new'),
       child: Card(
         child: Container(
-          width: 100,
-          padding: const EdgeInsets.all(14),
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.add_circle_outline,
-                  size: 24, color: cs.onSurfaceVariant),
-              const SizedBox(height: 6),
+                  size: 28, color: cs.onSurfaceVariant),
+              const SizedBox(height: 8),
               Text('Add Budget',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: cs.onSurfaceVariant,
                   )),
             ],
