@@ -10,6 +10,12 @@ class GoalDetailScreen extends ConsumerWidget {
   final int goalId;
   const GoalDetailScreen({super.key, required this.goalId});
 
+  static IconData _goalIconData(int? icon) {
+    // ignore: non_const_argument_for_const_parameter
+    if (icon != null) return IconData(icon);
+    return Icons.savings;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goalsAsync = ref.watch(allGoalsProvider);
@@ -79,7 +85,7 @@ class GoalDetailScreen extends ConsumerWidget {
                       Row(
                         children: [
                           Icon(
-                            goal.icon != null ? IconData(goal.icon!) : Icons.savings,
+                            _goalIconData(goal.icon),
                             color: color,
                           ),
                           const SizedBox(width: 8),

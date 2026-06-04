@@ -9,6 +9,12 @@ import '../../core/widgets/empty_state.dart';
 class GoalsScreen extends ConsumerWidget {
   const GoalsScreen({super.key});
 
+  static IconData _goalIconData(int? icon) {
+    // ignore: non_const_argument_for_const_parameter
+    if (icon != null) return IconData(icon);
+    return Icons.savings;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goalsAsync = ref.watch(allGoalsProvider);
@@ -40,7 +46,7 @@ class GoalsScreen extends ConsumerWidget {
                   leading: CircleAvatar(
                     backgroundColor: color.withValues(alpha: 0.14),
                     child: Icon(
-                      goal.icon != null ? IconData(goal.icon!) : Icons.savings,
+                      _goalIconData(goal.icon),
                       color: color,
                     ),
                   ),
