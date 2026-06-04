@@ -312,6 +312,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  static IconData _goalIconData(int? icon) {
+    // ignore: non_const_argument_for_const_parameter
+    if (icon != null) return IconData(icon);
+    return Icons.flag;
+  }
+
   Widget _goalRow(BuildContext context, ColorScheme cs, Goal goal) {
     final color = goal.color != null ? Color(goal.color!) : cs.primary;
     final pct = goal.targetAmountMinor > 0
@@ -328,7 +334,7 @@ class DashboardScreen extends ConsumerWidget {
             child: Row(
               children: [
                 Icon(
-                  goal.icon != null ? IconData(goal.icon!) : Icons.flag,
+                  _goalIconData(goal.icon),
                   color: color, size: 20,
                 ),
                 const SizedBox(width: 12),
