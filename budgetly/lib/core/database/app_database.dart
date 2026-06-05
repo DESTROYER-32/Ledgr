@@ -9,22 +9,26 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [
-  Wallets,
-  Categories,
-  Transactions,
-  Budgets,
-  BudgetCategoryLimits,
-  BudgetWallets,
-  RecurringTransactions,
-  Settings,
-  Objectives,
-  AssociatedTitles,
-  DeleteLogs,
-  ExchangeRates,
-])
+@DriftDatabase(
+  tables: [
+    Wallets,
+    Categories,
+    Transactions,
+    Budgets,
+    BudgetCategoryLimits,
+    BudgetWallets,
+    RecurringTransactions,
+    Settings,
+    Objectives,
+    AssociatedTitles,
+    DeleteLogs,
+    ExchangeRates,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+
+  AppDatabase.forTesting(super.e);
 
   @override
   int get schemaVersion => 9;
@@ -51,7 +55,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 6) {
           try {
-            await customStatement('CREATE TABLE IF NOT EXISTS goals (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, target_amount_minor INTEGER NOT NULL, current_amount_minor INTEGER DEFAULT 0, currency_code TEXT NOT NULL, deadline TEXT, icon INTEGER, color INTEGER, archived INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime(\'now\')), updated_at TEXT NOT NULL DEFAULT (datetime(\'now\')))');
+            await customStatement(
+              'CREATE TABLE IF NOT EXISTS goals (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, target_amount_minor INTEGER NOT NULL, current_amount_minor INTEGER DEFAULT 0, currency_code TEXT NOT NULL, deadline TEXT, icon INTEGER, color INTEGER, archived INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime(\'now\')), updated_at TEXT NOT NULL DEFAULT (datetime(\'now\')))',
+            );
           } catch (_) {}
           try {
             await m.createTable(exchangeRates);
@@ -71,14 +77,30 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _createIndexes() async {
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id)');
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id)');
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)');
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_special_type ON transactions(special_type)');
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_budget_limits_budget_id ON budget_category_limits(budget_id)');
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_budget_limits_category_id ON budget_category_limits(category_id)');
-    await customStatement('CREATE INDEX IF NOT EXISTS idx_recurring_wallet_id ON recurring_transactions(wallet_id)');
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_special_type ON transactions(special_type)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_budget_limits_budget_id ON budget_category_limits(budget_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_budget_limits_category_id ON budget_category_limits(category_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_recurring_wallet_id ON recurring_transactions(wallet_id)',
+    );
   }
 
   Future<void> _upgradeToV7(Migrator m) async {
@@ -116,20 +138,24 @@ class AppDatabase extends _$AppDatabase {
       if (rows.isNotEmpty) {
         for (final row in rows) {
           final data = row.data;
-          await into(objectives).insert(ObjectivesCompanion.insert(
-            name: data['name'] as String? ?? 'Goal',
-            type: 'goal',
-            amountMinor: data['target_amount_minor'] as int? ?? 0,
-            walletId: const Value(null),
-            currencyCode: 'USD',
-            deadline: data['deadline'] != null
-                ? Value(DateTime.parse(data['deadline'] as String))
-                : const Value(null),
-            color: data['color'] != null ? Value(data['color'] as int) : const Value(null),
-            icon: const Value(null),
-            pinned: const Value(false),
-            archived: Value(data['archived'] as bool? ?? false),
-          ));
+          await into(objectives).insert(
+            ObjectivesCompanion.insert(
+              name: data['name'] as String? ?? 'Goal',
+              type: 'goal',
+              amountMinor: data['target_amount_minor'] as int? ?? 0,
+              walletId: const Value(null),
+              currencyCode: 'USD',
+              deadline: data['deadline'] != null
+                  ? Value(DateTime.parse(data['deadline'] as String))
+                  : const Value(null),
+              color: data['color'] != null
+                  ? Value(data['color'] as int)
+                  : const Value(null),
+              icon: const Value(null),
+              pinned: const Value(false),
+              archived: Value(data['archived'] as bool? ?? false),
+            ),
+          );
         }
       }
     } catch (_) {}
