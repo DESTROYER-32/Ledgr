@@ -60,8 +60,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
         _endDate = r.endDate;
         _titleController.text = r.title ?? '';
         _noteController.text = r.note ?? '';
-        _amountController.text =
-            (r.amountMinor / 100).toStringAsFixed(2);
+        _amountController.text = (r.amountMinor / 100).toStringAsFixed(2);
       });
     }
   }
@@ -77,9 +76,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_walletId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an account')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select an account')));
       return;
     }
     setState(() => _isLoading = true);
@@ -93,11 +92,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
       walletId: Value(_walletId!),
       transferWalletId: const Value(null),
       categoryId: Value(_categoryId),
-      title: Value(_titleController.text.isEmpty
-          ? null
-          : _titleController.text),
-      note: Value(
-          _noteController.text.isEmpty ? null : _noteController.text),
+      title: Value(
+        _titleController.text.isEmpty ? null : _titleController.text,
+      ),
+      note: Value(_noteController.text.isEmpty ? null : _noteController.text),
       scheduleRule: Value(_schedule),
       startDate: Value(_startDate),
       endDate: Value(_endDate),
@@ -121,7 +119,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isEditing ? 'Edit Recurring' : 'New Recurring')),
+        title: Text(_isEditing ? 'Edit Recurring' : 'New Recurring'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -130,17 +129,20 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
-                    value: 'expense',
-                    label: Text('Expense'),
-                    icon: Icon(Icons.arrow_upward)),
+                  value: 'expense',
+                  label: Text('Expense'),
+                  icon: Icon(Icons.arrow_upward),
+                ),
                 ButtonSegment(
-                    value: 'income',
-                    label: Text('Income'),
-                    icon: Icon(Icons.arrow_downward)),
+                  value: 'income',
+                  label: Text('Income'),
+                  icon: Icon(Icons.arrow_downward),
+                ),
                 ButtonSegment(
-                    value: 'transfer',
-                    label: Text('Transfer'),
-                    icon: Icon(Icons.swap_horiz)),
+                  value: 'transfer',
+                  label: Text('Transfer'),
+                  icon: Icon(Icons.swap_horiz),
+                ),
               ],
               selected: {_type},
               onSelectionChanged: (v) => setState(() {
@@ -151,14 +153,14 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _amountController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Amount',
-                prefixText: '${MoneyUtils.defaultCurrencyCode} ',
+                prefixText: 'USD ',
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Required' : null,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -180,8 +182,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                 return ChoiceChip(
                   label: Text(s.$2),
                   selected: sel,
-                  onSelected: (_) =>
-                      setState(() => _schedule = s.$1),
+                  onSelected: (_) => setState(() => _schedule = s.$1),
                 );
               }).toList(),
             ),
@@ -190,11 +191,11 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
               data: (wallets) => DropdownButtonFormField<int>(
                 initialValue: _walletId,
                 isExpanded: true,
-                decoration:
-                    const InputDecoration(labelText: 'Account'),
+                decoration: const InputDecoration(labelText: 'Account'),
                 items: wallets
-                    .map((w) => DropdownMenuItem(
-                        value: w.id, child: Text(w.name)))
+                    .map(
+                      (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _walletId = v),
                 validator: (v) => v == null ? 'Required' : null,
@@ -208,16 +209,14 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                 data: (cats) => DropdownButtonFormField<int>(
                   initialValue: _categoryId,
                   isExpanded: true,
-                  decoration:
-                      const InputDecoration(labelText: 'Category'),
+                  decoration: const InputDecoration(labelText: 'Category'),
                   items: [
-                    const DropdownMenuItem(
-                        value: null, child: Text('None')),
-                    ...cats.map((c) => DropdownMenuItem(
-                        value: c.id, child: Text(c.name))),
+                    const DropdownMenuItem(value: null, child: Text('None')),
+                    ...cats.map(
+                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                    ),
                   ],
-                  onChanged: (v) =>
-                      setState(() => _categoryId = v),
+                  onChanged: (v) => setState(() => _categoryId = v),
                 ),
                 error: (e, _) => Text('$e'),
                 loading: () => const LinearProgressIndicator(),
