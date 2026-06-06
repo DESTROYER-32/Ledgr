@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers/providers.dart';
-import '../../core/services/auth_service.dart';
 import '../../core/services/notification_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -14,10 +13,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _appLock = false;
   bool _notifications = false;
   int? _defaultWalletId;
-  bool _canAuth = false;
   bool _isLoading = true;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
@@ -42,44 +39,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final repo = ref.read(settingsRepositoryProvider);
-    final appLock = await repo.get('app_lock');
     final notifications = await repo.get('notifications');
     final defaultWalletId = await repo.get('default_wallet_id');
     final themeMode = await repo.get('theme_mode');
     final themeSeed = await repo.get('theme_seed');
-    final canAuth = await AuthService.canAuthenticate();
     if (mounted) {
       setState(() {
-        _appLock = appLock == 'true';
         _notifications = notifications == 'true';
         _defaultWalletId = defaultWalletId == null
             ? null
             : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
         _themeSeed = themeSeed != null ? int.parse(themeSeed) : 0xFF1A6D4A;
-        _canAuth = canAuth;
         _isLoading = false;
       });
     }
-  }
-
-  Future<void> _toggleAppLock(bool value) async {
-    if (value && !_canAuth) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Biometric authentication not available on this device',
-            ),
-          ),
-        );
-      }
-      return;
-    }
-    setState(() => _appLock = value);
-    await ref
-        .read(settingsRepositoryProvider)
-        .set('app_lock', value.toString());
   }
 
   Future<void> _toggleNotifications(bool value) async {
@@ -134,23 +108,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _section(theme, 'Security', [
-            SwitchListTile(
-              secondary: Icon(
-                Icons.lock_outline,
-                color: _appLock ? theme.colorScheme.primary : null,
-              ),
-              title: const Text('App Lock'),
-              subtitle: Text(
-                _canAuth
-                    ? 'Require biometric to open'
-                    : 'Not available on this device',
-              ),
-              value: _appLock,
-              onChanged: _canAuth ? _toggleAppLock : null,
-            ),
-          ]),
-          const SizedBox(height: 8),
           _section(theme, 'Notifications', [
             SwitchListTile(
               secondary: Icon(

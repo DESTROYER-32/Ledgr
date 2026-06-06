@@ -37,9 +37,6 @@ dependencies:
   # Notifications
   flutter_local_notifications: ^18.0.1
 
-  # Auth
-  local_auth: ^2.3.0
-
   # CSV
   csv: ^6.0.0
 
