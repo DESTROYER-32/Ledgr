@@ -15,7 +15,6 @@ class ExchangeRatesScreen extends ConsumerStatefulWidget {
 class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
   String _search = '';
   List<String> _customCurrencies = [];
-
   @override
   void initState() {
     super.initState();
@@ -112,6 +111,13 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
       appBar: AppBar(
         title: const Text('Exchange Rates'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh rates',
+            onPressed: () {
+              ref.invalidate(exchangeRatesProvider);
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             tooltip: 'Exchange rates are fetched from fawazahmed0/currency-api',
@@ -210,50 +216,56 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
               ),
               const Divider(height: 1),
               Expanded(
-                child: ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final code = filtered[index];
-                    final rate = rates[code.toLowerCase()];
-                    final isCustom = _customCurrencies.contains(code);
-                    final symbol = CurrencyUtils.symbolFor(code) ?? code;
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(exchangeRatesProvider);
+                    await ref.read(exchangeRatesProvider.future);
+                  },
+                  child: ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final code = filtered[index];
+                      final rate = rates[code.toLowerCase()];
+                      final isCustom = _customCurrencies.contains(code);
+                      final symbol = CurrencyUtils.symbolFor(code) ?? code;
 
-                    return ListTile(
-                      key: ValueKey('$code-$rate'),
-                      leading: CircleAvatar(
-                        backgroundColor: isCustom
-                            ? theme.colorScheme.secondaryContainer
-                            : theme.colorScheme.surfaceContainerHighest,
-                        radius: 18,
-                        child: Text(
-                          symbol.length <= 2 ? symbol : code.substring(0, 2),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isCustom
-                                ? theme.colorScheme.onSecondaryContainer
-                                : null,
+                      return ListTile(
+                        key: ValueKey('$code-$rate'),
+                        leading: CircleAvatar(
+                          backgroundColor: isCustom
+                              ? theme.colorScheme.secondaryContainer
+                              : theme.colorScheme.surfaceContainerHighest,
+                          radius: 18,
+                          child: Text(
+                            symbol.length <= 2 ? symbol : code.substring(0, 2),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isCustom
+                                  ? theme.colorScheme.onSecondaryContainer
+                                  : null,
+                            ),
                           ),
                         ),
-                      ),
-                      title: Text(code),
-                      subtitle: Text(
-                        rate != null
-                            ? '1 USD = $rate $code'
-                            : 'No rate available',
-                      ),
-                      trailing: isCustom
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: theme.colorScheme.error,
-                              ),
-                              onPressed: () => _removeCustomCurrency(code),
-                            )
-                          : null,
-                      onTap: () => _setCustomRate(code, rate),
-                    );
-                  },
+                        title: Text(code),
+                        subtitle: Text(
+                          rate != null
+                              ? '1 USD = $rate $code'
+                              : 'No rate available',
+                        ),
+                        trailing: isCustom
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  color: theme.colorScheme.error,
+                                ),
+                                onPressed: () => _removeCustomCurrency(code),
+                              )
+                            : null,
+                        onTap: () => _setCustomRate(code, rate),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
