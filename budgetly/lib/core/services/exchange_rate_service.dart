@@ -4,40 +4,102 @@ import 'package:http/http.dart' as http;
 
 import '../database/repositories/settings_repository.dart';
 
+class ExchangeRateException implements Exception {
+  final String message;
+
+  const ExchangeRateException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ExchangeRateService {
   final SettingsRepository _settings;
+  final http.Client _client;
+  final List<String> _apiUrls;
 
-  ExchangeRateService(this._settings);
+  ExchangeRateService(
+    this._settings, {
+    http.Client? client,
+    List<String>? apiUrls,
+  }) : _client = client ?? http.Client(),
+       _apiUrls = apiUrls ?? _defaultApiUrls;
 
   static const _cacheKey = 'cached_currency_exchange';
   static const _customKey = 'custom_currency_amounts';
-  static const _apiUrls = [
+  static const _defaultApiUrls = [
     'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json',
     'https://latest.currency-api.pages.dev/v1/currencies/usd.min.json',
   ];
 
   Future<Map<String, double>> fetchRates() async {
+    try {
+      final rates = await _fetchRemoteRates();
+      await _saveCachedRates(rates);
+      return rates;
+    } catch (error) {
+      final cached = await _getCachedRates();
+      if (cached.isNotEmpty) return cached;
+      if (error is ExchangeRateException) rethrow;
+      throw const ExchangeRateException('Unable to load exchange rates.');
+    }
+  }
+
+  Future<Map<String, double>> _fetchRemoteRates() async {
+    Object? lastError;
     for (final url in _apiUrls) {
       try {
-        final response = await http
+        final response = await _client
             .get(Uri.parse(url))
             .timeout(const Duration(seconds: 10));
         if (response.statusCode == 200) {
-          final decoded = json.decode(response.body) as Map<String, dynamic>;
-          final usd = decoded['usd'] as Map<String, dynamic>;
-          final rates = usd.map((k, v) => MapEntry(k, (v as num).toDouble()));
-          try {
-            await _saveCachedRates(rates);
-          } catch (_) {}
-          return rates;
+          return _decodeUsdRates(response.body);
         }
-      } catch (_) {
-        continue;
+        lastError = 'HTTP ${response.statusCode}';
+      } catch (error) {
+        lastError = error;
       }
     }
-    final cached = await _getCachedRates();
-    if (cached.isNotEmpty) return cached;
-    return {'usd': 1.0};
+
+    throw ExchangeRateException(
+      lastError == null
+          ? 'Unable to load exchange rates.'
+          : 'Unable to load exchange rates. Last error: $lastError',
+    );
+  }
+
+  Map<String, double> _decodeUsdRates(String body) {
+    final decoded = json.decode(body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Exchange rate response was not an object.');
+    }
+
+    final usd = decoded['usd'];
+    if (usd is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Exchange rate response did not include USD.',
+      );
+    }
+
+    final rates = _normalizeRates(usd);
+    if (rates.length <= 1) {
+      throw const FormatException(
+        'Exchange rate response did not include currency rates.',
+      );
+    }
+    return rates;
+  }
+
+  Map<String, double> _normalizeRates(Map<dynamic, dynamic> source) {
+    final rates = <String, double>{};
+    for (final entry in source.entries) {
+      final value = entry.value;
+      if (value is num && value > 0) {
+        rates[entry.key.toString().toLowerCase()] = value.toDouble();
+      }
+    }
+    if (rates.isNotEmpty) rates.putIfAbsent('usd', () => 1.0);
+    return rates;
   }
 
   Future<void> _saveCachedRates(Map<String, double> rates) async {
@@ -49,7 +111,7 @@ class ExchangeRateService {
     if (raw == null) return {};
     try {
       final decoded = json.decode(raw) as Map<String, dynamic>;
-      return decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
+      return _normalizeRates(decoded);
     } catch (_) {
       return {};
     }
@@ -60,7 +122,7 @@ class ExchangeRateService {
     if (raw == null) return {};
     try {
       final decoded = json.decode(raw) as Map<String, dynamic>;
-      return decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
+      return _normalizeRates(decoded);
     } catch (_) {
       return {};
     }
@@ -80,15 +142,23 @@ class ExchangeRateService {
 
   Future<double> getRate(String currencyCode) async {
     final key = currencyCode.toLowerCase();
+    if (key == 'usd') return 1.0;
+
     final custom = await getCustomRates();
     if (custom.containsKey(key)) return custom[key]!;
-    final cached = await _getCachedRates();
-    if (cached.containsKey(key)) return cached[key]!;
-    return 1.0;
+
+    var cached = await _getCachedRates();
+    if (!cached.containsKey(key)) {
+      try {
+        cached = await fetchRates();
+      } catch (_) {}
+    }
+
+    return cached[key] ?? 1.0;
   }
 
   Future<double> ratio(String from, String to) async {
-    if (from == to) return 1.0;
+    if (from.toLowerCase() == to.toLowerCase()) return 1.0;
     final toRate = await getRate(to);
     final fromRate = await getRate(from);
     if (fromRate == 0) return 1.0;
@@ -96,16 +166,28 @@ class ExchangeRateService {
   }
 
   Future<int> convert(int amountMinor, String from, String to) async {
-    if (from == to) return amountMinor;
+    if (from.toLowerCase() == to.toLowerCase()) return amountMinor;
     final r = await ratio(from, to);
     return (amountMinor * r).round();
   }
 
-  Future<Map<String, double>> getAllRates() async {
+  Future<Map<String, double>> getAllRates({bool refresh = false}) async {
     final custom = await getCustomRates();
+    Map<String, double> rates;
+
+    try {
+      rates = refresh ? await fetchRates() : await _getRatesForDisplay();
+    } on ExchangeRateException {
+      if (custom.isEmpty) rethrow;
+      rates = {'usd': 1.0};
+    }
+
+    return Map<String, double>.from(rates)..addAll(custom);
+  }
+
+  Future<Map<String, double>> _getRatesForDisplay() async {
     final cached = await _getCachedRates();
-    final merged = Map<String, double>.from(cached);
-    merged.addAll(custom);
-    return merged;
+    if (cached.isNotEmpty) return cached;
+    return fetchRates();
   }
 }

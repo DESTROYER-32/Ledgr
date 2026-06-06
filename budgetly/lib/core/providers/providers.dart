@@ -86,7 +86,7 @@ final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
 
 final exchangeRatesProvider = FutureProvider<Map<String, double>>((ref) async {
   final service = ref.watch(exchangeRateServiceProvider);
-  return service.fetchRates();
+  return service.getAllRates(refresh: true);
 });
 
 final displayCurrencyProvider = FutureProvider<String>((ref) async {
