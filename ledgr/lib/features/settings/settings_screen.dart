@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/notification_service.dart';
-import '../../core/utils/money_utils.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
