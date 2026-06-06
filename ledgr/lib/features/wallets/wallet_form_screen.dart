@@ -37,19 +37,20 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     if (widget.walletId != null) {
       _loadWallet();
     } else {
-      final defaultCurrency =
-          ref.read(currencyCodeProvider).valueOrNull ?? 'USD';
-      _currencyCode = defaultCurrency;
+      _currencyCode = 'USD';
     }
   }
 
   Future<void> _loadWallet() async {
-    final wallet = await ref.read(walletRepositoryProvider).getById(widget.walletId!);
+    final wallet = await ref
+        .read(walletRepositoryProvider)
+        .getById(widget.walletId!);
     if (wallet != null && mounted) {
       _nameController.text = wallet.name;
       _type = wallet.type;
       _currencyCode = wallet.currencyCode;
-      _balanceController.text = (wallet.initialBalanceMinor / 100).toStringAsFixed(2);
+      _balanceController.text = (wallet.initialBalanceMinor / 100)
+          .toStringAsFixed(2);
     }
   }
 
@@ -68,19 +69,24 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     final balance = (double.tryParse(_balanceController.text) ?? 0) * 100;
 
     if (widget.walletId != null) {
-      await repo.update(widget.walletId!, WalletsCompanion(
-        name: Value(_nameController.text),
-        type: Value(_type),
-        currencyCode: Value(_currencyCode),
-        initialBalanceMinor: Value(balance.round()),
-      ));
+      await repo.update(
+        widget.walletId!,
+        WalletsCompanion(
+          name: Value(_nameController.text),
+          type: Value(_type),
+          currencyCode: Value(_currencyCode),
+          initialBalanceMinor: Value(balance.round()),
+        ),
+      );
     } else {
-      await repo.insert(WalletsCompanion.insert(
-        name: _nameController.text,
-        type: _type,
-        currencyCode: _currencyCode,
-        initialBalanceMinor: balance.round(),
-      ));
+      await repo.insert(
+        WalletsCompanion.insert(
+          name: _nameController.text,
+          type: _type,
+          currencyCode: _currencyCode,
+          initialBalanceMinor: balance.round(),
+        ),
+      );
     }
 
     if (mounted) context.pop();
@@ -98,8 +104,12 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Account name', hintText: 'e.g. Main Checking'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+              decoration: const InputDecoration(
+                labelText: 'Account name',
+                hintText: 'e.g. Main Checking',
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 20),
             Text('Account type', style: Theme.of(context).textTheme.titleSmall),
@@ -122,10 +132,12 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               initialValue: _currencyCode,
               decoration: const InputDecoration(labelText: 'Currency'),
               items: CurrencyUtils.codes
-                  .map((c) => DropdownMenuItem(
+                  .map(
+                    (c) => DropdownMenuItem(
                       value: c,
-                      child: Text(
-                          '$c  ${CurrencyUtils.symbolFor(c) ?? ''}')))
+                      child: Text('$c  ${CurrencyUtils.symbolFor(c) ?? ''}'),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _currencyCode = v);
@@ -139,7 +151,9 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                 prefixText:
                     '${CurrencyUtils.symbolFor(_currencyCode) ?? _currencyCode} ',
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
             const SizedBox(height: 32),
             FilledButton(

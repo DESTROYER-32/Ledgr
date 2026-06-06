@@ -23,7 +23,8 @@ class Categories extends Table {
   TextColumn get icon => text().nullable()();
   IntColumn get color => integer().nullable()();
   TextColumn get kind => text()();
-  IntColumn get mainCategoryPk => integer().references(Categories, #id).nullable()();
+  IntColumn get mainCategoryPk =>
+      integer().references(Categories, #id).nullable()();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -50,7 +51,8 @@ class Transactions extends Table {
   TextColumn get recurrenceRule => text().nullable()();
   TextColumn get budgetFksExclude => text().nullable()();
   TextColumn get budgetFks => text().nullable()();
-  IntColumn get objectiveFk => integer().references(Objectives, #id).nullable()();
+  IntColumn get objectiveFk =>
+      integer().references(Objectives, #id).nullable()();
   TextColumn get attachmentPath => text().nullable()();
   TextColumn get methodAdded => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -68,13 +70,18 @@ class Budgets extends Table {
   BoolColumn get pinned => boolean().withDefault(const Constant(false))();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
   IntColumn get color => integer().nullable()();
-  IntColumn get plannedAmountMinor => integer().withDefault(const Constant(0))();
+  IntColumn get plannedAmountMinor =>
+      integer().withDefault(const Constant(0))();
   BoolColumn get specificMode => boolean().withDefault(const Constant(false))();
   BoolColumn get includeIncome => boolean().withDefault(const Constant(true))();
-  BoolColumn get includeDebtCredit => boolean().withDefault(const Constant(true))();
-  BoolColumn get includeBalanceCorrection => boolean().withDefault(const Constant(true))();
-  BoolColumn get includeInOtherBudgets => boolean().withDefault(const Constant(true))();
-  BoolColumn get absoluteLimit => boolean().withDefault(const Constant(false))();
+  BoolColumn get includeDebtCredit =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get includeBalanceCorrection =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get includeInOtherBudgets =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get absoluteLimit =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get recurrenceRule => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
@@ -96,7 +103,9 @@ class BudgetWallets extends Table {
   IntColumn get walletId => integer().references(Wallets, #id)();
 
   @override
-  List<Set<Column<Object>>>? get uniqueKeys => [{budgetId, walletId}];
+  List<Set<Column<Object>>>? get uniqueKeys => [
+    {budgetId, walletId},
+  ];
 }
 
 @DataClassName('RecurringTransaction')
@@ -163,16 +172,4 @@ class DeleteLogs extends Table {
   TextColumn get type => text()();
   TextColumn get jsonData => text()();
   DateTimeColumn get deletedAt => dateTime().withDefault(currentDateAndTime)();
-}
-
-@DataClassName('ExchangeRate')
-class ExchangeRates extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get fromCurrency => text()();
-  TextColumn get toCurrency => text()();
-  RealColumn get rate => real()();
-  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
-
-  @override
-  List<Set<Column<Object>>>? get uniqueKeys => [{fromCurrency, toCurrency}];
 }

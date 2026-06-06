@@ -82,14 +82,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
       byCategory = await txRepo.incomeByCategory(
         _currentStart!,
         budget.periodEnd,
-        targetCurrency: budget.currencyCode,
       );
       totalSpent = byCategory.values.fold<int>(0, (s, v) => s + v);
     } else {
       byCategory = await txRepo.spentByCategory(
         _currentStart!,
         budget.periodEnd,
-        targetCurrency: budget.currencyCode,
       );
       totalSpent = byCategory.values.fold<int>(0, (s, v) => s + v);
     }
@@ -125,18 +123,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
           })
           .fold<int>(0, (sum, t) => sum + t.amountMinor);
     } else if (budget.isIncome) {
-      final prevByCategory = await txRepo.incomeByCategory(
-        prevStart,
-        prevEnd,
-        targetCurrency: budget.currencyCode,
-      );
+      final prevByCategory = await txRepo.incomeByCategory(prevStart, prevEnd);
       prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
     } else {
-      final prevByCategory = await txRepo.spentByCategory(
-        prevStart,
-        prevEnd,
-        targetCurrency: budget.currencyCode,
-      );
+      final prevByCategory = await txRepo.spentByCategory(prevStart, prevEnd);
       prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
     }
 

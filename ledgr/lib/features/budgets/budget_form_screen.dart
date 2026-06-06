@@ -62,7 +62,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         _startDate = budget.periodStart;
         _endDate = budget.periodEnd;
         _periodDays = days > 0 ? days : 30;
-        _amountController.text = (budget.plannedAmountMinor / 100).toStringAsFixed(2);
+        _amountController.text = (budget.plannedAmountMinor / 100)
+            .toStringAsFixed(2);
       });
       final limits = await repo.watchLimits(budget.id).first;
       setState(() {
@@ -74,8 +75,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(budgetRepositoryProvider);
-    final currencyCode = ref.read(currencyCodeProvider).valueOrNull ?? 'USD';
-    final plannedAmountMinor = ((double.tryParse(_amountController.text) ?? 0) * 100).round();
+    const currencyCode = 'USD';
+    final plannedAmountMinor =
+        ((double.tryParse(_amountController.text) ?? 0) * 100).round();
 
     final companion = BudgetsCompanion(
       name: Value(_nameController.text.trim()),
@@ -130,9 +132,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     final catsAsync = ref.watch(activeCategoriesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Budget' : 'New Budget'),
-      ),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit Budget' : 'New Budget')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -154,17 +154,18 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
             SegmentedButton<bool>(
               segments: const [
                 ButtonSegment(
-                    value: false,
-                    label: Text('Budget'),
-                    icon: Icon(Icons.arrow_upward)),
+                  value: false,
+                  label: Text('Budget'),
+                  icon: Icon(Icons.arrow_upward),
+                ),
                 ButtonSegment(
-                    value: true,
-                    label: Text('Goal'),
-                    icon: Icon(Icons.savings)),
+                  value: true,
+                  label: Text('Goal'),
+                  icon: Icon(Icons.savings),
+                ),
               ],
               selected: {_isIncome},
-              onSelectionChanged: (v) =>
-                  setState(() => _isIncome = v.first),
+              onSelectionChanged: (v) => setState(() => _isIncome = v.first),
             ),
             const SizedBox(height: 24),
             TextFormField(
@@ -173,8 +174,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 labelText: _isIncome ? 'Savings goal' : 'Budget amount',
                 hintText: '0.00',
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -199,7 +201,15 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 ButtonSegment(value: '30', label: Text('30 days')),
                 ButtonSegment(value: 'custom', label: Text('Custom')),
               ],
-              selected: {_periodDays == 7 ? '7' : _periodDays == 14 ? '14' : _periodDays == 30 ? '30' : 'custom'},
+              selected: {
+                _periodDays == 7
+                    ? '7'
+                    : _periodDays == 14
+                    ? '14'
+                    : _periodDays == 30
+                    ? '30'
+                    : 'custom',
+              },
               onSelectionChanged: (v) {
                 final val = v.first;
                 if (val == 'custom') {
@@ -251,8 +261,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       if (picked != null) {
                         setState(() {
                           _endDate = picked;
-                          _periodDays =
-                              _endDate.difference(_startDate).inDays;
+                          _periodDays = _endDate.difference(_startDate).inDays;
                         });
                       }
                     },
@@ -281,43 +290,42 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       color: c,
                       borderRadius: BorderRadius.circular(10),
                       border: selected
-                          ? Border.all(
-                              color: cs.onSurface, width: 2.5)
+                          ? Border.all(color: cs.onSurface, width: 2.5)
                           : null,
                     ),
                     child: selected
-                        ? const Icon(Icons.check,
-                            color: Colors.white, size: 18)
+                        ? const Icon(Icons.check, color: Colors.white, size: 18)
                         : null,
                   ),
                 );
               }).toList(),
             ),
             const SizedBox(height: 24),
-            Text(_specificMode ? 'Categories' : 'Categories (optional)',
-                style: theme.textTheme.titleSmall),
+            Text(
+              _specificMode ? 'Categories' : 'Categories (optional)',
+              style: theme.textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             Text(
               _specificMode
                   ? 'Select categories. Only transactions matching these will be available.'
                   : 'Select categories to track in this budget. Leave empty to track all.',
-              style: TextStyle(
-                  fontSize: 12, color: cs.onSurfaceVariant),
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             catsAsync.when(
               data: (cats) {
                 if (cats.isEmpty) {
-                  return Text('No categories available.',
-                      style: TextStyle(
-                          color: cs.onSurfaceVariant));
+                  return Text(
+                    'No categories available.',
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  );
                 }
                 return Wrap(
                   spacing: 6,
                   runSpacing: 6,
                   children: cats.map((c) {
-                    final selected =
-                        _selectedCategoryIds.contains(c.id);
+                    final selected = _selectedCategoryIds.contains(c.id);
                     return FilterChip(
                       label: Text(c.name, style: const TextStyle(fontSize: 12)),
                       selected: selected,
