@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers/providers.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/utils/currency_utils.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -18,6 +19,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoading = true;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
+  String _displayCurrency = 'USD';
 
   static const _themeSeeds = <int>[
     0xFF1A6D4A, // Green
@@ -43,6 +45,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final defaultWalletId = await repo.get('default_wallet_id');
     final themeMode = await repo.get('theme_mode');
     final themeSeed = await repo.get('theme_seed');
+    final displayCurrency = await repo.get('display_currency');
     if (mounted) {
       setState(() {
         _notifications = notifications == 'true';
@@ -51,6 +54,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
         _themeSeed = themeSeed != null ? int.parse(themeSeed) : 0xFF1A6D4A;
+        _displayCurrency = displayCurrency ?? 'USD';
         _isLoading = false;
       });
     }
@@ -81,6 +85,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _themeMode = mode);
     await ref.read(settingsRepositoryProvider).set('theme_mode', mode);
     ref.invalidate(themeConfigProvider);
+  }
+
+  Future<void> _setDisplayCurrency(String code) async {
+    setState(() => _displayCurrency = code);
+    await ref.read(settingsRepositoryProvider).set('display_currency', code);
+    ref.invalidate(displayCurrencyProvider);
   }
 
   Future<void> _setThemeSeed(int seed) async {
@@ -173,6 +183,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(
+                Icons.monetization_on_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Display Currency'),
+              subtitle: Text(_displayCurrency),
+              trailing: DropdownButton<String>(
+                value: _displayCurrency,
+                items: CurrencyUtils.codes
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) _setDisplayCurrency(v);
+                },
+                underline: const SizedBox(),
               ),
             ),
             const Divider(height: 1),

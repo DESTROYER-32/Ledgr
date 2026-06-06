@@ -84,9 +84,12 @@ final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
   return ExchangeRateService(ref.watch(settingsRepositoryProvider));
 });
 
+final exchangeRatesRefreshProvider = StateProvider<int>((ref) => 0);
+
 final exchangeRatesProvider = FutureProvider<Map<String, double>>((ref) async {
+  final count = ref.watch(exchangeRatesRefreshProvider);
   final service = ref.watch(exchangeRateServiceProvider);
-  return service.getAllRates(refresh: true);
+  return service.getAllRates(refresh: count > 0);
 });
 
 final displayCurrencyProvider = FutureProvider<String>((ref) async {
@@ -103,6 +106,10 @@ final displayCurrencyProvider = FutureProvider<String>((ref) async {
 // Stream providers for reactive queries
 final activeWalletsProvider = StreamProvider<List<Wallet>>(
   (ref) => ref.watch(walletRepositoryProvider).watchActive(),
+);
+
+final allWalletsProvider = StreamProvider<List<Wallet>>(
+  (ref) => ref.watch(walletRepositoryProvider).watchAll(),
 );
 
 final allTransactionsProvider = StreamProvider<List<Transaction>>(
