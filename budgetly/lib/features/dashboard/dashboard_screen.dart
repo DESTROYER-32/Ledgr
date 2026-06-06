@@ -21,6 +21,7 @@ class DashboardScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final totalBalanceAsync = ref.watch(totalBalanceProvider);
+    final displayCurrencyAsync = ref.watch(displayCurrencyProvider);
     final recentAsync = ref.watch(recentTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
     final walletsAsync = ref.watch(activeWalletsProvider);
@@ -60,7 +61,13 @@ class DashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             _buildSetupCard(context, theme, cs, walletsAsync, ref),
-            _buildBalanceCard(context, theme, cs, totalBalanceAsync),
+            _buildBalanceCard(
+              context,
+              theme,
+              cs,
+              totalBalanceAsync,
+              displayCurrencyAsync,
+            ),
             const SizedBox(height: 20),
             _buildWalletCards(
               context,
@@ -70,7 +77,7 @@ class DashboardScreen extends ConsumerWidget {
               walletBalancesAsync,
             ),
             const SizedBox(height: 20),
-            _buildMonthlySummary(context, theme, cs, ref),
+            _buildMonthlySummary(context, theme, cs, ref, displayCurrencyAsync),
             const SizedBox(height: 24),
             _buildQuickActions(context, cs),
             const SizedBox(height: 24),
@@ -166,12 +173,15 @@ class DashboardScreen extends ConsumerWidget {
     ThemeData theme,
     ColorScheme cs,
     AsyncValue<int> totalBalanceAsync,
+    AsyncValue<String> displayCurrencyAsync,
   ) {
+    final currencyCode =
+        displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
     return totalBalanceAsync.when(
       data: (total) {
         return BalanceCard(
           label: 'Total Balance',
-          amount: MoneyUtils.format(total),
+          amount: MoneyUtils.format(total, currencyCode: currencyCode),
           icon: Icons.account_balance_wallet,
           accentColor: cs.primary,
           bottom: Wrap(
@@ -644,7 +654,10 @@ class DashboardScreen extends ConsumerWidget {
     ThemeData theme,
     ColorScheme cs,
     WidgetRef ref,
+    AsyncValue<String> displayCurrencyAsync,
   ) {
+    final currencyCode =
+        displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 0);
@@ -676,7 +689,10 @@ class DashboardScreen extends ConsumerWidget {
                           child: StatTile(
                             icon: Icons.arrow_downward,
                             label: 'Income',
-                            value: MoneyUtils.format(income),
+                            value: MoneyUtils.format(
+                              income,
+                              currencyCode: currencyCode,
+                            ),
                             color: AppColors.income,
                           ),
                         ),
@@ -689,7 +705,10 @@ class DashboardScreen extends ConsumerWidget {
                           child: StatTile(
                             icon: Icons.arrow_upward,
                             label: 'Expenses',
-                            value: MoneyUtils.format(expenses),
+                            value: MoneyUtils.format(
+                              expenses,
+                              currencyCode: currencyCode,
+                            ),
                             color: AppColors.expense,
                           ),
                         ),
@@ -702,7 +721,10 @@ class DashboardScreen extends ConsumerWidget {
                           child: StatTile(
                             icon: Icons.account_balance_wallet,
                             label: 'Net',
-                            value: MoneyUtils.format(income - expenses),
+                            value: MoneyUtils.format(
+                              income - expenses,
+                              currencyCode: currencyCode,
+                            ),
                             color: income - expenses >= 0
                                 ? AppColors.income
                                 : AppColors.expense,

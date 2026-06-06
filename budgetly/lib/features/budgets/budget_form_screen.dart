@@ -75,7 +75,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(budgetRepositoryProvider);
-    const currencyCode = 'USD';
+    final currencyCode =
+        ref.read(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
     final plannedAmountMinor =
         ((double.tryParse(_amountController.text) ?? 0) * 100).round();
 
@@ -86,7 +88,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       color: Value(_color),
       periodStart: Value(_startDate),
       periodEnd: Value(_endDate),
-      currencyCode: const Value('USD'),
+      currencyCode: Value(currencyCode),
       plannedAmountMinor: Value(plannedAmountMinor),
     );
 

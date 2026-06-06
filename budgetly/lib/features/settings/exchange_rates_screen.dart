@@ -114,8 +114,27 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh rates',
-            onPressed: () {
-              ref.invalidate(exchangeRatesProvider);
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              ref.read(exchangeRatesRefreshProvider.notifier).state++;
+              await Future.microtask(() async {
+                try {
+                  await ref.read(exchangeRatesProvider.future);
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Exchange rates updated'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                } catch (_) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to refresh rates'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              });
             },
           ),
           IconButton(
@@ -218,7 +237,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    ref.invalidate(exchangeRatesProvider);
+                    ref.read(exchangeRatesRefreshProvider.notifier).state++;
                     await ref.read(exchangeRatesProvider.future);
                   },
                   child: ListView.builder(
