@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/notification_service.dart';
-import '../../core/utils/money_utils.dart';
-import '../../core/utils/currency_utils.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -18,14 +16,11 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _appLock = false;
   bool _notifications = false;
-  String _currency = 'USD';
   int? _defaultWalletId;
   bool _canAuth = false;
   bool _isLoading = true;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
-
-  final _currencies = CurrencyUtils.codes;
 
   static const _themeSeeds = <int>[
     0xFF1A6D4A, // Green
@@ -39,8 +34,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     0xFF37474F, // Blue Grey
   ];
 
-
-
   @override
   void initState() {
     super.initState();
@@ -51,7 +44,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final repo = ref.read(settingsRepositoryProvider);
     final appLock = await repo.get('app_lock');
     final notifications = await repo.get('notifications');
-    final currency = await repo.get('currency');
     final defaultWalletId = await repo.get('default_wallet_id');
     final themeMode = await repo.get('theme_mode');
     final themeSeed = await repo.get('theme_seed');
@@ -60,7 +52,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       setState(() {
         _appLock = appLock == 'true';
         _notifications = notifications == 'true';
-        _currency = currency ?? 'USD';
         _defaultWalletId = defaultWalletId == null
             ? null
             : int.tryParse(defaultWalletId);
@@ -77,25 +68,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content:
-                  Text('Biometric authentication not available on this device')),
+            content: Text(
+              'Biometric authentication not available on this device',
+            ),
+          ),
         );
       }
       return;
     }
     setState(() => _appLock = value);
-    await ref.read(settingsRepositoryProvider).set(
-          'app_lock',
-          value.toString(),
-        );
+    await ref
+        .read(settingsRepositoryProvider)
+        .set('app_lock', value.toString());
   }
 
   Future<void> _toggleNotifications(bool value) async {
     setState(() => _notifications = value);
-    await ref.read(settingsRepositoryProvider).set(
-          'notifications',
-          value.toString(),
-        );
+    await ref
+        .read(settingsRepositoryProvider)
+        .set('notifications', value.toString());
     if (value) {
       await NotificationService.requestPermissions();
     }
@@ -110,14 +101,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await repo.set('default_wallet_id', walletId.toString());
     }
     ref.invalidate(defaultWalletIdProvider);
-  }
-
-  Future<void> _setCurrency(String currency) async {
-    setState(() => _currency = currency);
-    MoneyUtils.setDefaultCurrencyCode(currency);
-    await ref.read(settingsRepositoryProvider).set('currency', currency);
-    ref.invalidate(currencyCodeProvider);
-    ref.invalidate(totalBalanceProvider);
   }
 
   Future<void> _setThemeMode(String mode) async {
@@ -155,9 +138,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SwitchListTile(
               secondary: Icon(
                 Icons.lock_outline,
-                color: _appLock
-                    ? theme.colorScheme.primary
-                    : null,
+                color: _appLock ? theme.colorScheme.primary : null,
               ),
               title: const Text('App Lock'),
               subtitle: Text(
@@ -174,13 +155,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SwitchListTile(
               secondary: Icon(
                 Icons.notifications_outlined,
-                color: _notifications
-                    ? theme.colorScheme.primary
-                    : null,
+                color: _notifications ? theme.colorScheme.primary : null,
               ),
               title: const Text('Bill Reminders'),
-              subtitle: const Text(
-                  'Alerts for recurring transactions'),
+              subtitle: const Text('Alerts for recurring transactions'),
               value: _notifications,
               onChanged: _toggleNotifications,
             ),
@@ -189,11 +167,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _section(theme, 'Account Defaults', [
             walletsAsync.when(
               data: (wallets) {
-                final hasSelected = wallets.any((w) => w.id == _defaultWalletId);
+                final hasSelected = wallets.any(
+                  (w) => w.id == _defaultWalletId,
+                );
                 final selectedId = hasSelected ? _defaultWalletId : null;
                 return ListTile(
-                  leading: Icon(Icons.account_balance_wallet_outlined,
-                      color: theme.colorScheme.primary),
+                  leading: Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
                   title: const Text('Default Account'),
                   subtitle: const Text('Used for quick transaction add'),
                   trailing: SizedBox(
@@ -206,13 +188,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           value: null,
                           child: Text('None'),
                         ),
-                        ...wallets.map((w) => DropdownMenuItem<int?>(
-                              value: w.id,
-                              child: Text(
-                                w.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            )),
+                        ...wallets.map(
+                          (w) => DropdownMenuItem<int?>(
+                            value: w.id,
+                            child: Text(
+                              w.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
                       ],
                       onChanged: _setDefaultWallet,
                       underline: const SizedBox(),
@@ -234,32 +218,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
-          ]),
-          const SizedBox(height: 8),
-          _section(theme, 'Currency', [
+            const Divider(height: 1),
             ListTile(
-              leading: Icon(Icons.monetization_on_outlined,
-                  color: theme.colorScheme.primary),
-              title: const Text('Currency'),
-              subtitle: Text(_currency),
-              trailing: DropdownButton<String>(
-                value: _currency,
-                items: _currencies
-                    .map((c) => DropdownMenuItem(
-                        value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) _setCurrency(v);
-                },
-                underline: const SizedBox(),
+              leading: Icon(
+                Icons.currency_exchange,
+                color: theme.colorScheme.primary,
               ),
+              title: const Text('Exchange Rates'),
+              subtitle: const Text('View rates and set custom overrides'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/exchange-rates'),
             ),
           ]),
           const SizedBox(height: 8),
           _section(theme, 'Theme', [
             ListTile(
-              leading: Icon(Icons.palette_outlined,
-                  color: theme.colorScheme.primary),
+              leading: Icon(
+                Icons.palette_outlined,
+                color: theme.colorScheme.primary,
+              ),
               title: const Text('Theme Mode'),
               trailing: DropdownButton<String>(
                 value: _themeMode,
@@ -292,14 +269,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         color: color,
                         shape: BoxShape.circle,
                         border: selected
-                            ? Border.all(color: theme.colorScheme.onSurface, width: 2.5)
+                            ? Border.all(
+                                color: theme.colorScheme.onSurface,
+                                width: 2.5,
+                              )
                             : null,
                         boxShadow: selected
-                            ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8)]
+                            ? [
+                                BoxShadow(
+                                  color: color.withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                ),
+                              ]
                             : null,
                       ),
                       child: selected
-                          ? const Icon(Icons.check, color: Colors.white, size: 18)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 18,
+                            )
                           : null,
                     ),
                   );
@@ -312,15 +301,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.upload_file),
               title: const Text('Export Data'),
-              subtitle: const Text(
-                  'Backup your data to a file'),
+              subtitle: const Text('Backup your data to a file'),
               onTap: () => context.push('/backup'),
             ),
             ListTile(
               leading: const Icon(Icons.download),
               title: const Text('Import Data'),
-              subtitle: const Text(
-                  'Restore from backup or import CSV'),
+              subtitle: const Text('Restore from backup or import CSV'),
               onTap: () => context.push('/backup'),
             ),
           ]),
@@ -329,8 +316,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.auto_awesome),
               title: const Text('Smart Labels'),
-              subtitle: const Text(
-                  'Auto-categorize transactions by keyword'),
+              subtitle: const Text('Auto-categorize transactions by keyword'),
               onTap: () => context.push('/smart-labels'),
             ),
             ListTile(
@@ -363,8 +349,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.flag),
               title: const Text('Goals & Loans'),
-              subtitle: const Text(
-                  'Savings goals and debt tracking'),
+              subtitle: const Text('Savings goals and debt tracking'),
               onTap: () => context.push('/objectives'),
             ),
           ]),
@@ -373,15 +358,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.account_balance),
               title: const Text('Accounts'),
-              subtitle: const Text(
-                  'Manage your wallets and accounts'),
+              subtitle: const Text('Manage your wallets and accounts'),
               onTap: () => context.push('/wallets'),
             ),
             ListTile(
               leading: const Icon(Icons.category),
               title: const Text('Categories'),
-              subtitle: const Text(
-                  'Manage transaction categories'),
+              subtitle: const Text('Manage transaction categories'),
               onTap: () => context.push('/categories'),
             ),
           ]),
@@ -404,14 +387,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 4),
-          child: Text(title,
-              style: theme.textTheme.titleSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          )),
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
-        Card(
-          child: Column(children: items),
-        ),
+        Card(child: Column(children: items)),
       ],
     );
   }

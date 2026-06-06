@@ -41,7 +41,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _currencyCode;
   DateTime _date = DateTime.now();
   bool _isLoading = false;
-  bool _isConverting = false;
   bool _isEditing = false;
 
   @override
@@ -111,47 +110,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   void _duplicate() {
     setState(() => _isEditing = false);
-  }
-
-  Future<void> _convertAmount(
-    String fromCurrency,
-    String toCurrency,
-    double amount,
-  ) async {
-    if (amount <= 0 || fromCurrency == toCurrency) return;
-    setState(() => _isConverting = true);
-    final service = ref.read(exchangeRateServiceProvider);
-    final rate = await service.getConversionRate(fromCurrency, toCurrency);
-    if (!mounted) return;
-    setState(() => _isConverting = false);
-    if (rate != null) {
-      final converted = amount * rate;
-      _amountController.text = converted.toStringAsFixed(2);
-    } else if (mounted) {
-      await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Rate Not Found'),
-          content: Text(
-            'No exchange rate found for $fromCurrency → $toCurrency.\n'
-            'Enter the converted amount manually, or cancel to keep the '
-            'original value.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Keep Original'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx, _amountController.text);
-              },
-              child: const Text('Use Current Value'),
-            ),
-          ],
-        ),
-      );
-    }
   }
 
   Future<void> _autoCategorize(String title) async {
@@ -306,11 +264,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               controller: _amountController,
               currencySymbol: displayCurrency,
             ),
-            if (_isConverting)
-              const Padding(
-                padding: EdgeInsets.only(top: 4),
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -365,34 +318,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
                     )
                     .toList(),
-                onChanged: (v) async {
-                  final oldWalletId = _walletId;
-                  final oldCurrency = _currencyCode;
+                onChanged: (v) {
                   setState(() {
                     _walletId = v;
                     _currencyCode = null;
                   });
-                  if (oldCurrency != null && oldWalletId != null) {
-                    final oldWallet = wallets
-                        .where((w) => w.id == oldWalletId)
-                        .firstOrNull;
-                    final newWallet = wallets
-                        .where((w) => w.id == v)
-                        .firstOrNull;
-                    if (oldWallet != null &&
-                        newWallet != null &&
-                        oldCurrency != oldWallet.currencyCode) {
-                      final amount =
-                          double.tryParse(_amountController.text) ?? 0;
-                      if (amount > 0) {
-                        await _convertAmount(
-                          oldCurrency,
-                          newWallet.currencyCode,
-                          amount,
-                        );
-                      }
-                    }
-                  }
                 },
                 validator: (v) => v == null ? 'Required' : null,
               ),
@@ -414,12 +344,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   .toList(),
               onChanged: (v) async {
                 if (v != null) {
-                  final fromCurrency = _currencyCode ?? walletCurrency;
-                  final amount = double.tryParse(_amountController.text) ?? 0;
-                  setState(() => _currencyCode = v);
-                  if (fromCurrency != v && amount > 0) {
-                    await _convertAmount(fromCurrency, v, amount);
+                  final oldCurrency = displayCurrency;
+                  final amountText = _amountController.text;
+                  final amount = double.tryParse(amountText) ?? 0;
+                  if (amount > 0 && oldCurrency != v) {
+                    final service = ref.read(exchangeRateServiceProvider);
+                    final converted = await service.convert(
+                      (amount * 100).round(),
+                      oldCurrency,
+                      v,
+                    );
+                    _amountController.text = (converted / 100).toStringAsFixed(
+                      2,
+                    );
                   }
+                  setState(() => _currencyCode = v);
                 }
               },
             ),

@@ -9,7 +9,6 @@ import 'core/router/app_router.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
-import 'core/utils/money_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,8 +18,6 @@ void main() async {
   final db = AppDatabase();
   final settingsRepo = SettingsRepository(db);
   final onboarded = await settingsRepo.isOnboardingComplete();
-  final currency = await settingsRepo.get('currency');
-  MoneyUtils.setDefaultCurrencyCode(currency ?? 'USD');
 
   runApp(
     ProviderScope(
