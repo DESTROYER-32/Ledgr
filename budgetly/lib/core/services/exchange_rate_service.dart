@@ -26,7 +26,9 @@ class ExchangeRateService {
           final decoded = json.decode(response.body) as Map<String, dynamic>;
           final usd = decoded['usd'] as Map<String, dynamic>;
           final rates = usd.map((k, v) => MapEntry(k, (v as num).toDouble()));
-          await _saveCachedRates(rates);
+          try {
+            await _saveCachedRates(rates);
+          } catch (_) {}
           return rates;
         }
       } catch (_) {
