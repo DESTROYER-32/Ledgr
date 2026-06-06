@@ -187,24 +187,24 @@ final totalBalanceProvider = FutureProvider<int>((ref) async {
   return total;
 });
 
+Future<Map<int, int>> walletBalancesByWalletCurrency(
+  WalletRepository repo,
+) async {
+  final wallets = await repo.getAll();
+  final map = <int, int>{};
+  for (final w in wallets) {
+    final balance = await repo.balanceForWallet(w.id);
+    map[w.id] = balance;
+  }
+  return map;
+}
+
 final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allTransactionsProvider);
   ref.watch(exchangeRatesProvider);
   final repo = ref.watch(walletRepositoryProvider);
-  final rateService = ref.watch(exchangeRateServiceProvider);
-  final displayCurrency = await ref.watch(displayCurrencyProvider.future);
-  final wallets = await repo.getAll();
-  final map = <int, int>{};
-  for (final w in wallets) {
-    final balance = await repo.balanceForWallet(w.id);
-    map[w.id] = await rateService.convert(
-      balance,
-      w.currencyCode,
-      displayCurrency,
-    );
-  }
-  return map;
+  return walletBalancesByWalletCurrency(repo);
 });
 
 final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>((
