@@ -8,7 +8,6 @@ import '../../features/budgets/budgets_screen.dart';
 import '../../features/categories/categories_screen.dart';
 import '../../features/categories/category_form_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
-import '../../features/exchange_rates/exchange_rates_screen.dart';
 import '../../features/objectives/objective_detail_screen.dart';
 import '../../features/objectives/objective_form_screen.dart';
 import '../../features/objectives/objectives_list_screen.dart';
@@ -17,6 +16,7 @@ import '../../features/recurring/recurring_screen.dart';
 import '../../features/recurring/recurring_form_screen.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/settings/exchange_rates_screen.dart';
 import '../../features/transactions/transaction_form_screen.dart';
 import '../../features/wallets/wallet_detail_screen.dart';
 import '../../features/wallets/wallet_form_screen.dart';
@@ -78,9 +78,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/budgets/:id/edit',
         name: 'budget-edit',
-        builder: (context, state) => BudgetFormScreen(
-          budgetId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) =>
+            BudgetFormScreen(budgetId: int.parse(state.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/wallets/new',
@@ -90,9 +89,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/wallets/edit/:id',
         name: 'wallet-edit',
-        builder: (context, state) => WalletFormScreen(
-          walletId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) =>
+            WalletFormScreen(walletId: int.parse(state.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/wallets/:id',
@@ -193,11 +191,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/exchange-rates',
-        name: 'exchange-rates',
-        builder: (context, state) => const ExchangeRatesScreen(),
-      ),
-      GoRoute(
         path: '/smart-labels',
         name: 'smart-labels',
         builder: (context, state) => const AssociatedTitlesScreen(),
@@ -233,6 +226,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/credit-debt',
         name: 'credit-debt',
         builder: (context, state) => const CreditDebtScreen(),
+      ),
+      GoRoute(
+        path: '/exchange-rates',
+        name: 'exchange-rates',
+        builder: (context, state) => const ExchangeRatesScreen(),
       ),
     ],
   );

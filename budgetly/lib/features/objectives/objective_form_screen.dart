@@ -35,8 +35,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
     final obj = await repo.getById(widget.objectiveId!);
     if (obj != null && mounted) {
       _nameController.text = obj.name;
-      _amountController.text =
-          (obj.amountMinor / 100).toStringAsFixed(2);
+      _amountController.text = (obj.amountMinor / 100).toStringAsFixed(2);
       _type = obj.type;
       _deadline = obj.deadline;
       _color = obj.color ?? 0xFF43A047;
@@ -78,8 +77,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
                 labelText: 'Name',
                 border: OutlineInputBorder(),
               ),
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Required' : null,
+              validator: (v) => v == null || v.isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             AmountField(
@@ -103,8 +101,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
               onTap: () async {
                 final d = await showDatePicker(
                   context: context,
-                  initialDate: DateTime.now().add(
-                      const Duration(days: 30)),
+                  initialDate: DateTime.now().add(const Duration(days: 30)),
                   firstDate: DateTime.now(),
                   lastDate: DateTime(2100),
                 );
@@ -116,24 +113,34 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: [
-                0xFF43A047, 0xFFE53935, 0xFF1E88E5, 0xFFFF8F00,
-                0xFF8E24AA, 0xFF00ACC1, 0xFFD81B60, 0xFF546E7A,
-              ].map((c) => GestureDetector(
-                    onTap: () => setState(() => _color = c),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Color(c),
-                        shape: BoxShape.circle,
-                        border: _color == c
-                            ? Border.all(
-                                color: Colors.white, width: 3)
-                            : null,
-                      ),
-                    ),
-                  )).toList(),
+              children:
+                  [
+                        0xFF43A047,
+                        0xFFE53935,
+                        0xFF1E88E5,
+                        0xFFFF8F00,
+                        0xFF8E24AA,
+                        0xFF00ACC1,
+                        0xFFD81B60,
+                        0xFF546E7A,
+                      ]
+                      .map(
+                        (c) => GestureDetector(
+                          onTap: () => setState(() => _color = c),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Color(c),
+                              shape: BoxShape.circle,
+                              border: _color == c
+                                  ? Border.all(color: Colors.white, width: 3)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
             ),
             const SizedBox(height: 24),
             FilledButton(
@@ -149,15 +156,16 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(objectiveRepositoryProvider);
-    final amount = (_amountController.text.isEmpty
-            ? 0.0
-            : double.parse(_amountController.text) * 100)
-        .round();
+    final amount =
+        (_amountController.text.isEmpty
+                ? 0.0
+                : double.parse(_amountController.text) * 100)
+            .round();
     final entry = ObjectivesCompanion.insert(
       name: _nameController.text,
       type: _type,
       amountMinor: amount,
-      currencyCode: ref.read(currencyCodeProvider).valueOrNull ?? 'USD',
+      currencyCode: 'USD',
       deadline: _deadline != null ? Value(_deadline!) : const Value(null),
       color: Value(_color),
     );

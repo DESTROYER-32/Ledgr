@@ -8,12 +8,12 @@ import '../database/repositories/category_repository.dart';
 import '../database/repositories/delete_log_repository.dart';
 import '../database/repositories/objective_repository.dart';
 import '../database/repositories/recurring_repository.dart';
-import '../services/recurring_service.dart';
 import '../services/exchange_rate_service.dart';
+import '../services/recurring_service.dart';
 import '../database/repositories/settings_repository.dart';
-import '../database/repositories/exchange_rate_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
+import '../utils/money_utils.dart';
 
 class ThemeConfig {
   final ThemeMode themeMode;
@@ -33,7 +33,10 @@ class ThemeConfig {
 final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
 
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
-  return WalletRepository(ref.watch(appDatabaseProvider));
+  return WalletRepository(
+    ref.watch(appDatabaseProvider),
+    ref.watch(exchangeRateServiceProvider),
+  );
 });
 
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
@@ -60,14 +63,6 @@ final objectiveRepositoryProvider = Provider<ObjectiveRepository>((ref) {
   return ObjectiveRepository(ref.watch(appDatabaseProvider));
 });
 
-final exchangeRateRepositoryProvider = Provider<ExchangeRateRepository>((ref) {
-  return ExchangeRateRepository(ref.watch(appDatabaseProvider));
-});
-
-final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
-  return ExchangeRateService(ref.watch(exchangeRateRepositoryProvider));
-});
-
 final associatedTitleRepositoryProvider = Provider<AssociatedTitleRepository>((
   ref,
 ) {
@@ -83,6 +78,26 @@ final recurringServiceProvider = Provider<RecurringService>((ref) {
     ref.watch(recurringRepositoryProvider),
     ref.watch(transactionRepositoryProvider),
   );
+});
+
+final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
+  return ExchangeRateService(ref.watch(settingsRepositoryProvider));
+});
+
+final exchangeRatesProvider = FutureProvider<Map<String, double>>((ref) async {
+  final service = ref.watch(exchangeRateServiceProvider);
+  return service.fetchRates();
+});
+
+final displayCurrencyProvider = FutureProvider<String>((ref) async {
+  final setting = await ref
+      .watch(settingsRepositoryProvider)
+      .get('display_currency');
+  if (setting != null) return setting;
+  final wallets = await ref.watch(walletRepositoryProvider).getAll();
+  final active = wallets.where((w) => !w.archived);
+  if (active.isNotEmpty) return active.first.currencyCode;
+  return MoneyUtils.defaultCurrencyCode;
 });
 
 // Stream providers for reactive queries
@@ -117,12 +132,6 @@ final allBudgetsProvider = StreamProvider<List<Budget>>(
 final activeRecurringProvider = StreamProvider<List<RecurringTransaction>>(
   (ref) => ref.watch(recurringRepositoryProvider).watchActive(),
 );
-
-final currencyCodeProvider = FutureProvider<String>((ref) async {
-  final repo = ref.watch(settingsRepositoryProvider);
-  final currency = await repo.get('currency');
-  return currency ?? 'USD';
-});
 
 final defaultWalletIdProvider = FutureProvider<int?>((ref) async {
   final repo = ref.watch(settingsRepositoryProvider);
@@ -160,19 +169,40 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
 final totalBalanceProvider = FutureProvider<int>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allTransactionsProvider);
-  final currency = await ref.watch(currencyCodeProvider.future);
+  ref.watch(exchangeRatesProvider);
   final repo = ref.watch(walletRepositoryProvider);
-  return repo.totalBalance(targetCurrency: currency);
+  final wallets = await repo.getAll();
+  final rateService = ref.watch(exchangeRateServiceProvider);
+  final displayCurrency = await ref.watch(displayCurrencyProvider.future);
+  var total = 0;
+  for (final w in wallets) {
+    if (w.archived) continue;
+    final balance = await repo.balanceForWallet(w.id);
+    total += await rateService.convert(
+      balance,
+      w.currencyCode,
+      displayCurrency,
+    );
+  }
+  return total;
 });
 
 final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allTransactionsProvider);
+  ref.watch(exchangeRatesProvider);
   final repo = ref.watch(walletRepositoryProvider);
+  final rateService = ref.watch(exchangeRateServiceProvider);
+  final displayCurrency = await ref.watch(displayCurrencyProvider.future);
   final wallets = await repo.getAll();
   final map = <int, int>{};
   for (final w in wallets) {
-    map[w.id] = await repo.balanceForWallet(w.id);
+    final balance = await repo.balanceForWallet(w.id);
+    map[w.id] = await rateService.convert(
+      balance,
+      w.currencyCode,
+      displayCurrency,
+    );
   }
   return map;
 });
@@ -185,10 +215,7 @@ final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>((
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
-  final currency = await ref.watch(currencyCodeProvider.future);
-  return ref
-      .watch(transactionRepositoryProvider)
-      .spentByCategory(start, end, targetCurrency: currency);
+  return ref.watch(transactionRepositoryProvider).spentByCategory(start, end);
 });
 
 final monthlyIncomeProvider = FutureProvider.family<int, String>((
@@ -199,10 +226,7 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
-  final currency = await ref.watch(currencyCodeProvider.future);
-  return ref
-      .watch(transactionRepositoryProvider)
-      .totalIncome(start, end, targetCurrency: currency);
+  return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
 });
 
 final allObjectivesProvider = StreamProvider<List<Objective>>(
@@ -217,10 +241,7 @@ final monthlyExpensesProvider = FutureProvider.family<int, String>((
   final parts = key.split(',');
   final start = DateTime.parse(parts[0]);
   final end = DateTime.parse(parts[1]);
-  final currency = await ref.watch(currencyCodeProvider.future);
-  return ref
-      .watch(transactionRepositoryProvider)
-      .totalExpenses(start, end, targetCurrency: currency);
+  return ref.watch(transactionRepositoryProvider).totalExpenses(start, end);
 });
 
 final deleteLogsProvider = StreamProvider<List<DeleteLog>>(

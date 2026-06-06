@@ -22,7 +22,6 @@ part 'app_database.g.dart';
     Objectives,
     AssociatedTitles,
     DeleteLogs,
-    ExchangeRates,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -58,9 +57,6 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'CREATE TABLE IF NOT EXISTS goals (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, target_amount_minor INTEGER NOT NULL, current_amount_minor INTEGER DEFAULT 0, currency_code TEXT NOT NULL, deadline TEXT, icon INTEGER, color INTEGER, archived INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime(\'now\')), updated_at TEXT NOT NULL DEFAULT (datetime(\'now\')))',
             );
-          } catch (_) {}
-          try {
-            await m.createTable(exchangeRates);
           } catch (_) {}
         }
         if (from < 7) {

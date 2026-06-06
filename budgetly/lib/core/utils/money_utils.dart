@@ -3,18 +3,14 @@ import 'package:intl/intl.dart';
 class MoneyUtils {
   MoneyUtils._();
 
-  static String _defaultCurrencyCode = 'USD';
-
-  static String get defaultCurrencyCode => _defaultCurrencyCode;
-
-  static void setDefaultCurrencyCode(String code) {
-    _defaultCurrencyCode = code;
-  }
+  static const String defaultCurrencyCode = 'USD';
 
   static String _symbol(String code) {
     try {
-      return NumberFormat.simpleCurrency(name: code, decimalDigits: 2)
-          .currencySymbol;
+      return NumberFormat.simpleCurrency(
+        name: code,
+        decimalDigits: 2,
+      ).currencySymbol;
     } catch (_) {
       return code;
     }
@@ -22,7 +18,7 @@ class MoneyUtils {
 
   static String format(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
-    final code = currencyCode ?? _defaultCurrencyCode;
+    final code = currencyCode ?? defaultCurrencyCode;
     try {
       final format = NumberFormat.simpleCurrency(name: code, decimalDigits: 2);
       return format.format(amount);
@@ -33,7 +29,7 @@ class MoneyUtils {
 
   static String formatCompact(int amountMinor, {String? currencyCode}) {
     final amount = amountMinor / 100;
-    final sym = _symbol(currencyCode ?? _defaultCurrencyCode);
+    final sym = _symbol(currencyCode ?? defaultCurrencyCode);
     if (amount.abs() >= 1000000) {
       return '$sym${(amount / 1000000).toStringAsFixed(1)}M';
     }
@@ -49,7 +45,8 @@ class MoneyUtils {
 
   static String formatDate(DateTime date) => AppDateUtils.formatDate(date);
 
-  static String formatDateShort(DateTime date) => AppDateUtils.formatDateShort(date);
+  static String formatDateShort(DateTime date) =>
+      AppDateUtils.formatDateShort(date);
 }
 
 class AppDateUtils {

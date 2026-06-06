@@ -759,16 +759,8 @@ class DashboardScreen extends ConsumerWidget {
           .fold<int>(0, (sum, t) => sum + t.amountMinor);
     }
     return isGoal
-        ? txRepo.totalIncome(
-            budget.periodStart,
-            budget.periodEnd,
-            targetCurrency: budget.currencyCode,
-          )
-        : txRepo.totalExpenses(
-            budget.periodStart,
-            budget.periodEnd,
-            targetCurrency: budget.currencyCode,
-          );
+        ? txRepo.totalIncome(budget.periodStart, budget.periodEnd)
+        : txRepo.totalExpenses(budget.periodStart, budget.periodEnd);
   }
 
   static const _loadingCard = Card(

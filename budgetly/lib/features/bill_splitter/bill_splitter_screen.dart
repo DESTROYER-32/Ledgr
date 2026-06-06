@@ -10,12 +10,10 @@ class BillSplitterScreen extends ConsumerStatefulWidget {
   const BillSplitterScreen({super.key});
 
   @override
-  ConsumerState<BillSplitterScreen> createState() =>
-      _BillSplitterScreenState();
+  ConsumerState<BillSplitterScreen> createState() => _BillSplitterScreenState();
 }
 
-class _BillSplitterScreenState
-    extends ConsumerState<BillSplitterScreen> {
+class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
   final _items = <_SplitItem>[];
   final _people = <String>['You'];
   final _itemNameCtrl = TextEditingController();
@@ -103,11 +101,11 @@ class _BillSplitterScreenState
               child: ListTile(
                 title: Text(item.name),
                 subtitle: Text(
-                    '\$${item.amount.toStringAsFixed(2)} per person'),
+                  '\$${item.amount.toStringAsFixed(2)} per person',
+                ),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: () =>
-                      setState(() => _items.removeAt(e.key)),
+                  onPressed: () => setState(() => _items.removeAt(e.key)),
                 ),
               ),
             );
@@ -143,8 +141,7 @@ class _BillSplitterScreenState
               FilledButton.tonal(
                 onPressed: () {
                   final name = _itemNameCtrl.text;
-                  final amount =
-                      double.tryParse(_itemAmountCtrl.text) ?? 0;
+                  final amount = double.tryParse(_itemAmountCtrl.text) ?? 0;
                   if (name.isNotEmpty && amount > 0) {
                     setState(() {
                       _items.add(_SplitItem(name, amount));
@@ -166,21 +163,21 @@ class _BillSplitterScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Summary',
-                      style: theme.textTheme.titleMedium),
+                  Text('Summary', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text(
-                      'Total: \$${(_items.fold<double>(0, (s, i) => s + i.amount * _people.length)).toStringAsFixed(2)}'),
+                    'Total: \$${(_items.fold<double>(0, (s, i) => s + i.amount * _people.length)).toStringAsFixed(2)}',
+                  ),
                   const SizedBox(height: 8),
                   ..._people.map((person) {
                     final perPerson = _items.fold<double>(
-                        0, (s, i) => s + i.amount);
+                      0,
+                      (s, i) => s + i.amount,
+                    );
                     return Padding(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(person),
                           Text(
@@ -211,36 +208,37 @@ class _BillSplitterScreenState
         .first;
     if (wallets.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No wallets available')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No wallets available')));
       }
       return;
     }
     final wallet = wallets.first;
     final title = 'Bill split: ${_items.map((i) => i.name).join(', ')}';
     final perPerson = _items.fold<int>(
-        0, (s, i) => s + (i.amount * 100).round());
+      0,
+      (s, i) => s + (i.amount * 100).round(),
+    );
 
     for (final person in _people) {
       if (person == 'You') continue;
-      await repo.insert(TransactionsCompanion.insert(
-        type: 'expense',
-        amountMinor: perPerson,
-        currencyCode:
-            ref.read(currencyCodeProvider).valueOrNull ?? 'USD',
-        date: DateTime.now(),
-        walletId: wallet.id,
-        title: Value('$title ($person)'),
-        specialType: const Value('none'),
-      ));
+      await repo.insert(
+        TransactionsCompanion.insert(
+          type: 'expense',
+          amountMinor: perPerson,
+          currencyCode: 'USD',
+          date: DateTime.now(),
+          walletId: wallet.id,
+          title: Value('$title ($person)'),
+          specialType: const Value('none'),
+        ),
+      );
     }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Created ${_people.length - 1} transaction(s)')),
+        SnackBar(content: Text('Created ${_people.length - 1} transaction(s)')),
       );
       context.pop();
     }

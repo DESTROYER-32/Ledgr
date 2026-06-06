@@ -19,8 +19,6 @@ void main() async {
   final db = AppDatabase();
   final settingsRepo = SettingsRepository(db);
   final onboarded = await settingsRepo.isOnboardingComplete();
-  final currency = await settingsRepo.get('currency');
-  MoneyUtils.setDefaultCurrencyCode(currency ?? 'USD');
 
   runApp(
     ProviderScope(
