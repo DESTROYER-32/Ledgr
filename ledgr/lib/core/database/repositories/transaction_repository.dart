@@ -95,8 +95,9 @@ class TransactionRepository {
     int? maxAmount,
   }) async {
     final q = _db.transactions.select();
-    if (startDate != null)
+    if (startDate != null) {
       q.where((t) => t.date.isBiggerOrEqualValue(startDate));
+    }
     if (endDate != null) q.where((t) => t.date.isSmallerOrEqualValue(endDate));
     if (walletId != null) {
       q.where(
