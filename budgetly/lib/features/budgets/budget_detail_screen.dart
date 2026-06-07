@@ -453,9 +453,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isIncome
-                          ? '${MoneyUtils.format(_prevTotalSpent)} \u2192 ${MoneyUtils.format(_totalSpent)}'
-                          : '${MoneyUtils.format(_prevTotalSpent)} \u2192 ${MoneyUtils.format(_totalSpent)}',
+                      '${MoneyUtils.format(_prevTotalSpent, currencyCode: budget.currencyCode)} \u2192 ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -504,7 +502,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 const Spacer(),
                 if (_totalPlanned > 0)
                   Text(
-                    '${MoneyUtils.format(_totalSpent)} / ${MoneyUtils.format(_totalPlanned)}',
+                    '${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(_totalPlanned, currencyCode: budget.currencyCode)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -530,8 +528,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 children: [
                   Text(
                     isOver
-                        ? '${MoneyUtils.format(-remaining)} over'
-                        : '${MoneyUtils.format(remaining)} ${budget.isIncome ? 'left to save' : 'remaining'}',
+                        ? '${MoneyUtils.format(-remaining, currencyCode: budget.currencyCode)} over'
+                        : '${MoneyUtils.format(remaining, currencyCode: budget.currencyCode)} ${budget.isIncome ? 'left to save' : 'remaining'}',
                     style: TextStyle(
                       fontSize: 12,
                       color: isOver ? AppColors.expense : cs.onSurfaceVariant,
@@ -551,8 +549,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   budget.isIncome
-                      ? 'Saved ${MoneyUtils.format(_totalSpent)} (no goal set)'
-                      : 'Spent ${MoneyUtils.format(_totalSpent)} (no limit set)',
+                      ? 'Saved ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} (no goal set)'
+                      : 'Spent ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} (no limit set)',
                   style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
               ),
@@ -595,6 +593,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   spent: spent,
                   pct: pct,
                   over: over,
+                  currencyCode: budget.currencyCode,
                   onRemove: () => _removeLimit(limit.categoryId),
                 ),
               );
@@ -758,6 +757,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                         amountMinor: t.amountMinor,
                         title: t.title,
                         date: t.date,
+                        currencyCode: t.currencyCode,
                         onTap: () => context.push('/transactions/${t.id}'),
                       ),
                     ),
@@ -775,6 +775,7 @@ class _CategoryLimitRow extends StatelessWidget {
   final int spent;
   final double pct;
   final bool over;
+  final String currencyCode;
   final VoidCallback onRemove;
 
   const _CategoryLimitRow({
@@ -782,6 +783,7 @@ class _CategoryLimitRow extends StatelessWidget {
     required this.spent,
     required this.pct,
     required this.over,
+    required this.currencyCode,
     required this.onRemove,
   });
 
@@ -814,7 +816,7 @@ class _CategoryLimitRow extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '${spent > 0 ? MoneyUtils.format(spent) : ''} / ${MoneyUtils.format(limit.plannedAmountMinor)}',
+                    '${spent > 0 ? MoneyUtils.format(spent, currencyCode: currencyCode) : ''} / ${MoneyUtils.format(limit.plannedAmountMinor, currencyCode: currencyCode)}',
                     style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                   ),
                 ],

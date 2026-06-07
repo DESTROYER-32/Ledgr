@@ -96,6 +96,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
               if (index == wallets.length + 1) {
                 return _buildAddWalletCard(context, theme);
               }
+              if (index - 1 >= wallets.length) return const SizedBox.shrink();
               final wallet = wallets[index - 1];
               final balance =
                   balancesAsync.valueOrNull?[wallet.id] ??
@@ -187,9 +188,9 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
   }) {
     final archived = wallet.archived;
     return Opacity(
+      key: key,
       opacity: archived ? 0.55 : 1.0,
       child: Card(
-        key: key,
         margin: const EdgeInsets.only(bottom: 8),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(
