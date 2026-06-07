@@ -198,8 +198,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final theme = Theme.of(context);
     final wallets = walletsAsync.valueOrNull ?? [];
     final selectedWallet = wallets.where((w) => w.id == _walletId).firstOrNull;
-    final walletCurrency =
-        selectedWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final defaultCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
+    final walletCurrency = selectedWallet?.currencyCode ?? defaultCurrency;
     final displayCurrency = _currencyCode ?? walletCurrency;
 
     return Scaffold(

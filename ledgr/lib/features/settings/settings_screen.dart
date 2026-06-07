@@ -91,6 +91,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _displayCurrency = code);
     await ref.read(settingsRepositoryProvider).set('display_currency', code);
     ref.invalidate(displayCurrencyProvider);
+    ref.invalidate(totalBalanceProvider);
   }
 
   Future<void> _setThemeSeed(int seed) async {
@@ -191,7 +192,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Icons.monetization_on_outlined,
                 color: theme.colorScheme.primary,
               ),
-              title: const Text('Display Currency'),
+              title: const Text('Default Currency'),
               subtitle: Text(_displayCurrency),
               trailing: DropdownButton<String>(
                 value: _displayCurrency,

@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/currency_utils.dart';
 import '../../core/utils/money_utils.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   DateTime _endDate = DateTime.now().add(const Duration(days: 30));
   int _periodDays = 30;
   Set<int> _selectedCategoryIds = {};
+  String _currencyCode = '';
 
   bool get _isEditing => widget.budgetId != null;
 
@@ -36,6 +38,11 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     super.initState();
     if (_isEditing) _load();
     _updateEndDate();
+    if (!_isEditing) {
+      _currencyCode =
+          ref.read(displayCurrencyProvider).valueOrNull ??
+          MoneyUtils.defaultCurrencyCode;
+    }
   }
 
   @override
@@ -65,6 +72,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         _amountController.text = (budget.plannedAmountMinor / 100)
             .toStringAsFixed(2);
       });
+      _currencyCode = budget.currencyCode;
       final limits = await repo.watchLimits(budget.id).first;
       setState(() {
         _selectedCategoryIds = limits.map((l) => l.categoryId).toSet();
@@ -75,9 +83,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(budgetRepositoryProvider);
-    final currencyCode =
-        ref.read(displayCurrencyProvider).valueOrNull ??
-        MoneyUtils.defaultCurrencyCode;
+    final currencyCode = _currencyCode;
     final plannedAmountMinor =
         ((double.tryParse(_amountController.text) ?? 0) * 100).round();
 
@@ -179,6 +185,23 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: _currencyCode,
+              decoration: const InputDecoration(labelText: 'Currency'),
+              items: CurrencyUtils.codes
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c,
+                      child: Text('$c  ${CurrencyUtils.symbolFor(c)}'),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) setState(() => _currencyCode = v);
+              },
             ),
             const SizedBox(height: 16),
             SwitchListTile(

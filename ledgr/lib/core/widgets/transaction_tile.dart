@@ -13,6 +13,7 @@ class TransactionTile extends StatelessWidget {
   final Color? categoryColor;
   final VoidCallback? onTap;
   final VoidCallback? onDuplicate;
+  final String? currencyCode;
 
   const TransactionTile({
     super.key,
@@ -25,6 +26,7 @@ class TransactionTile extends StatelessWidget {
     this.categoryColor,
     this.onTap,
     this.onDuplicate,
+    this.currencyCode,
   });
 
   @override
@@ -68,7 +70,9 @@ class TransactionTile extends StatelessWidget {
                     Text(
                       title ?? type[0].toUpperCase() + type.substring(1),
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -98,7 +102,9 @@ class TransactionTile extends StatelessWidget {
                             categoryName!,
                             style: TextStyle(
                               fontSize: 12,
-                              color: categoryColor ?? theme.colorScheme.onSurfaceVariant,
+                              color:
+                                  categoryColor ??
+                                  theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -109,7 +115,7 @@ class TransactionTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '$sign${MoneyUtils.format(amountMinor)}',
+                '$sign${MoneyUtils.format(amountMinor, currencyCode: currencyCode)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -119,8 +125,11 @@ class TransactionTile extends StatelessWidget {
               if (onDuplicate != null) ...[
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: Icon(Icons.copy, size: 16,
-                      color: theme.colorScheme.onSurfaceVariant),
+                  icon: Icon(
+                    Icons.copy,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   onPressed: onDuplicate,
                   visualDensity: VisualDensity.compact,
                   tooltip: 'Duplicate',

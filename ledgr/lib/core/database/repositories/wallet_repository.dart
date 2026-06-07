@@ -8,7 +8,10 @@ class WalletRepository {
   final ExchangeRateService _exchangeRates;
   WalletRepository(this._db, this._exchangeRates);
 
-  Stream<List<Wallet>> watchAll() => _db.wallets.select().watch();
+  Stream<List<Wallet>> watchAll() =>
+      (_db.wallets.select()
+            ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
+          .watch();
 
   Future<List<Wallet>> getAll() => _db.wallets.select().get();
 

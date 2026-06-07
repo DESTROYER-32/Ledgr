@@ -1188,6 +1188,7 @@ class DashboardScreen extends ConsumerWidget {
                           amountMinor: t.amountMinor,
                           title: t.title,
                           date: t.date,
+                          currencyCode: t.currencyCode,
                           onTap: () => context.push('/transactions/${t.id}'),
                         ),
                       ),
