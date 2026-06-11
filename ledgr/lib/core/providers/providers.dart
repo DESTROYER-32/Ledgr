@@ -97,9 +97,6 @@ final displayCurrencyProvider = FutureProvider<String>((ref) async {
       .watch(settingsRepositoryProvider)
       .get('display_currency');
   if (setting != null) return setting;
-  final wallets = await ref.watch(walletRepositoryProvider).getAll();
-  final active = wallets.where((w) => !w.archived);
-  if (active.isNotEmpty) return active.first.currencyCode;
   return MoneyUtils.defaultCurrencyCode;
 });
 
