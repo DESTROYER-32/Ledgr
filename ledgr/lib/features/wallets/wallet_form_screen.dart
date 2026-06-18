@@ -131,14 +131,21 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               isExpanded: true,
               initialValue: _currencyCode,
               decoration: const InputDecoration(labelText: 'Currency'),
-              items: CurrencyUtils.codes
-                  .map(
-                    (c) => DropdownMenuItem(
-                      value: c,
-                      child: Text('$c  ${CurrencyUtils.symbolFor(c) ?? ''}'),
-                    ),
-                  )
-                  .toList(),
+              items:
+                  currencyOptionsWithSelection(
+                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                            CurrencyUtils.codes,
+                        _currencyCode,
+                      )
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(
+                            '$c  ${CurrencyUtils.symbolFor(c) ?? ''}',
+                          ),
+                        ),
+                      )
+                      .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _currencyCode = v);
               },

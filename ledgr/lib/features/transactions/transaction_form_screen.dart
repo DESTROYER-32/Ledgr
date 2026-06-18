@@ -347,14 +347,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               isExpanded: true,
               initialValue: displayCurrency,
               decoration: const InputDecoration(labelText: 'Currency'),
-              items: CurrencyUtils.codes
-                  .map(
-                    (c) => DropdownMenuItem(
-                      value: c,
-                      child: Text('$c  ${CurrencyUtils.symbolFor(c)}'),
-                    ),
-                  )
-                  .toList(),
+              items:
+                  currencyOptionsWithSelection(
+                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                            CurrencyUtils.codes,
+                        displayCurrency,
+                      )
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c,
+                          child: Text('$c  ${CurrencyUtils.symbolFor(c)}'),
+                        ),
+                      )
+                      .toList(),
               onChanged: (v) async {
                 if (v != null) {
                   final oldCurrency = displayCurrency;
