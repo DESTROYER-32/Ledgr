@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/money_utils.dart';
 
 class BillSplitterScreen extends ConsumerStatefulWidget {
   const BillSplitterScreen({super.key});
@@ -31,6 +32,13 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final wallets = ref.watch(activeWalletsProvider).valueOrNull;
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
+    final splitCurrency = wallets != null && wallets.isNotEmpty
+        ? wallets.first.currencyCode
+        : displayCurrency;
 
     return Scaffold(
       appBar: AppBar(
@@ -101,7 +109,7 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
               child: ListTile(
                 title: Text(item.name),
                 subtitle: Text(
-                  '\$${item.amount.toStringAsFixed(2)} per person',
+                  '${MoneyUtils.format((item.amount * 100).round(), currencyCode: splitCurrency)} per person',
                 ),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline),
@@ -166,7 +174,7 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
                   Text('Summary', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text(
-                    'Total: \$${(_items.fold<double>(0, (s, i) => s + i.amount * _people.length)).toStringAsFixed(2)}',
+                    'Total: ${MoneyUtils.format((_items.fold<double>(0, (s, i) => s + i.amount * _people.length) * 100).round(), currencyCode: splitCurrency)}',
                   ),
                   const SizedBox(height: 8),
                   ..._people.map((person) {
@@ -181,7 +189,10 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
                         children: [
                           Text(person),
                           Text(
-                            '\$${perPerson.toStringAsFixed(2)}',
+                            MoneyUtils.format(
+                              (perPerson * 100).round(),
+                              currencyCode: splitCurrency,
+                            ),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: theme.colorScheme.primary,

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/currency_utils.dart';
+import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -22,7 +23,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoading = true;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
-  String _displayCurrency = 'USD';
+  String _displayCurrency = MoneyUtils.defaultCurrencyCode;
   List<String> _favoriteCurrencies = CurrencyUtils.codes;
 
   static const _themeSeeds = <int>[
@@ -59,7 +60,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
         _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
-        _displayCurrency = displayCurrency ?? 'USD';
+        _displayCurrency = displayCurrency ?? MoneyUtils.defaultCurrencyCode;
         _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
         _isLoading = false;
       });

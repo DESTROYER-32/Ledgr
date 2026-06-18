@@ -31,7 +31,16 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.objectiveId != null) _load();
+    if (widget.objectiveId != null) {
+      _load();
+    } else {
+      _loadDefaultCurrency();
+    }
+  }
+
+  Future<void> _loadDefaultCurrency() async {
+    final currencyCode = await ref.read(displayCurrencyProvider.future);
+    if (mounted) setState(() => _currencyCode = currencyCode);
   }
 
   Future<void> _load() async {
@@ -95,6 +104,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
             AmountField(
               controller: _amountController,
               label: _type == 'loan' ? 'Total Amount' : 'Target Amount',
+              currencySymbol: _currencyCode,
             ),
             const SizedBox(height: 16),
             ModernSelectionField<String>(

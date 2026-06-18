@@ -38,7 +38,14 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     if (widget.walletId != null) {
       _loadWallet();
     } else {
-      _currencyCode = 'USD';
+      _loadDefaultCurrency();
+    }
+  }
+
+  Future<void> _loadDefaultCurrency() async {
+    final currencyCode = await ref.read(displayCurrencyProvider.future);
+    if (mounted && _currencyCode.isEmpty) {
+      setState(() => _currencyCode = currencyCode);
     }
   }
 
@@ -132,24 +139,25 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               label: 'Currency',
               value: _currencyCode,
               leadingIcon: Icons.payments_outlined,
-              items: currencyOptionsWithSelection(
-                ref.watch(favoriteCurrenciesProvider).valueOrNull ??
-                    CurrencyUtils.codes,
-                _currencyCode,
-              )
-                  .map(
-                    (c) => ModernSelectionItem(
-                      value: c,
-                      title: c,
-                      subtitle: CurrencyUtils.currencies
-                          .where((currency) => currency.code == c)
-                          .map((currency) => currency.name)
-                          .firstOrNull,
-                      icon: Icons.monetization_on_outlined,
-                      badge: CurrencyUtils.symbolFor(c),
-                    ),
-                  )
-                  .toList(),
+              items:
+                  currencyOptionsWithSelection(
+                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                            CurrencyUtils.codes,
+                        _currencyCode,
+                      )
+                      .map(
+                        (c) => ModernSelectionItem(
+                          value: c,
+                          title: c,
+                          subtitle: CurrencyUtils.currencies
+                              .where((currency) => currency.code == c)
+                              .map((currency) => currency.name)
+                              .firstOrNull,
+                          icon: Icons.monetization_on_outlined,
+                          badge: CurrencyUtils.symbolFor(c),
+                        ),
+                      )
+                      .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _currencyCode = v);
               },
