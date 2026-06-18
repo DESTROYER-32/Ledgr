@@ -69,6 +69,7 @@ class WalletRepository {
           amount,
           t.currencyCode,
           wallet.currencyCode,
+          onDate: t.date,
         );
         balance -= converted;
       } else if (t.type == 'income' && t.walletId == walletId) {
@@ -76,6 +77,7 @@ class WalletRepository {
           amount,
           t.currencyCode,
           wallet.currencyCode,
+          onDate: t.date,
         );
         balance += converted;
       } else if (t.type == 'transfer') {
@@ -84,6 +86,7 @@ class WalletRepository {
             amount,
             t.currencyCode,
             wallet.currencyCode,
+            onDate: t.date,
           );
           balance -= converted;
         }
@@ -92,6 +95,7 @@ class WalletRepository {
             amount,
             t.currencyCode,
             wallet.currencyCode,
+            onDate: t.date,
           );
           balance += converted;
         }

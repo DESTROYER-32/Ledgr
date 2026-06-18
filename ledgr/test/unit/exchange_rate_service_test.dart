@@ -114,4 +114,30 @@ void main() {
     expect(jpy, 1500000);
     expect(calls, 1);
   });
+
+  test('dated conversion uses cached snapshot for transaction date', () async {
+    var calls = 0;
+    final service = buildService(
+      MockClient((_) async {
+        calls += 1;
+        if (calls == 1) return http.Response(rateBody, 200);
+        return http.Response(
+          '{"date":"2026-06-07","usd":{"usd":1,"eur":0.8,"jpy":140}}',
+          200,
+        );
+      }),
+    );
+
+    await service.fetchRates();
+    await service.fetchRates();
+
+    expect(
+      await service.convert(10000, 'USD', 'EUR', onDate: DateTime(2026, 6, 6)),
+      9100,
+    );
+    expect(
+      await service.convert(10000, 'USD', 'EUR', onDate: DateTime(2026, 6, 7)),
+      8000,
+    );
+  });
 }
