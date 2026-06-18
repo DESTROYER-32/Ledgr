@@ -140,6 +140,10 @@ class ExchangeRateService {
     await _settings.set(_customKey, json.encode(custom));
   }
 
+  Future<void> clearCustomRates() async {
+    await _settings.remove(_customKey);
+  }
+
   Future<double> getRate(String currencyCode) async {
     final key = currencyCode.toLowerCase();
     if (key == 'usd') return 1.0;

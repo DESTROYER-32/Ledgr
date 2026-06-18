@@ -4,6 +4,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/currency_utils.dart';
 
+sealed class _RateDialogAction {
+  const _RateDialogAction();
+
+  static _RateDialogAction set(double rate) => _SetRateAction(rate);
+  static const _RateDialogAction reset = _ResetRateAction();
+}
+
+class _SetRateAction extends _RateDialogAction {
+  const _SetRateAction(this.rate);
+  final double rate;
+}
+
+class _ResetRateAction extends _RateDialogAction {
+  const _ResetRateAction();
+}
+
 class ExchangeRatesScreen extends ConsumerStatefulWidget {
   const ExchangeRatesScreen({super.key});
 
@@ -52,10 +68,15 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
   }
 
   Future<void> _setCustomRate(String currency, double? currentRate) async {
+    final service = ref.read(exchangeRateServiceProvider);
+    final hasOverride = (await service.getCustomRates()).containsKey(
+      currency.toLowerCase(),
+    );
     final controller = TextEditingController(
       text: currentRate != null ? currentRate.toString() : '',
     );
-    final result = await showDialog<double>(
+    if (!mounted) return;
+    final result = await showDialog<_RateDialogAction>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('1 USD = ? $currency'),
@@ -81,11 +102,16 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
+          if (hasOverride)
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, _RateDialogAction.reset),
+              child: const Text('Use fetched rate'),
+            ),
           TextButton(
             onPressed: () {
               final rate = double.tryParse(controller.text);
               if (rate != null && rate > 0) {
-                Navigator.pop(ctx, rate);
+                Navigator.pop(ctx, _RateDialogAction.set(rate));
               }
             },
             child: const Text('Set'),
@@ -94,9 +120,12 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
       ),
     );
     if (result != null) {
-      await ref
-          .read(exchangeRateServiceProvider)
-          .setCustomRate(currency, result);
+      switch (result) {
+        case _SetRateAction(:final rate):
+          await service.setCustomRate(currency, rate);
+        case _ResetRateAction():
+          await service.removeCustomRate(currency);
+      }
       ref.invalidate(exchangeRatesProvider);
       setState(() {});
     }
@@ -168,6 +197,9 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
             ...CurrencyUtils.codes,
             ..._customCurrencies,
           };
+          final customRatesFuture = ref
+              .read(exchangeRateServiceProvider)
+              .getCustomRates();
           final filtered = allCodes.where((code) {
             if (_search.isEmpty) return true;
             final q = _search.toLowerCase();
@@ -235,56 +267,82 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
               ),
               const Divider(height: 1),
               Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    ref.read(exchangeRatesRefreshProvider.notifier).state++;
-                    await ref.read(exchangeRatesProvider.future);
-                  },
-                  child: ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final code = filtered[index];
-                      final rate = rates[code.toLowerCase()];
-                      final isCustom = _customCurrencies.contains(code);
-                      final symbol = CurrencyUtils.symbolFor(code) ?? code;
+                child: FutureBuilder<Map<String, double>>(
+                  future: customRatesFuture,
+                  builder: (context, customSnapshot) {
+                    final customRates =
+                        customSnapshot.data ?? const <String, double>{};
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        ref.read(exchangeRatesRefreshProvider.notifier).state++;
+                        await ref.read(exchangeRatesProvider.future);
+                      },
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final code = filtered[index];
+                          final key = code.toLowerCase();
+                          final rate = rates[key];
+                          final isCustomCurrency = _customCurrencies.contains(
+                            code,
+                          );
+                          final hasOverride = customRates.containsKey(key);
+                          final symbol = CurrencyUtils.symbolFor(code) ?? code;
 
-                      return ListTile(
-                        key: ValueKey('$code-$rate'),
-                        leading: CircleAvatar(
-                          backgroundColor: isCustom
-                              ? theme.colorScheme.secondaryContainer
-                              : theme.colorScheme.surfaceContainerHighest,
-                          radius: 18,
-                          child: Text(
-                            symbol.length <= 2 ? symbol : code.substring(0, 2),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isCustom
-                                  ? theme.colorScheme.onSecondaryContainer
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        title: Text(code),
-                        subtitle: Text(
-                          rate != null
-                              ? '1 USD = $rate $code'
-                              : 'No rate available',
-                        ),
-                        trailing: isCustom
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  color: theme.colorScheme.error,
+                          return ListTile(
+                            key: ValueKey('$code-$rate-$hasOverride'),
+                            leading: CircleAvatar(
+                              backgroundColor: hasOverride || isCustomCurrency
+                                  ? theme.colorScheme.secondaryContainer
+                                  : theme.colorScheme.surfaceContainerHighest,
+                              radius: 18,
+                              child: Text(
+                                symbol.length <= 2
+                                    ? symbol
+                                    : code.substring(0, 2),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: hasOverride || isCustomCurrency
+                                      ? theme.colorScheme.onSecondaryContainer
+                                      : null,
                                 ),
-                                onPressed: () => _removeCustomCurrency(code),
-                              )
-                            : null,
-                        onTap: () => _setCustomRate(code, rate),
-                      );
-                    },
-                  ),
+                              ),
+                            ),
+                            title: Text(code),
+                            subtitle: Text(
+                              rate != null
+                                  ? '1 USD = $rate $code${hasOverride ? ' • custom override' : ''}'
+                                  : 'No rate available',
+                            ),
+                            trailing: hasOverride
+                                ? IconButton(
+                                    tooltip: 'Use fetched rate',
+                                    icon: const Icon(Icons.restore),
+                                    onPressed: () async {
+                                      await ref
+                                          .read(exchangeRateServiceProvider)
+                                          .removeCustomRate(code);
+                                      ref.invalidate(exchangeRatesProvider);
+                                      setState(() {});
+                                    },
+                                  )
+                                : isCustomCurrency
+                                ? IconButton(
+                                    icon: Icon(
+                                      Icons.delete_outline,
+                                      color: theme.colorScheme.error,
+                                    ),
+                                    onPressed: () =>
+                                        _removeCustomCurrency(code),
+                                  )
+                                : null,
+                            onTap: () => _setCustomRate(code, rate),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
