@@ -4,6 +4,7 @@ import '../database/app_database.dart';
 import '../database/repositories/recurring_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
+import '../utils/money_utils.dart';
 
 class RecurringService {
   final RecurringRepository _recurringRepo;
@@ -34,7 +35,9 @@ class RecurringService {
           type: Value(r.transactionType),
           specialType: Value(r.specialType),
           amountMinor: Value(r.amountMinor),
-          currencyCode: Value(wallet?.currencyCode ?? 'USD'),
+          currencyCode: Value(
+            wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode,
+          ),
           date: Value(r.nextDueDate!),
           walletId: Value(r.walletId),
           transferWalletId: Value(r.transferWalletId),
