@@ -77,6 +77,7 @@ final recurringServiceProvider = Provider<RecurringService>((ref) {
   return RecurringService(
     ref.watch(recurringRepositoryProvider),
     ref.watch(transactionRepositoryProvider),
+    ref.watch(walletRepositoryProvider),
   );
 });
 
