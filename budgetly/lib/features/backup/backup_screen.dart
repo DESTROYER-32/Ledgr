@@ -10,7 +10,6 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
-import '../../core/utils/money_utils.dart';
 
 class BackupScreen extends ConsumerWidget {
   const BackupScreen({super.key});
@@ -95,6 +94,36 @@ class BackupScreen extends ConsumerWidget {
       final dbFile = File('${dir.path}/budgetly.db');
       final sourceFile = File(result.files.single.path!);
 
+      if (context.mounted) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Restore backup?'),
+            content: const Text(
+              'This will replace the current Budgetly database. A safety copy of the current database will be created first.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Restore'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+      }
+
+      if (dbFile.existsSync()) {
+        final safetyFile = File(
+          '${dir.path}/budgetly_pre_restore_${DateTime.now().millisecondsSinceEpoch}.db',
+        );
+        await dbFile.copy(safetyFile.path);
+      }
+
       final db = ref.read(appDatabaseProvider);
       await db.close();
       ref.invalidate(appDatabaseProvider);
@@ -119,12 +148,24 @@ class BackupScreen extends ConsumerWidget {
       final repo = ref.read(transactionRepositoryProvider);
       final transactions = await repo.search();
       final rows = [
-        ['Date', 'Type', 'Amount', 'Title', 'Note'],
+        [
+          'Date',
+          'Type',
+          'Amount',
+          'Currency',
+          'WalletId',
+          'CategoryId',
+          'Title',
+          'Note',
+        ],
         for (final t in transactions)
           [
             t.date.toIso8601String(),
             t.type,
             (t.amountMinor / 100).toStringAsFixed(2),
+            t.currencyCode,
+            t.walletId,
+            t.categoryId ?? '',
             t.title ?? '',
             t.note ?? '',
           ],
@@ -161,28 +202,88 @@ class BackupScreen extends ConsumerWidget {
         return;
       }
       final repo = ref.read(transactionRepositoryProvider);
+      final labelRepo = ref.read(associatedTitleRepositoryProvider);
       final wallets = await ref
           .read(walletRepositoryProvider)
           .watchActive()
           .first;
+      final walletIds = wallets.map((w) => w.id).toSet();
+      final header = rows.first
+          .map((cell) => cell.toString().toLowerCase().trim())
+          .toList();
+      final dateIndex = _columnIndex(header, [
+        'date',
+        'posted date',
+        'transaction date',
+      ]);
+      final typeIndex = _columnIndex(header, ['type', 'transaction type']);
+      final amountIndex = _columnIndex(header, ['amount', 'value']);
+      final currencyIndex = _columnIndex(header, ['currency', 'currency code']);
+      final walletIndex = _columnIndex(header, [
+        'walletid',
+        'wallet id',
+        'account id',
+      ]);
+      final categoryIndex = _columnIndex(header, ['categoryid', 'category id']);
+      final titleIndex = _columnIndex(header, [
+        'title',
+        'description',
+        'merchant',
+        'payee',
+      ]);
+      final noteIndex = _columnIndex(header, ['note', 'notes', 'memo']);
       var count = 0;
       for (var i = 1; i < rows.length; i++) {
         final row = rows[i];
-        if (row.length < 4) continue;
+        if (wallets.isEmpty || dateIndex == null || amountIndex == null) break;
         try {
-          final date = DateTime.parse(row[0].toString());
-          final type = row[1].toString().toLowerCase();
-          final amount = (double.tryParse(row[2].toString()) ?? 0) * 100;
-          final title = row.length > 3 ? row[3].toString() : null;
-          if (wallets.isEmpty) break;
+          final date = DateTime.parse(_cell(row, dateIndex));
+          final rawAmount = double.tryParse(_cell(row, amountIndex)) ?? 0;
+          final rawType = typeIndex == null
+              ? ''
+              : _cell(row, typeIndex).toLowerCase();
+          final type = rawType == 'income' || rawAmount > 0
+              ? 'income'
+              : 'expense';
+          final amountMinor = (rawAmount.abs() * 100).round();
+          final title = titleIndex == null
+              ? null
+              : _emptyToNull(_cell(row, titleIndex));
+          final note = noteIndex == null
+              ? null
+              : _emptyToNull(_cell(row, noteIndex));
+          final currency = currencyIndex == null
+              ? wallets.first.currencyCode
+              : (_emptyToNull(_cell(row, currencyIndex)) ??
+                        wallets.first.currencyCode)
+                    .toUpperCase();
+          final parsedWalletId = walletIndex == null
+              ? null
+              : int.tryParse(_cell(row, walletIndex));
+          final walletId =
+              parsedWalletId != null && walletIds.contains(parsedWalletId)
+              ? parsedWalletId
+              : wallets.first.id;
+          final parsedCategoryId = categoryIndex == null
+              ? null
+              : int.tryParse(_cell(row, categoryIndex));
+          final categoryId =
+              parsedCategoryId ??
+              (title == null
+                  ? null
+                  : await labelRepo.findCategoryIdForTitle(title));
           await repo.insert(
             TransactionsCompanion.insert(
               type: type,
-              amountMinor: amount.round(),
-              currencyCode: MoneyUtils.defaultCurrencyCode,
+              amountMinor: amountMinor,
+              currencyCode: currency,
               date: date,
-              walletId: wallets.first.id,
+              walletId: walletId,
               title: Value(title),
+              note: Value(note),
+              categoryId: categoryId == null
+                  ? const Value.absent()
+                  : Value(categoryId),
             ),
           );
           count++;
@@ -201,4 +302,18 @@ class BackupScreen extends ConsumerWidget {
       }
     }
   }
+
+  int? _columnIndex(List<String> header, List<String> names) {
+    for (final name in names) {
+      final index = header.indexOf(name);
+      if (index != -1) return index;
+    }
+    return null;
+  }
+
+  String _cell(List<dynamic> row, int index) =>
+      index < row.length ? row[index].toString().trim() : '';
+
+  String? _emptyToNull(String value) =>
+      value.trim().isEmpty ? null : value.trim();
 }
