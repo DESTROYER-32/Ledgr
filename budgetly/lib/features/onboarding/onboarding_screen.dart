@@ -21,7 +21,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _balanceController = TextEditingController();
 
   final _currencies = [
-    'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL',
+    'USD',
+    'EUR',
+    'GBP',
+    'JPY',
+    'CAD',
+    'AUD',
+    'CHF',
+    'CNY',
+    'INR',
+    'BRL',
   ];
 
   final _walletTypes = [
@@ -49,15 +58,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final balance = _balanceController.text.isEmpty
         ? 0
         : (double.tryParse(_balanceController.text) ?? 0);
-    await walletRepo.insert(WalletsCompanion.insert(
-      name: _walletNameController.text.isEmpty
-          ? 'Main Wallet'
-          : _walletNameController.text,
-      type: _walletType,
-      currencyCode: _selectedCurrency,
-      initialBalanceMinor: (balance * 100).round(),
-    ));
+    await walletRepo.insert(
+      WalletsCompanion.insert(
+        name: _walletNameController.text.isEmpty
+            ? 'Main Wallet'
+            : _walletNameController.text,
+        type: _walletType,
+        currencyCode: _selectedCurrency,
+        initialBalanceMinor: (balance * 100).round(),
+      ),
+    );
 
+    await ref
+        .read(settingsRepositoryProvider)
+        .set('display_currency', _selectedCurrency);
     await ref.read(settingsRepositoryProvider).completeOnboarding();
 
     if (mounted) context.go('/');
@@ -74,10 +88,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: PageView(
                 controller: _pageController,
                 onPageChanged: (i) => setState(() => _currentPage = i),
-                children: [
-                  _buildWelcomeStep(theme),
-                  _buildWalletStep(theme),
-                ],
+                children: [_buildWelcomeStep(theme), _buildWalletStep(theme)],
               ),
             ),
             _buildBottomBar(theme),
@@ -94,17 +105,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Spacer(flex: 2),
-          Icon(Icons.account_balance_wallet,
-              size: 64, color: theme.colorScheme.primary),
+          Icon(
+            Icons.account_balance_wallet,
+            size: 64,
+            color: theme.colorScheme.primary,
+          ),
           const SizedBox(height: 24),
-          Text('Welcome to Budgetly',
-              style: theme.textTheme.headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Welcome to Budgetly',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             'Track your spending, stay on budget, and reach your financial goals.',
-            style: theme.textTheme.bodyLarge
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 32),
           Text('Select your currency', style: theme.textTheme.titleMedium),
@@ -128,18 +146,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () =>
-                        setState(() => _selectedCurrency = currency),
+                    onTap: () => setState(() => _selectedCurrency = currency),
                     child: Center(
-                      child: Text(currency,
-                          style: TextStyle(
-                            fontWeight: selected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: selected
-                                ? theme.colorScheme.onPrimaryContainer
-                                : null,
-                          )),
+                      child: Text(
+                        currency,
+                        style: TextStyle(
+                          fontWeight: selected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: selected
+                              ? theme.colorScheme.onPrimaryContainer
+                              : null,
+                        ),
+                      ),
                     ),
                   ),
                 );
@@ -159,16 +178,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Spacer(flex: 2),
-          Icon(Icons.account_balance,
-              size: 64, color: theme.colorScheme.primary),
+          Icon(
+            Icons.account_balance,
+            size: 64,
+            color: theme.colorScheme.primary,
+          ),
           const SizedBox(height: 24),
-          Text('Create your first account',
-              style: theme.textTheme.headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Create your first account',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 12),
-          Text('Set up a wallet or account to start tracking.',
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            'Set up a wallet or account to start tracking.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 24),
           TextField(
             controller: _walletNameController,
@@ -200,8 +228,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               hintText: '0.00',
               prefixText: '$_selectedCurrency ',
             ),
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           const Spacer(),
         ],
