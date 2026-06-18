@@ -505,6 +505,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: 'Theme Mode',
                 value: _themeMode,
                 leadingIcon: Icons.palette_outlined,
+                searchEnabled: false,
                 items: const [
                   ModernSelectionItem(
                     value: 'system',
