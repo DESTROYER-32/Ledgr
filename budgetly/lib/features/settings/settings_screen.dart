@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/currency_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -98,6 +99,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.invalidate(displayCurrencyProvider);
     ref.invalidate(totalBalanceProvider);
   }
+
+  String? _currencyName(String code) {
+    for (final currency in CurrencyUtils.currencies) {
+      if (currency.code == code) return currency.name;
+    }
+    return null;
+  }
+
+  IconData _walletIcon(String type) => switch (type) {
+    'savings' => Icons.savings_outlined,
+    'cash' => Icons.payments_outlined,
+    'credit_card' => Icons.credit_card_outlined,
+    'loan' => Icons.account_balance_wallet_outlined,
+    _ => Icons.account_balance_outlined,
+  };
 
   List<String> _decodeFavoriteCurrencies(String? raw) {
     if (raw == null || raw.isEmpty) return CurrencyUtils.codes;
@@ -388,36 +404,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   (w) => w.id == _defaultWalletId,
                 );
                 final selectedId = hasSelected ? _defaultWalletId : null;
-                return ListTile(
-                  leading: Icon(
-                    Icons.account_balance_wallet_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
-                  title: const Text('Default Account'),
-                  subtitle: const Text('Used for quick transaction add'),
-                  trailing: SizedBox(
-                    width: 160,
-                    child: DropdownButton<int?>(
-                      value: selectedId,
-                      isExpanded: true,
-                      items: [
-                        const DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text('None'),
-                        ),
-                        ...wallets.map(
-                          (w) => DropdownMenuItem<int?>(
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: ModernSelectionField<int>(
+                    label: 'Default Account',
+                    value: selectedId,
+                    placeholder: 'None',
+                    allowClear: true,
+                    leadingIcon: Icons.account_balance_wallet_outlined,
+                    items: wallets
+                        .map(
+                          (w) => ModernSelectionItem(
                             value: w.id,
-                            child: Text(
-                              w.name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            title: w.name,
+                            subtitle: 'Used for quick transaction add',
+                            icon: _walletIcon(w.type),
+                            badge: w.currencyCode,
                           ),
-                        ),
-                      ],
-                      onChanged: _setDefaultWallet,
-                      underline: const SizedBox(),
-                    ),
+                        )
+                        .toList(),
+                    onChanged: _setDefaultWallet,
                   ),
                 );
               },
@@ -436,26 +442,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const Divider(height: 1),
-            ListTile(
-              leading: Icon(
-                Icons.monetization_on_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: const Text('Default Currency'),
-              subtitle: Text(_displayCurrency),
-              trailing: DropdownButton<String>(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: ModernSelectionField<String>(
+                label: 'Default Currency',
                 value: _displayCurrency,
+                leadingIcon: Icons.monetization_on_outlined,
                 items:
                     currencyOptionsWithSelection(
                           _favoriteCurrencies,
                           _displayCurrency,
                         )
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .map(
+                          (c) => ModernSelectionItem(
+                            value: c,
+                            title: c,
+                            subtitle: _currencyName(c),
+                            icon: Icons.monetization_on_outlined,
+                            badge: CurrencyUtils.symbolFor(c),
+                          ),
+                        )
                         .toList(),
                 onChanged: (v) {
                   if (v != null) _setDisplayCurrency(v);
                 },
-                underline: const SizedBox(),
               ),
             ),
             const Divider(height: 1),
@@ -489,23 +499,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ]),
           const SizedBox(height: 8),
           _section(theme, 'Theme', [
-            ListTile(
-              leading: Icon(
-                Icons.palette_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: const Text('Theme Mode'),
-              trailing: DropdownButton<String>(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: ModernSelectionField<String>(
+                label: 'Theme Mode',
                 value: _themeMode,
+                leadingIcon: Icons.palette_outlined,
                 items: const [
-                  DropdownMenuItem(value: 'system', child: Text('System')),
-                  DropdownMenuItem(value: 'light', child: Text('Light')),
-                  DropdownMenuItem(value: 'dark', child: Text('Dark')),
+                  ModernSelectionItem(
+                    value: 'system',
+                    title: 'System',
+                    subtitle: 'Follow device theme',
+                    icon: Icons.brightness_auto_outlined,
+                  ),
+                  ModernSelectionItem(
+                    value: 'light',
+                    title: 'Light',
+                    subtitle: 'Always use light mode',
+                    icon: Icons.light_mode_outlined,
+                  ),
+                  ModernSelectionItem(
+                    value: 'dark',
+                    title: 'Dark',
+                    subtitle: 'Always use dark mode',
+                    icon: Icons.dark_mode_outlined,
+                  ),
                 ],
                 onChanged: (v) {
                   if (v != null) _setThemeMode(v);
                 },
-                underline: const SizedBox(),
               ),
             ),
             const Divider(height: 1),
