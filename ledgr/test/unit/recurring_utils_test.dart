@@ -34,8 +34,12 @@ void main() {
     });
 
     test('generateInstances daily returns correct count', () {
-      final instances =
-          RecurringUtils.generateInstances('daily', baseDate, null, 5);
+      final instances = RecurringUtils.generateInstances(
+        'daily',
+        baseDate,
+        null,
+        5,
+      );
       expect(instances.length, 5);
       expect(instances[0], baseDate);
       expect(instances[1].day, 16);
@@ -44,15 +48,23 @@ void main() {
 
     test('generateInstances respects end date', () {
       final end = DateTime(2024, 6, 18);
-      final instances =
-          RecurringUtils.generateInstances('daily', baseDate, end, 10);
+      final instances = RecurringUtils.generateInstances(
+        'daily',
+        baseDate,
+        end,
+        10,
+      );
       expect(instances.length, 4); // 15, 16, 17, 18
     });
 
     test('generateInstances monthly with end date', () {
       final end = DateTime(2024, 9, 1);
-      final instances =
-          RecurringUtils.generateInstances('monthly', baseDate, end, 10);
+      final instances = RecurringUtils.generateInstances(
+        'monthly',
+        baseDate,
+        end,
+        10,
+      );
       expect(instances.length, 3); // Jun 15, Jul 15, Aug 15
     });
 
@@ -65,9 +77,23 @@ void main() {
     });
 
     test('generateInstances returns empty for maxCount = 0', () {
-      final instances =
-          RecurringUtils.generateInstances('daily', baseDate, null, 0);
+      final instances = RecurringUtils.generateInstances(
+        'daily',
+        baseDate,
+        null,
+        0,
+      );
       expect(instances, isEmpty);
+    });
+
+    test('generateInstances stops when rule does not advance date', () {
+      final instances = RecurringUtils.generateInstances(
+        'unknown-rule',
+        baseDate,
+        null,
+        10,
+      );
+      expect(instances, [baseDate]);
     });
   });
 }
