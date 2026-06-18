@@ -78,6 +78,15 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             _buildMonthlySummary(context, theme, cs, ref, displayCurrencyAsync),
+            const SizedBox(height: 16),
+            _buildInsightsCard(
+              context,
+              theme,
+              cs,
+              ref,
+              displayCurrencyAsync,
+              activeBudgets,
+            ),
             const SizedBox(height: 24),
             _buildQuickActions(context, cs),
             const SizedBox(height: 24),
@@ -837,6 +846,107 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildInsightsCard(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    WidgetRef ref,
+    AsyncValue<String> displayCurrencyAsync,
+    List<Budget> activeBudgets,
+  ) {
+    final currencyCode =
+        displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
+    return FutureBuilder<_DashboardInsights>(
+      future: _loadInsights(ref, activeBudgets),
+      builder: (context, snapshot) {
+        final insights = snapshot.data;
+        if (insights == null) return _loadingCard;
+        if (!insights.hasData) return const SizedBox.shrink();
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.insights, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Insights',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (insights.previousExpenses > 0)
+                  _InsightRow(
+                    icon: insights.expenseDelta >= 0
+                        ? Icons.trending_up
+                        : Icons.trending_down,
+                    text:
+                        'Expenses are ${insights.expenseDelta.abs().toStringAsFixed(0)}% ${insights.expenseDelta >= 0 ? 'higher' : 'lower'} than last month.',
+                  ),
+                if (insights.largestExpense != null)
+                  _InsightRow(
+                    icon: Icons.receipt_long,
+                    text:
+                        'Largest expense: ${insights.largestExpense!.title ?? 'Untitled'} at ${MoneyUtils.format(insights.largestExpense!.amountMinor, currencyCode: insights.largestExpense!.currencyCode)}.',
+                  ),
+                if (insights.rolloverPreview != 0)
+                  _InsightRow(
+                    icon: Icons.sync_alt,
+                    text:
+                        'Budget rollover preview: ${MoneyUtils.format(insights.rolloverPreview, currencyCode: currencyCode)} ${insights.rolloverPreview >= 0 ? 'available' : 'overspent'} across active budgets.',
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static Future<_DashboardInsights> _loadInsights(
+    WidgetRef ref,
+    List<Budget> activeBudgets,
+  ) async {
+    final txRepo = ref.read(transactionRepositoryProvider);
+    final now = DateTime.now();
+    final currentStart = DateTime(now.year, now.month, 1);
+    final currentEnd = DateTime(now.year, now.month + 1, 0);
+    final previousStart = DateTime(now.year, now.month - 1, 1);
+    final previousEnd = DateTime(now.year, now.month, 0);
+    final currentExpenses = await txRepo.totalExpenses(
+      currentStart,
+      currentEnd,
+    );
+    final previousExpenses = await txRepo.totalExpenses(
+      previousStart,
+      previousEnd,
+    );
+    final currentExpenseRows = await txRepo.search(
+      startDate: currentStart,
+      endDate: currentEnd,
+      type: 'expense',
+      specialType: 'none',
+    );
+    currentExpenseRows.sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
+    var rolloverPreview = 0;
+    for (final budget in activeBudgets.where((b) => !b.isIncome)) {
+      final spent = await _getBudgetPreviewTotal(txRepo, budget, false);
+      rolloverPreview += budget.plannedAmountMinor - spent;
+    }
+    return _DashboardInsights(
+      currentExpenses: currentExpenses,
+      previousExpenses: previousExpenses,
+      largestExpense: currentExpenseRows.firstOrNull,
+      rolloverPreview: rolloverPreview,
+    );
+  }
+
   Widget _actionButton(
     BuildContext context,
     IconData icon,
@@ -1200,6 +1310,53 @@ class DashboardScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
         ),
       ],
+    );
+  }
+}
+
+class _DashboardInsights {
+  const _DashboardInsights({
+    required this.currentExpenses,
+    required this.previousExpenses,
+    required this.largestExpense,
+    required this.rolloverPreview,
+  });
+
+  final int currentExpenses;
+  final int previousExpenses;
+  final Transaction? largestExpense;
+  final int rolloverPreview;
+
+  bool get hasData =>
+      currentExpenses != 0 ||
+      previousExpenses != 0 ||
+      largestExpense != null ||
+      rolloverPreview != 0;
+
+  double get expenseDelta => previousExpenses == 0
+      ? 0
+      : ((currentExpenses - previousExpenses) / previousExpenses) * 100;
+}
+
+class _InsightRow extends StatelessWidget {
+  const _InsightRow({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: cs.primary),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+        ],
+      ),
     );
   }
 }

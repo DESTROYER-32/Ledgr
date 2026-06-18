@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +22,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
   String _displayCurrency = 'USD';
+  List<String> _favoriteCurrencies = CurrencyUtils.codes;
 
   static const _themeSeeds = <int>[
     0xFF1A6D4A, // Green
@@ -46,6 +49,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = await repo.get('theme_mode');
     final themeSeed = await repo.get('theme_seed');
     final displayCurrency = await repo.get('display_currency');
+    final favoriteCurrencies = await repo.get('favorite_currencies');
     if (mounted) {
       setState(() {
         _notifications = notifications == 'true';
@@ -53,8 +57,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ? null
             : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
-        _themeSeed = themeSeed != null ? int.parse(themeSeed) : 0xFF1A6D4A;
+        _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
         _displayCurrency = displayCurrency ?? 'USD';
+        _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
         _isLoading = false;
       });
     }
@@ -92,6 +97,112 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref.read(settingsRepositoryProvider).set('display_currency', code);
     ref.invalidate(displayCurrencyProvider);
     ref.invalidate(totalBalanceProvider);
+  }
+
+  List<String> _decodeFavoriteCurrencies(String? raw) {
+    if (raw == null || raw.isEmpty) return CurrencyUtils.codes;
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is List) {
+        final favorites = decoded
+            .whereType<String>()
+            .map((code) => code.toUpperCase())
+            .where(CurrencyUtils.codes.contains)
+            .toSet()
+            .toList();
+        return favorites.isEmpty ? CurrencyUtils.codes : favorites;
+      }
+    } catch (_) {}
+    return CurrencyUtils.codes;
+  }
+
+  Future<void> _setFavoriteCurrencies(List<String> codes) async {
+    final favorites = codes
+        .where(CurrencyUtils.codes.contains)
+        .toSet()
+        .toList();
+    final repo = ref.read(settingsRepositoryProvider);
+    setState(
+      () => _favoriteCurrencies = favorites.isEmpty
+          ? CurrencyUtils.codes
+          : favorites,
+    );
+    if (favorites.isEmpty || favorites.length == CurrencyUtils.codes.length) {
+      await repo.remove('favorite_currencies');
+    } else {
+      await repo.set('favorite_currencies', json.encode(favorites));
+    }
+    ref.invalidate(favoriteCurrenciesProvider);
+  }
+
+  Future<void> _showFavoriteCurrenciesDialog() async {
+    final selected = _favoriteCurrencies.toSet();
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Favorite Currencies'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Currency lists will show only selected currencies. Select all or none to show every currency.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: CurrencyUtils.currencies.length,
+                    itemBuilder: (context, index) {
+                      final currency = CurrencyUtils.currencies[index];
+                      return CheckboxListTile(
+                        value: selected.contains(currency.code),
+                        title: Text('${currency.code}  ${currency.symbol}'),
+                        subtitle: Text(currency.name),
+                        onChanged: (checked) {
+                          setDialogState(() {
+                            if (checked == true) {
+                              selected.add(currency.code);
+                            } else {
+                              selected.remove(currency.code);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => setDialogState(() {
+                selected
+                  ..clear()
+                  ..addAll(CurrencyUtils.codes);
+              }),
+              child: const Text('Select All'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, selected.toList()),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null) {
+      await _setFavoriteCurrencies(result);
+    }
   }
 
   Future<void> _setThemeSeed(int seed) async {
@@ -196,14 +307,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: Text(_displayCurrency),
               trailing: DropdownButton<String>(
                 value: _displayCurrency,
-                items: CurrencyUtils.codes
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
+                items:
+                    currencyOptionsWithSelection(
+                          _favoriteCurrencies,
+                          _displayCurrency,
+                        )
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
                 onChanged: (v) {
                   if (v != null) _setDisplayCurrency(v);
                 },
                 underline: const SizedBox(),
               ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(
+                Icons.star_border,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Favorite Currencies'),
+              subtitle: Text(
+                _favoriteCurrencies.length == CurrencyUtils.codes.length
+                    ? 'All currencies shown'
+                    : _favoriteCurrencies.join(', '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _showFavoriteCurrenciesDialog,
             ),
             const Divider(height: 1),
             ListTile(

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,6 +15,7 @@ import '../services/recurring_service.dart';
 import '../database/repositories/settings_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
+import '../utils/currency_utils.dart';
 import '../utils/money_utils.dart';
 
 class ThemeConfig {
@@ -30,7 +33,11 @@ class ThemeConfig {
   });
 }
 
-final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(db.close);
+  return db;
+});
 
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   return WalletRepository(
@@ -77,6 +84,7 @@ final recurringServiceProvider = Provider<RecurringService>((ref) {
   return RecurringService(
     ref.watch(recurringRepositoryProvider),
     ref.watch(transactionRepositoryProvider),
+    ref.watch(walletRepositoryProvider),
   );
 });
 
@@ -91,6 +99,46 @@ final exchangeRatesProvider = FutureProvider<Map<String, double>>((ref) async {
   final service = ref.watch(exchangeRateServiceProvider);
   return service.getAllRates(refresh: count > 0);
 });
+
+final favoriteCurrenciesProvider = FutureProvider<List<String>>((ref) async {
+  final raw = await ref
+      .watch(settingsRepositoryProvider)
+      .get('favorite_currencies');
+  if (raw == null || raw.isEmpty) return CurrencyUtils.codes;
+
+  try {
+    final decoded = json.decode(raw);
+    if (decoded is List) {
+      final favorites = decoded
+          .whereType<String>()
+          .map((code) => code.toUpperCase())
+          .where(CurrencyUtils.codes.contains)
+          .toSet()
+          .toList();
+      return favorites.isEmpty ? CurrencyUtils.codes : favorites;
+    }
+  } catch (_) {
+    // Fall back to every currency if stored settings are invalid.
+  }
+
+  return CurrencyUtils.codes;
+});
+
+List<String> currencyOptionsWithSelection(
+  List<String> favoriteCurrencies,
+  String? selectedCurrency,
+) {
+  final options = favoriteCurrencies
+      .where(CurrencyUtils.codes.contains)
+      .toSet()
+      .toList();
+  if (selectedCurrency != null &&
+      CurrencyUtils.codes.contains(selectedCurrency) &&
+      !options.contains(selectedCurrency)) {
+    options.insert(0, selectedCurrency);
+  }
+  return options.isEmpty ? CurrencyUtils.codes : options;
+}
 
 final displayCurrencyProvider = FutureProvider<String>((ref) async {
   final setting = await ref
@@ -155,9 +203,7 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
     'dark' => ThemeMode.dark,
     _ => ThemeMode.system,
   };
-  final seed = seedStr != null
-      ? Color(int.parse(seedStr))
-      : const Color(0xFF1A6D4A);
+  final seed = Color(int.tryParse(seedStr ?? '') ?? 0xFF1A6D4A);
   final font = fontStr ?? 'System';
   final anim = animStr != null ? double.tryParse(animStr) ?? 1.0 : 1.0;
   final outlined = iconStr == 'true';
