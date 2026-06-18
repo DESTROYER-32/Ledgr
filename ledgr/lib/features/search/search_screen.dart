@@ -8,6 +8,7 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class Debouncer {
   final Duration delay;
@@ -48,9 +49,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   StreamSubscription? _resultSubscription;
 
   bool get _hasFilters =>
-      _type != null || _walletId != null || _categoryId != null ||
-      _startDate != null || _endDate != null ||
-      _minAmountMinor != null || _maxAmountMinor != null;
+      _type != null ||
+      _walletId != null ||
+      _categoryId != null ||
+      _startDate != null ||
+      _endDate != null ||
+      _minAmountMinor != null ||
+      _maxAmountMinor != null;
 
   @override
   void initState() {
@@ -154,28 +159,35 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         label: _type == 'expense'
                             ? 'Expense'
                             : _type == 'income'
-                                ? 'Income'
-                                : 'Transfer',
+                            ? 'Income'
+                            : 'Transfer',
                         onRemove: () => setState(() {
                           _type = null;
                           _runSearch();
                         }),
                       ),
-                    if (_walletId != null) _buildWalletChip(onRemove: () {
-                      setState(() {
-                        _walletId = null;
-                        _runSearch();
-                      });
-                    }),
-                    if (_categoryId != null) _buildCategoryChip(onRemove: () {
-                      setState(() {
-                        _categoryId = null;
-                        _runSearch();
-                      });
-                    }),
+                    if (_walletId != null)
+                      _buildWalletChip(
+                        onRemove: () {
+                          setState(() {
+                            _walletId = null;
+                            _runSearch();
+                          });
+                        },
+                      ),
+                    if (_categoryId != null)
+                      _buildCategoryChip(
+                        onRemove: () {
+                          setState(() {
+                            _categoryId = null;
+                            _runSearch();
+                          });
+                        },
+                      ),
                     if (_startDate != null)
                       _filterChip(
-                        label: 'From ${MoneyUtils.formatDateShort(_startDate!)}',
+                        label:
+                            'From ${MoneyUtils.formatDateShort(_startDate!)}',
                         onRemove: () => setState(() {
                           _startDate = null;
                           _runSearch();
@@ -216,8 +228,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 OutlinedButton.icon(
                   onPressed: _showFilterSheet,
                   icon: const Icon(Icons.tune, size: 16),
-                  label: const Text('Filters',
-                      style: TextStyle(fontSize: 13)),
+                  label: const Text('Filters', style: TextStyle(fontSize: 13)),
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton.icon(
@@ -244,10 +255,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ? '${MoneyUtils.formatDateShort(_startDate!)} - ${MoneyUtils.formatDateShort(_endDate!)}'
                         : 'Date range',
                     style: TextStyle(
-                        fontSize: 12,
-                        color: _startDate != null
-                            ? null
-                            : cs.onSurfaceVariant),
+                      fontSize: 12,
+                      color: _startDate != null ? null : cs.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -260,13 +270,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.search, size: 48,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                    Icon(
+                      Icons.search,
+                      size: 48,
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.4),
+                    ),
                     const SizedBox(height: 12),
-                    Text('Start typing to search',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        )),
+                    Text(
+                      'Start typing to search',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -278,10 +293,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _filterChip({
-    required String label,
-    required VoidCallback onRemove,
-  }) {
+  Widget _filterChip({required String label, required VoidCallback onRemove}) {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: InputChip(
@@ -351,13 +363,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 8),
-                  Text('Filters',
-                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          )),
+                  Text(
+                    'Filters',
+                    style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 20),
-                  Text('Type',
-                      style: Theme.of(ctx).textTheme.labelMedium),
+                  Text('Type', style: Theme.of(ctx).textTheme.labelMedium),
                   const SizedBox(height: 8),
                   SegmentedButton<String>(
                     segments: const [
@@ -366,44 +379,49 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ButtonSegment(value: 'transfer', label: Text('Transfer')),
                     ],
                     selected: localType != null ? {localType!} : <String>{},
-                    onSelectionChanged: (v) =>
-                        setLocalState(() => localType = v.isEmpty ? null : v.first),
+                    onSelectionChanged: (v) => setLocalState(
+                      () => localType = v.isEmpty ? null : v.first,
+                    ),
                     emptySelectionAllowed: true,
                     showSelectedIcon: false,
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int?>(
-                    initialValue: localWalletId,
-                    decoration: const InputDecoration(
-                        labelText: 'Account',
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8)),
-                    isExpanded: true,
-                    items: [
-                      const DropdownMenuItem<int?>(
-                          value: null, child: Text('All accounts')),
-                      ...wallets.map((w) => DropdownMenuItem<int?>(
-                          value: w.id, child: Text(w.name))),
-                    ],
-                    onChanged: (v) =>
-                        setLocalState(() => localWalletId = v),
+                  ModernSelectionField<int>(
+                    label: 'Account',
+                    value: localWalletId,
+                    placeholder: 'All accounts',
+                    allowClear: true,
+                    leadingIcon: Icons.account_balance_wallet_outlined,
+                    items: wallets
+                        .map(
+                          (w) => ModernSelectionItem(
+                            value: w.id,
+                            title: w.name,
+                            subtitle: w.type.replaceAll('_', ' '),
+                            icon: Icons.account_balance_outlined,
+                            badge: w.currencyCode,
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setLocalState(() => localWalletId = v),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<int?>(
-                    initialValue: localCategoryId,
-                    decoration: const InputDecoration(
-                        labelText: 'Category',
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8)),
-                    isExpanded: true,
-                    items: [
-                      const DropdownMenuItem<int?>(
-                          value: null, child: Text('All categories')),
-                      ...cats.map((c) => DropdownMenuItem<int?>(
-                          value: c.id, child: Text(c.name))),
-                    ],
-                    onChanged: (v) =>
-                        setLocalState(() => localCategoryId = v),
+                  ModernSelectionField<int>(
+                    label: 'Category',
+                    value: localCategoryId,
+                    placeholder: 'All categories',
+                    allowClear: true,
+                    leadingIcon: Icons.category_outlined,
+                    items: cats
+                        .map(
+                          (c) => ModernSelectionItem(
+                            value: c.id,
+                            title: c.name,
+                            icon: Icons.category_outlined,
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setLocalState(() => localCategoryId = v),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -414,16 +432,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Min amount',
                             contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
-                          keyboardType: const TextInputType
-                              .numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           onChanged: (v) {
                             final parsed = double.tryParse(v);
-                            setLocalState(() =>
-                                localMinAmount = parsed != null
-                                    ? (parsed * 100).round()
-                                    : null);
+                            setLocalState(
+                              () => localMinAmount = parsed != null
+                                  ? (parsed * 100).round()
+                                  : null,
+                            );
                           },
                         ),
                       ),
@@ -434,16 +456,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Max amount',
                             contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
-                          keyboardType: const TextInputType
-                              .numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           onChanged: (v) {
                             final parsed = double.tryParse(v);
-                            setLocalState(() =>
-                                localMaxAmount = parsed != null
-                                    ? (parsed * 100).round()
-                                    : null);
+                            setLocalState(
+                              () => localMaxAmount = parsed != null
+                                  ? (parsed * 100).round()
+                                  : null,
+                            );
                           },
                         ),
                       ),
@@ -479,11 +505,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off, size: 48,
-                color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+            Icon(
+              Icons.search_off,
+              size: 48,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 12),
-            Text('No results found',
-                style: theme.textTheme.bodyLarge),
+            Text('No results found', style: theme.textTheme.bodyLarge),
           ],
         ),
       );
@@ -498,7 +526,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     final grouped = <String, List<Transaction>>{};
     for (final t in _results!) {
-      final key = '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}-${t.date.day.toString().padLeft(2, '0')}';
+      final key =
+          '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}-${t.date.day.toString().padLeft(2, '0')}';
       grouped.putIfAbsent(key, () => []).add(t);
     }
     final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -513,8 +542,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               Expanded(
                 child: Text(
                   '${_results!.length} transaction${_results!.length == 1 ? '' : 's'}',
-                  style: TextStyle(
-                      fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
               ),
               if (totalExpenses > 0)
@@ -523,14 +551,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: Text(
                     'Exp: ${_formatAmount(totalExpenses)}',
                     style: const TextStyle(
-                        fontSize: 12, color: AppColors.expense),
+                      fontSize: 12,
+                      color: AppColors.expense,
+                    ),
                   ),
                 ),
               if (totalIncome > 0)
                 Text(
                   'Inc: ${_formatAmount(totalIncome)}',
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.income),
+                  style: const TextStyle(fontSize: 12, color: AppColors.income),
                 ),
             ],
           ),
@@ -543,9 +572,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               final dayTransactions = grouped[dateKey]!;
               final parts = dateKey.split('-');
               final date = DateTime(
-                  int.parse(parts[0]),
-                  int.parse(parts[1]),
-                  int.parse(parts[2]));
+                int.parse(parts[0]),
+                int.parse(parts[1]),
+                int.parse(parts[2]),
+              );
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,9 +596,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     final isIncome = t.type == 'income';
                     final color = isExpense
                         ? AppColors.expense
-                        : (isIncome
-                            ? AppColors.income
-                            : AppColors.transfer);
+                        : (isIncome ? AppColors.income : AppColors.transfer);
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: color.withValues(alpha: 0.15),
@@ -577,23 +605,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           isExpense
                               ? Icons.arrow_upward
                               : (isIncome
-                                  ? Icons.arrow_downward
-                                  : Icons.swap_horiz),
+                                    ? Icons.arrow_downward
+                                    : Icons.swap_horiz),
                           color: color,
                           size: 18,
                         ),
                       ),
-                      title: Text(t.title ?? t.type,
-                          style: const TextStyle(fontSize: 14)),
+                      title: Text(
+                        t.title ?? t.type,
+                        style: const TextStyle(fontSize: 14),
+                      ),
                       trailing: Text(
                         '${isExpense ? '-' : (isIncome ? '+' : '')}${_formatAmount(t.amountMinor)}',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, color: color),
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
                       ),
-                      onTap: () =>
-                          context.push('/transactions/${t.id}'),
+                      onTap: () => context.push('/transactions/${t.id}'),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 0),
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
                     );
                   }),
                 ],

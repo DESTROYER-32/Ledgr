@@ -213,16 +213,21 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             const SizedBox(height: 16),
             if (_type == 'expense' || _type == 'income')
               catsAsync.when(
-                data: (cats) => DropdownButtonFormField<int>(
-                  initialValue: _categoryId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('None')),
-                    ...cats.map(
-                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    ),
-                  ],
+                data: (cats) => ModernSelectionField<int>(
+                  label: 'Category',
+                  value: _categoryId,
+                  placeholder: 'None',
+                  allowClear: true,
+                  leadingIcon: Icons.category_outlined,
+                  items: cats
+                      .map(
+                        (c) => ModernSelectionItem(
+                          value: c.id,
+                          title: c.name,
+                          icon: Icons.category_outlined,
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) => setState(() => _categoryId = v),
                 ),
                 error: (e, _) => Text('$e'),
