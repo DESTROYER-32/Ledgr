@@ -30,7 +30,11 @@ class ThemeConfig {
   });
 }
 
-final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(db.close);
+  return db;
+});
 
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   return WalletRepository(

@@ -15,21 +15,24 @@ class RecurringRepository {
             ..orderBy([(r) => OrderingTerm(expression: r.nextDueDate)]))
           .watch();
 
-  Future<RecurringTransaction?> getById(int id) =>
+  Future<List<RecurringTransaction>> getActive() =>
       (_db.recurringTransactions.select()
-            ..where((r) => r.id.equals(id)))
+            ..where((r) => r.active.equals(true))
+            ..orderBy([(r) => OrderingTerm(expression: r.nextDueDate)]))
+          .get();
+
+  Future<RecurringTransaction?> getById(int id) =>
+      (_db.recurringTransactions.select()..where((r) => r.id.equals(id)))
           .getSingleOrNull();
 
   Future<void> insert(RecurringTransactionsCompanion entry) =>
       _db.into(_db.recurringTransactions).insert(entry);
 
   Future<void> update(int id, RecurringTransactionsCompanion entry) =>
-      (_db.recurringTransactions.update()
-            ..where((r) => r.id.equals(id)))
-          .write(entry);
+      (_db.recurringTransactions.update()..where((r) => r.id.equals(id))).write(
+        entry,
+      );
 
   Future<void> delete(int id) =>
-      (_db.recurringTransactions.delete()
-            ..where((r) => r.id.equals(id)))
-          .go();
+      (_db.recurringTransactions.delete()..where((r) => r.id.equals(id))).go();
 }
