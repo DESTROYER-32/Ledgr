@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/currency_utils.dart';
+import '../utils/money_utils.dart';
 
 class AmountField extends StatelessWidget {
   final TextEditingController controller;
@@ -11,7 +12,7 @@ class AmountField extends StatelessWidget {
     super.key,
     required this.controller,
     this.label = 'Amount',
-    this.currencySymbol = 'USD',
+    this.currencySymbol = MoneyUtils.defaultCurrencyCode,
     this.autofocus = false,
   });
 

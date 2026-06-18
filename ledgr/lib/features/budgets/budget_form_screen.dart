@@ -40,9 +40,14 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     if (_isEditing) _load();
     _updateEndDate();
     if (!_isEditing) {
-      _currencyCode =
-          ref.read(displayCurrencyProvider).valueOrNull ??
-          MoneyUtils.defaultCurrencyCode;
+      _loadDefaultCurrency();
+    }
+  }
+
+  Future<void> _loadDefaultCurrency() async {
+    final currencyCode = await ref.read(displayCurrencyProvider.future);
+    if (mounted && _currencyCode.isEmpty) {
+      setState(() => _currencyCode = currencyCode);
     }
   }
 
