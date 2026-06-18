@@ -18,7 +18,7 @@ class RecurringService {
 
   Future<int> processDueRecurrings() async {
     final now = DateTime.now();
-    final all = await _recurringRepo.watchActive().first;
+    final all = await _recurringRepo.getActive();
     final due = all
         .where((r) => r.nextDueDate != null && !r.nextDueDate!.isAfter(now))
         .toList();

@@ -36,7 +36,7 @@ class BackupScreen extends ConsumerWidget {
                   leading: const Icon(Icons.download),
                   title: const Text('Restore Backup'),
                   subtitle: const Text('Restore from a .db file'),
-                  onTap: () => _importBackup(context),
+                  onTap: () => _importBackup(context, ref),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -66,39 +66,50 @@ class BackupScreen extends ConsumerWidget {
       final dbFile = File('${dir.path}/budgetly.db');
       if (!dbFile.existsSync()) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No data to export')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('No data to export')));
         }
         return;
       }
       final backupDir = await getTemporaryDirectory();
       final backupFile = File('${backupDir.path}/budgetly_backup.db');
       await dbFile.copy(backupFile.path);
-      await Share.shareXFiles([XFile(backupFile.path)], text: 'Budgetly Backup');
+      await Share.shareXFiles([
+        XFile(backupFile.path),
+      ], text: 'Budgetly Backup');
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Export failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
       }
     }
   }
 
-  Future<void> _importBackup(BuildContext context) async {
+  Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
     try {
       final result = await FilePicker.platform.pickFiles(type: FileType.any);
       if (result == null || result.files.single.path == null) return;
       final dir = await getApplicationDocumentsDirectory();
       final dbFile = File('${dir.path}/budgetly.db');
       final sourceFile = File(result.files.single.path!);
+
+      final db = ref.read(appDatabaseProvider);
+      await db.close();
+      ref.invalidate(appDatabaseProvider);
+
       await sourceFile.copy(dbFile.path);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Restore complete. Restart app.')));
+          const SnackBar(content: Text('Restore complete. Restart app.')),
+        );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Restore failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Restore failed: $e')));
       }
     }
   }
@@ -122,12 +133,14 @@ class BackupScreen extends ConsumerWidget {
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/budgetly_transactions.csv');
       await file.writeAsString(csv);
-      await Share.shareXFiles([XFile(file.path)],
-          text: 'Budgetly Transactions');
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Budgetly Transactions');
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('CSV export failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('CSV export failed: $e')));
       }
     }
   }
@@ -141,13 +154,17 @@ class BackupScreen extends ConsumerWidget {
       final rows = const CsvToListConverter().convert(content);
       if (rows.length < 2) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('CSV file is empty')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('CSV file is empty')));
         }
         return;
       }
       final repo = ref.read(transactionRepositoryProvider);
-      final wallets = await ref.read(walletRepositoryProvider).watchActive().first;
+      final wallets = await ref
+          .read(walletRepositoryProvider)
+          .watchActive()
+          .first;
       var count = 0;
       for (var i = 1; i < rows.length; i++) {
         final row = rows[i];
@@ -158,25 +175,29 @@ class BackupScreen extends ConsumerWidget {
           final amount = (double.tryParse(row[2].toString()) ?? 0) * 100;
           final title = row.length > 3 ? row[3].toString() : null;
           if (wallets.isEmpty) break;
-          await repo.insert(TransactionsCompanion.insert(
-            type: type,
-            amountMinor: amount.round(),
-            currencyCode: MoneyUtils.defaultCurrencyCode,
-            date: date,
-            walletId: wallets.first.id,
-            title: Value(title),
-          ));
+          await repo.insert(
+            TransactionsCompanion.insert(
+              type: type,
+              amountMinor: amount.round(),
+              currencyCode: MoneyUtils.defaultCurrencyCode,
+              date: date,
+              walletId: wallets.first.id,
+              title: Value(title),
+            ),
+          );
           count++;
         } catch (_) {}
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Imported $count transactions')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Imported $count transactions')));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('CSV import failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('CSV import failed: $e')));
       }
     }
   }
