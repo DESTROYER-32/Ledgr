@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class RecurringFormScreen extends ConsumerStatefulWidget {
   final int? recurringId;
@@ -188,13 +189,19 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             ),
             const SizedBox(height: 16),
             walletsAsync.when(
-              data: (wallets) => DropdownButtonFormField<int>(
-                initialValue: _walletId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Account'),
+              data: (wallets) => ModernSelectionField<int>(
+                label: 'Account',
+                value: _walletId,
+                leadingIcon: Icons.account_balance_wallet_outlined,
                 items: wallets
                     .map(
-                      (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
+                      (w) => ModernSelectionItem(
+                        value: w.id,
+                        title: w.name,
+                        subtitle: w.type.replaceAll('_', ' '),
+                        icon: Icons.account_balance_outlined,
+                        badge: w.currencyCode,
+                      ),
                     )
                     .toList(),
                 onChanged: (v) => setState(() => _walletId = v),
