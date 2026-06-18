@@ -5,7 +5,10 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/currency_utils.dart';
+import '../../core/utils/money_utils.dart';
 import '../../core/widgets/amount_field.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class ObjectiveFormScreen extends ConsumerStatefulWidget {
   final int? objectiveId;
@@ -21,6 +24,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   String _type = 'goal';
+  String _currencyCode = MoneyUtils.defaultCurrencyCode;
   DateTime? _deadline;
   int _color = 0xFF43A047;
 
@@ -37,10 +41,18 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
       _nameController.text = obj.name;
       _amountController.text = (obj.amountMinor / 100).toStringAsFixed(2);
       _type = obj.type;
+      _currencyCode = obj.currencyCode;
       _deadline = obj.deadline;
       _color = obj.color ?? 0xFF43A047;
       setState(() {});
     }
+  }
+
+  String? _currencyName(String code) {
+    for (final currency in CurrencyUtils.currencies) {
+      if (currency.code == code) return currency.name;
+    }
+    return null;
   }
 
   @override
@@ -83,6 +95,31 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
             AmountField(
               controller: _amountController,
               label: _type == 'loan' ? 'Total Amount' : 'Target Amount',
+            ),
+            const SizedBox(height: 16),
+            ModernSelectionField<String>(
+              label: 'Currency',
+              value: _currencyCode,
+              leadingIcon: Icons.monetization_on_outlined,
+              items:
+                  currencyOptionsWithSelection(
+                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                            CurrencyUtils.codes,
+                        _currencyCode,
+                      )
+                      .map(
+                        (c) => ModernSelectionItem(
+                          value: c,
+                          title: c,
+                          subtitle: _currencyName(c),
+                          icon: Icons.monetization_on_outlined,
+                          badge: CurrencyUtils.symbolFor(c),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (v) {
+                if (v != null) setState(() => _currencyCode = v);
+              },
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -165,7 +202,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
       name: _nameController.text,
       type: _type,
       amountMinor: amount,
-      currencyCode: 'USD',
+      currencyCode: _currencyCode,
       deadline: _deadline != null ? Value(_deadline!) : const Value(null),
       color: Value(_color),
     );

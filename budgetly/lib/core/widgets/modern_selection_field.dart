@@ -26,6 +26,7 @@ class ModernSelectionField<T> extends StatelessWidget {
   final IconData? leadingIcon;
   final bool allowClear;
   final bool enabled;
+  final bool searchEnabled;
 
   const ModernSelectionField({
     super.key,
@@ -38,6 +39,7 @@ class ModernSelectionField<T> extends StatelessWidget {
     this.leadingIcon,
     this.allowClear = false,
     this.enabled = true,
+    this.searchEnabled = true,
   });
 
   @override
@@ -53,18 +55,20 @@ class ModernSelectionField<T> extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           onTap: enabled
               ? () async {
-                  final result = await showModalBottomSheet<_SelectionResult<T>>(
-                    context: context,
-                    useSafeArea: true,
-                    showDragHandle: true,
-                    isScrollControlled: true,
-                    builder: (_) => _ModernSelectionSheet<T>(
-                      title: label,
-                      value: value,
-                      items: items,
-                      allowClear: allowClear,
-                    ),
-                  );
+                  final result =
+                      await showModalBottomSheet<_SelectionResult<T>>(
+                        context: context,
+                        useSafeArea: true,
+                        showDragHandle: true,
+                        isScrollControlled: true,
+                        builder: (_) => _ModernSelectionSheet<T>(
+                          title: label,
+                          value: value,
+                          items: items,
+                          allowClear: allowClear,
+                          searchEnabled: searchEnabled,
+                        ),
+                      );
                   if (result != null) {
                     state.didChange(result.value);
                     onChanged(result.value);
@@ -143,16 +147,19 @@ class _ModernSelectionSheet<T> extends StatefulWidget {
   final T? value;
   final List<ModernSelectionItem<T>> items;
   final bool allowClear;
+  final bool searchEnabled;
 
   const _ModernSelectionSheet({
     required this.title,
     required this.value,
     required this.items,
     required this.allowClear,
+    required this.searchEnabled,
   });
 
   @override
-  State<_ModernSelectionSheet<T>> createState() => _ModernSelectionSheetState<T>();
+  State<_ModernSelectionSheet<T>> createState() =>
+      _ModernSelectionSheetState<T>();
 }
 
 class _ModernSelectionSheetState<T> extends State<_ModernSelectionSheet<T>> {
@@ -180,7 +187,9 @@ class _ModernSelectionSheetState<T> extends State<_ModernSelectionSheet<T>> {
           children: [
             Row(
               children: [
-                Expanded(child: Text(widget.title, style: theme.textTheme.titleLarge)),
+                Expanded(
+                  child: Text(widget.title, style: theme.textTheme.titleLarge),
+                ),
                 if (widget.allowClear)
                   TextButton(
                     onPressed: () => Navigator.pop(
@@ -191,19 +200,21 @@ class _ModernSelectionSheetState<T> extends State<_ModernSelectionSheet<T>> {
                   ),
               ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search ${widget.title.toLowerCase()}',
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
+            if (widget.searchEnabled) ...[
+              const SizedBox(height: 12),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search ${widget.title.toLowerCase()}',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
+                onChanged: (value) => setState(() => _query = value),
               ),
-              onChanged: (value) => setState(() => _query = value),
-            ),
+            ],
             const SizedBox(height: 12),
             Expanded(
               child: ListView.separated(
@@ -216,10 +227,8 @@ class _ModernSelectionSheetState<T> extends State<_ModernSelectionSheet<T>> {
                   return _ModernSelectionTile<T>(
                     item: item,
                     selected: selected,
-                    onTap: () => Navigator.pop(
-                      context,
-                      _SelectionResult<T>(item.value),
-                    ),
+                    onTap: () =>
+                        Navigator.pop(context, _SelectionResult<T>(item.value)),
                   );
                 },
               ),
@@ -247,7 +256,9 @@ class _ModernSelectionTile<T> extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Material(
-      color: selected ? cs.primaryContainer : cs.surfaceContainerHighest.withValues(alpha: .55),
+      color: selected
+          ? cs.primaryContainer
+          : cs.surfaceContainerHighest.withValues(alpha: .55),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -268,13 +279,17 @@ class _ModernSelectionTile<T> extends StatelessWidget {
                   children: [
                     Text(
                       item.title,
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     if (item.subtitle != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         item.subtitle!,
-                        style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ],
