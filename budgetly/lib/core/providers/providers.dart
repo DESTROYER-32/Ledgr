@@ -160,9 +160,7 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
     'dark' => ThemeMode.dark,
     _ => ThemeMode.system,
   };
-  final seed = seedStr != null
-      ? Color(int.parse(seedStr))
-      : const Color(0xFF1A6D4A);
+  final seed = Color(int.tryParse(seedStr ?? '') ?? 0xFF1A6D4A);
   final font = fontStr ?? 'System';
   final anim = animStr != null ? double.tryParse(animStr) ?? 1.0 : 1.0;
   final outlined = iconStr == 'true';

@@ -53,7 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ? null
             : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
-        _themeSeed = themeSeed != null ? int.parse(themeSeed) : 0xFF1A6D4A;
+        _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
         _displayCurrency = displayCurrency ?? 'USD';
         _isLoading = false;
       });
