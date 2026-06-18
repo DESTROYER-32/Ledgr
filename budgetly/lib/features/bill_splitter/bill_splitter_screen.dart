@@ -227,7 +227,7 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
         TransactionsCompanion.insert(
           type: 'expense',
           amountMinor: perPerson,
-          currencyCode: 'USD',
+          currencyCode: wallet.currencyCode,
           date: DateTime.now(),
           walletId: wallet.id,
           title: Value('$title ($person)'),

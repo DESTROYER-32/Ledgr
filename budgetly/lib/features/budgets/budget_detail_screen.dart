@@ -8,6 +8,7 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/transaction_tile.dart';
 
@@ -875,13 +876,10 @@ class _LimitDialogState extends State<_LimitDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DropdownButtonFormField<int>(
-            initialValue: _selectedCatId,
-            decoration: const InputDecoration(
-              labelText: 'Category',
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            isExpanded: true,
+          ModernSelectionField<int>(
+            label: 'Category',
+            value: _selectedCatId,
+            leadingIcon: Icons.category_outlined,
             items: widget.categories
                 .where(
                   (c) => widget.isIncome
@@ -889,8 +887,12 @@ class _LimitDialogState extends State<_LimitDialog> {
                       : (c.kind == 'expense' || c.kind == 'both'),
                 )
                 .map(
-                  (c) =>
-                      DropdownMenuItem<int>(value: c.id, child: Text(c.name)),
+                  (c) => ModernSelectionItem(
+                    value: c.id,
+                    title: c.name,
+                    subtitle: c.kind,
+                    icon: Icons.category_outlined,
+                  ),
                 )
                 .toList(),
             onChanged: (v) => setState(() => _selectedCatId = v),
@@ -956,18 +958,18 @@ class _AddMoneyDialogState extends State<_AddMoneyDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DropdownButtonFormField<int>(
-            initialValue: _selectedWalletId,
-            decoration: const InputDecoration(
-              labelText: 'Account',
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            isExpanded: true,
+          ModernSelectionField<int>(
+            label: 'Account',
+            value: _selectedWalletId,
+            leadingIcon: Icons.account_balance_wallet_outlined,
             items: widget.wallets
                 .map(
-                  (w) => DropdownMenuItem<int>(
+                  (w) => ModernSelectionItem(
                     value: w.id,
-                    child: Text('${w.name} (${w.currencyCode})'),
+                    title: w.name,
+                    subtitle: w.type.replaceAll('_', ' '),
+                    icon: Icons.account_balance_outlined,
+                    badge: w.currencyCode,
                   ),
                 )
                 .toList(),
