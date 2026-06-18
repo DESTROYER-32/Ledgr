@@ -116,8 +116,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (title.isEmpty) return;
     final repo = ref.read(associatedTitleRepositoryProvider);
     final catId = await repo.findCategoryIdForTitle(title);
-    if (catId != null && mounted) {
-      setState(() => _categoryId = catId);
+    final objectives = await ref.read(allObjectivesProvider.future);
+    final normalizedTitle = title.toLowerCase();
+    final objectiveId = objectives
+        .where((o) => normalizedTitle.contains(o.name.toLowerCase()))
+        .map((o) => o.id)
+        .firstOrNull;
+    if ((catId != null || objectiveId != null) && mounted) {
+      setState(() {
+        if (catId != null) _categoryId = catId;
+        if (_objectiveId == null && objectiveId != null) {
+          _objectiveId = objectiveId;
+        }
+      });
     }
   }
 
