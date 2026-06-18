@@ -1,4 +1,8 @@
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:budgetly/core/database/app_database.dart';
+import 'package:budgetly/core/database/repositories/budget_repository.dart';
 
 /// Tests for budget calculation logic
 /// Note: These test the calculation math, not the database layer.
@@ -29,8 +33,7 @@ void main() {
     test('percentage is 0 when planned is 0', () {
       const planned = 0;
       const spent = 5000;
-      final percentage =
-          planned > 0 ? (spent / planned).clamp(0.0, 1.0) : 0.0;
+      final percentage = planned > 0 ? (spent / planned).clamp(0.0, 1.0) : 0.0;
       expect(percentage, 0.0);
     });
 
@@ -48,13 +51,71 @@ void main() {
     });
 
     test('total spent across categories', () {
-      final spentByCat = <int, int>{
-        1: 25000,
-        2: 15000,
-        3: 5000,
-      };
+      final spentByCat = <int, int>{1: 25000, 2: 15000, 3: 5000};
       final total = spentByCat.values.fold<int>(0, (s, v) => s + v);
       expect(total, 45000);
+    });
+  });
+
+  group('BudgetRepository', () {
+    test('setLimit keeps wallet-specific limits separate', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final repo = BudgetRepository(db);
+      final budgetId = await db
+          .into(db.budgets)
+          .insert(
+            BudgetsCompanion.insert(
+              name: 'Groceries',
+              periodStart: DateTime(2024, 1),
+              periodEnd: DateTime(2024, 1, 31),
+              currencyCode: 'USD',
+            ),
+          );
+      final categoryId = await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: 'Food', kind: 'expense'));
+      final wallet1 = await db
+          .into(db.wallets)
+          .insert(
+            WalletsCompanion.insert(
+              name: 'Checking',
+              type: 'checking',
+              currencyCode: 'USD',
+              initialBalanceMinor: 0,
+            ),
+          );
+      final wallet2 = await db
+          .into(db.wallets)
+          .insert(
+            WalletsCompanion.insert(
+              name: 'Cash',
+              type: 'cash',
+              currencyCode: 'USD',
+              initialBalanceMinor: 0,
+            ),
+          );
+
+      await repo.setLimit(
+        budgetId,
+        categoryId,
+        walletId: wallet1,
+        amount: 10000,
+      );
+      await repo.setLimit(
+        budgetId,
+        categoryId,
+        walletId: wallet2,
+        amount: 25000,
+      );
+
+      final limits = await db.select(db.budgetCategoryLimits).get();
+      expect(limits, hasLength(2));
+      expect(
+        {for (final limit in limits) limit.walletId: limit.plannedAmountMinor},
+        {wallet1: 10000, wallet2: 25000},
+      );
     });
   });
 }

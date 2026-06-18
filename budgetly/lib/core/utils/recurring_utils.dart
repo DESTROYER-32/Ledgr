@@ -1,8 +1,7 @@
 class RecurringUtils {
   RecurringUtils._();
 
-  static DateTime computeNextDueDate(
-      String rule, DateTime fromDate) {
+  static DateTime computeNextDueDate(String rule, DateTime fromDate) {
     switch (rule) {
       case 'daily':
         return DateTime(fromDate.year, fromDate.month, fromDate.day + 1);
@@ -18,13 +17,19 @@ class RecurringUtils {
   }
 
   static List<DateTime> generateInstances(
-      String rule, DateTime start, DateTime? end, int maxCount) {
+    String rule,
+    DateTime start,
+    DateTime? end,
+    int maxCount,
+  ) {
     final instances = <DateTime>[];
     var current = start;
     while (instances.length < maxCount) {
       if (end != null && current.isAfter(end)) break;
       instances.add(current);
-      current = computeNextDueDate(rule, current);
+      final next = computeNextDueDate(rule, current);
+      if (!next.isAfter(current)) break;
+      current = next;
     }
     return instances;
   }
