@@ -86,6 +86,18 @@ void main() {
     expect(rates['jpy'], 150.0);
   });
 
+  test('removing a custom rate restores fetched rate on refresh', () async {
+    final service = buildService(
+      MockClient((_) async => http.Response(rateBody, 200)),
+    );
+
+    await service.setCustomRate('EUR', 0.95);
+    expect((await service.getAllRates(refresh: true))['eur'], 0.95);
+
+    await service.removeCustomRate('EUR');
+    expect((await service.getAllRates(refresh: true))['eur'], 0.91);
+  });
+
   test('conversion fetches rates when cache is empty', () async {
     var calls = 0;
     final service = buildService(
