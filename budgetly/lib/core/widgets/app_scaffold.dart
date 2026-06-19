@@ -8,17 +8,24 @@ class AppScaffold extends StatelessWidget {
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith('/budgets')) return 1;
-    if (location.startsWith('/wallets')) return 2;
-    if (location.startsWith('/settings')) return 3;
+    if (location.startsWith('/analytics')) return 2;
+    if (location.startsWith('/wallets')) return 3;
+    if (location.startsWith('/settings')) return 4;
     return 0;
   }
 
   void _onTap(BuildContext context, int index) {
     switch (index) {
-      case 0: context.go('/');
-      case 1: context.go('/budgets');
-      case 2: context.go('/wallets');
-      case 3: context.go('/settings');
+      case 0:
+        context.go('/');
+      case 1:
+        context.go('/budgets');
+      case 2:
+        context.go('/analytics');
+      case 3:
+        context.go('/wallets');
+      case 4:
+        context.go('/settings');
     }
   }
 
@@ -40,7 +47,8 @@ class AppScaffold extends StatelessWidget {
               child: FloatingActionButton(
                 heroTag: 'shell_fab',
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18)),
+                  borderRadius: BorderRadius.circular(18),
+                ),
                 onPressed: () => _showQuickEntry(context),
                 child: const Icon(Icons.add, size: 30),
               ),
@@ -62,6 +70,11 @@ class AppScaffold extends StatelessWidget {
             icon: const Icon(Icons.track_changes_outlined),
             selectedIcon: Icon(Icons.track_changes, color: cs.primary),
             label: 'Budgets',
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights, color: cs.primary),
+            label: 'Analytics',
           ),
           NavigationDestination(
             icon: const Icon(Icons.account_balance_wallet_outlined),
@@ -101,8 +114,10 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
 
   void _navigateToForm() {
     Navigator.pop(context);
-    widget.rootNavigator.push('/transactions/new',
-        extra: <String, dynamic>{'type': _type});
+    widget.rootNavigator.push(
+      '/transactions/new',
+      extra: <String, dynamic>{'type': _type},
+    );
   }
 
   @override
@@ -120,16 +135,30 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 8),
-          Text('Quick Add Transaction',
-              style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          )),
+          Text(
+            'Quick Add Transaction',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 20),
           SegmentedButton<String>(
             segments: const [
-              ButtonSegment(value: 'expense', label: Text('Expense'), icon: Icon(Icons.arrow_upward)),
-              ButtonSegment(value: 'income', label: Text('Income'), icon: Icon(Icons.arrow_downward)),
-              ButtonSegment(value: 'transfer', label: Text('Transfer'), icon: Icon(Icons.swap_horiz)),
+              ButtonSegment(
+                value: 'expense',
+                label: Text('Expense'),
+                icon: Icon(Icons.arrow_upward),
+              ),
+              ButtonSegment(
+                value: 'income',
+                label: Text('Income'),
+                icon: Icon(Icons.arrow_downward),
+              ),
+              ButtonSegment(
+                value: 'transfer',
+                label: Text('Transfer'),
+                icon: Icon(Icons.swap_horiz),
+              ),
             ],
             selected: {_type},
             onSelectionChanged: (v) => setState(() => _type = v.first),
