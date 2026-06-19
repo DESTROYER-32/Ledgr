@@ -580,15 +580,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 8),
           _section(theme, 'Data', [
             ListTile(
-              leading: const Icon(Icons.upload_file),
-              title: const Text('Export Data'),
-              subtitle: const Text('Backup your data to a file'),
-              onTap: () => context.push('/backup'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('Import Data'),
-              subtitle: const Text('Restore from backup or import CSV'),
+              leading: const Icon(Icons.backup_outlined),
+              title: const Text('Backup & Restore'),
+              subtitle: const Text('Export or restore all app data'),
               onTap: () => context.push('/backup'),
             ),
           ]),
