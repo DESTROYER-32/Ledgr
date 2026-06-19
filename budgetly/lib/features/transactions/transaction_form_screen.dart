@@ -8,6 +8,7 @@ import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../core/widgets/amount_field.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   final int? transactionId;
@@ -204,6 +205,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   @override
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
+    final walletBalances = ref.watch(walletBalancesProvider).valueOrNull ?? {};
     final catsAsync = ref.watch(expenseCategoriesProvider);
     final objectivesAsync = ref.watch(allObjectivesProvider);
     final theme = Theme.of(context);
@@ -322,13 +324,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ),
             const SizedBox(height: 16),
             walletsAsync.when(
-              data: (wallets) => DropdownButtonFormField<int>(
-                isExpanded: true,
-                initialValue: _walletId,
-                decoration: const InputDecoration(labelText: 'Account'),
+              data: (wallets) => ModernSelectionField<int>(
+                label: 'Account',
+                value: _walletId,
+                leadingIcon: Icons.account_balance_wallet_outlined,
                 items: wallets
                     .map(
-                      (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
+                      (w) => ModernSelectionItem(
+                        value: w.id,
+                        title: w.name,
+                        subtitle:
+                            '${_walletTypeLabel(w.type)} • ${MoneyUtils.format(walletBalances[w.id] ?? w.initialBalanceMinor, currencyCode: w.currencyCode)}',
+                        icon: _walletIcon(w.type),
+                        badge: w.currencyCode,
+                      ),
                     )
                     .toList(),
                 onChanged: (v) {
@@ -343,10 +352,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               loading: () => const LinearProgressIndicator(),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: displayCurrency,
-              decoration: const InputDecoration(labelText: 'Currency'),
+            ModernSelectionField<String>(
+              label: 'Currency',
+              value: displayCurrency,
+              leadingIcon: Icons.payments_outlined,
               items:
                   currencyOptionsWithSelection(
                         ref.watch(favoriteCurrenciesProvider).valueOrNull ??
@@ -354,9 +363,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         displayCurrency,
                       )
                       .map(
-                        (c) => DropdownMenuItem(
+                        (c) => ModernSelectionItem(
                           value: c,
-                          child: Text('$c  ${CurrencyUtils.symbolFor(c)}'),
+                          title: c,
+                          subtitle: _currencyName(c),
+                          icon: Icons.monetization_on_outlined,
+                          badge: CurrencyUtils.symbolFor(c),
                         ),
                       )
                       .toList(),
@@ -383,16 +395,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             const SizedBox(height: 16),
             if (_type == 'expense' || _type == 'income')
               catsAsync.when(
-                data: (cats) => DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: _categoryId,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('None')),
-                    ...cats.map(
-                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    ),
-                  ],
+                data: (cats) => ModernSelectionField<int>(
+                  label: 'Category',
+                  value: _categoryId,
+                  placeholder: 'None',
+                  allowClear: true,
+                  leadingIcon: Icons.category_outlined,
+                  items: cats
+                      .map(
+                        (c) => ModernSelectionItem(
+                          value: c.id,
+                          title: c.name,
+                          icon: Icons.category_outlined,
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) => setState(() => _categoryId = v),
                 ),
                 error: (e, _) => Text('$e'),
@@ -400,15 +417,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               ),
             if (_type == 'transfer')
               walletsAsync.when(
-                data: (wallets) => DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: _transferWalletId,
-                  decoration: const InputDecoration(labelText: 'Transfer to'),
+                data: (wallets) => ModernSelectionField<int>(
+                  label: 'Transfer to',
+                  value: _transferWalletId,
+                  leadingIcon: Icons.swap_horiz_rounded,
                   items: wallets
                       .where((w) => w.id != _walletId)
                       .map(
-                        (w) =>
-                            DropdownMenuItem(value: w.id, child: Text(w.name)),
+                        (w) => ModernSelectionItem(
+                          value: w.id,
+                          title: w.name,
+                          subtitle:
+                              '${_walletTypeLabel(w.type)} • ${MoneyUtils.format(walletBalances[w.id] ?? w.initialBalanceMinor, currencyCode: w.currencyCode)}',
+                          icon: _walletIcon(w.type),
+                          badge: w.currencyCode,
+                        ),
                       )
                       .toList(),
                   onChanged: (v) => setState(() => _transferWalletId = v),
@@ -418,23 +441,25 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               ),
             const SizedBox(height: 16),
             objectivesAsync.when(
-              data: (objectives) => DropdownButtonFormField<int?>(
-                isExpanded: true,
-                initialValue: _objectiveId,
-                decoration: const InputDecoration(
-                  labelText: 'Link to Goal/Loan (optional)',
-                ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('None')),
-                  ...objectives.map(
-                    (o) => DropdownMenuItem(
-                      value: o.id,
-                      child: Text(
-                        '${o.name} (${o.type == 'loan' ? 'Loan' : 'Goal'})',
+              data: (objectives) => ModernSelectionField<int>(
+                label: 'Link to Goal/Loan',
+                value: _objectiveId,
+                placeholder: 'None',
+                allowClear: true,
+                leadingIcon: Icons.flag_outlined,
+                items: objectives
+                    .map(
+                      (o) => ModernSelectionItem(
+                        value: o.id,
+                        title: o.name,
+                        subtitle: o.type == 'loan' ? 'Loan' : 'Goal',
+                        icon: o.type == 'loan'
+                            ? Icons.account_balance_outlined
+                            : Icons.flag_outlined,
+                        badge: o.currencyCode,
                       ),
-                    ),
-                  ),
-                ],
+                    )
+                    .toList(),
                 onChanged: (v) => setState(() => _objectiveId = v),
               ),
               error: (e, _) => Text('$e'),
@@ -508,6 +533,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         ),
       ),
     );
+  }
+
+  IconData _walletIcon(String type) => switch (type) {
+    'savings' => Icons.savings_outlined,
+    'cash' => Icons.payments_outlined,
+    'credit_card' => Icons.credit_card_outlined,
+    'loan' => Icons.account_balance_wallet_outlined,
+    _ => Icons.account_balance_outlined,
+  };
+
+  String _walletTypeLabel(String type) => switch (type) {
+    'credit_card' => 'Credit card',
+    'loan' => 'Loan account',
+    _ => '${type[0].toUpperCase()}${type.substring(1)} account',
+  };
+
+  String? _currencyName(String code) {
+    for (final currency in CurrencyUtils.currencies) {
+      if (currency.code == code) return currency.name;
+    }
+    return null;
   }
 
   Widget _specialChip(String value, String label) {

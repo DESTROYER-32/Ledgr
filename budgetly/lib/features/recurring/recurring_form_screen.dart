@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class RecurringFormScreen extends ConsumerStatefulWidget {
   final int? recurringId;
@@ -188,13 +189,19 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             ),
             const SizedBox(height: 16),
             walletsAsync.when(
-              data: (wallets) => DropdownButtonFormField<int>(
-                initialValue: _walletId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Account'),
+              data: (wallets) => ModernSelectionField<int>(
+                label: 'Account',
+                value: _walletId,
+                leadingIcon: Icons.account_balance_wallet_outlined,
                 items: wallets
                     .map(
-                      (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
+                      (w) => ModernSelectionItem(
+                        value: w.id,
+                        title: w.name,
+                        subtitle: w.type.replaceAll('_', ' '),
+                        icon: Icons.account_balance_outlined,
+                        badge: w.currencyCode,
+                      ),
                     )
                     .toList(),
                 onChanged: (v) => setState(() => _walletId = v),
@@ -206,16 +213,21 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             const SizedBox(height: 16),
             if (_type == 'expense' || _type == 'income')
               catsAsync.when(
-                data: (cats) => DropdownButtonFormField<int>(
-                  initialValue: _categoryId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('None')),
-                    ...cats.map(
-                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    ),
-                  ],
+                data: (cats) => ModernSelectionField<int>(
+                  label: 'Category',
+                  value: _categoryId,
+                  placeholder: 'None',
+                  allowClear: true,
+                  leadingIcon: Icons.category_outlined,
+                  items: cats
+                      .map(
+                        (c) => ModernSelectionItem(
+                          value: c.id,
+                          title: c.name,
+                          icon: Icons.category_outlined,
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) => setState(() => _categoryId = v),
                 ),
                 error: (e, _) => Text('$e'),

@@ -8,6 +8,7 @@ import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
   final int? budgetId;
@@ -39,9 +40,14 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     if (_isEditing) _load();
     _updateEndDate();
     if (!_isEditing) {
-      _currencyCode =
-          ref.read(displayCurrencyProvider).valueOrNull ??
-          MoneyUtils.defaultCurrencyCode;
+      _loadDefaultCurrency();
+    }
+  }
+
+  Future<void> _loadDefaultCurrency() async {
+    final currencyCode = await ref.read(displayCurrencyProvider.future);
+    if (mounted && _currencyCode.isEmpty) {
+      setState(() => _currencyCode = currencyCode);
     }
   }
 
@@ -50,6 +56,13 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     _nameController.dispose();
     _amountController.dispose();
     super.dispose();
+  }
+
+  String? _currencyName(String code) {
+    for (final currency in CurrencyUtils.currencies) {
+      if (currency.code == code) return currency.name;
+    }
+    return null;
   }
 
   void _updateEndDate() {
@@ -187,10 +200,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: _currencyCode,
-              decoration: const InputDecoration(labelText: 'Currency'),
+            ModernSelectionField<String>(
+              label: 'Currency',
+              value: _currencyCode,
+              leadingIcon: Icons.monetization_on_outlined,
               items:
                   currencyOptionsWithSelection(
                         ref.watch(favoriteCurrenciesProvider).valueOrNull ??
@@ -198,9 +211,12 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         _currencyCode,
                       )
                       .map(
-                        (c) => DropdownMenuItem(
+                        (c) => ModernSelectionItem(
                           value: c,
-                          child: Text('$c  ${CurrencyUtils.symbolFor(c)}'),
+                          title: c,
+                          subtitle: _currencyName(c),
+                          icon: Icons.monetization_on_outlined,
+                          badge: CurrencyUtils.symbolFor(c),
                         ),
                       )
                       .toList(),
@@ -352,13 +368,24 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                   );
                 }
                 return Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: cats.map((c) {
                     final selected = _selectedCategoryIds.contains(c.id);
                     return FilterChip(
-                      label: Text(c.name, style: const TextStyle(fontSize: 12)),
+                      label: Text(
+                        c.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       selected: selected,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
                       onSelected: (v) {
                         setState(() {
                           if (v) {
@@ -368,11 +395,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                           }
                         });
                       },
-                      visualDensity: VisualDensity.compact,
                       avatar: c.color != null
                           ? Container(
-                              width: 8,
-                              height: 8,
+                              width: 10,
+                              height: 10,
                               decoration: BoxDecoration(
                                 color: Color(c.color!),
                                 shape: BoxShape.circle,

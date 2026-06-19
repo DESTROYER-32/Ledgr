@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class ObjectiveDetailScreen extends ConsumerWidget {
   final int objectiveId;
@@ -233,18 +234,18 @@ class _AddMoneyDialogState extends State<_AddMoneyDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DropdownButtonFormField<int>(
-            initialValue: _selectedWalletId,
-            decoration: const InputDecoration(
-              labelText: 'Account',
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            isExpanded: true,
+          ModernSelectionField<int>(
+            label: 'Account',
+            value: _selectedWalletId,
+            leadingIcon: Icons.account_balance_wallet_outlined,
             items: widget.wallets
                 .map(
-                  (w) => DropdownMenuItem<int>(
+                  (w) => ModernSelectionItem(
                     value: w.id,
-                    child: Text('${w.name} (${w.currencyCode})'),
+                    title: w.name,
+                    subtitle: w.type.replaceAll('_', ' '),
+                    icon: Icons.account_balance_outlined,
+                    badge: w.currencyCode,
                   ),
                 )
                 .toList(),

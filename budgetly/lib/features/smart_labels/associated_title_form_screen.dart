@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class AssociatedTitleFormScreen extends ConsumerStatefulWidget {
   final int? titleId;
@@ -51,9 +52,10 @@ class _AssociatedTitleFormScreenState
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(widget.titleId != null
-              ? 'Edit Smart Label'
-              : 'New Smart Label')),
+        title: Text(
+          widget.titleId != null ? 'Edit Smart Label' : 'New Smart Label',
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -66,56 +68,43 @@ class _AssociatedTitleFormScreenState
                 hintText: 'e.g. "Uber"',
                 border: OutlineInputBorder(),
               ),
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Required' : null,
+              validator: (v) => v == null || v.isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             categoriesAsync.when(
-              data: (categories) => DropdownButtonFormField<int>(
-                initialValue: _categoryId,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                ),
+              data: (categories) => ModernSelectionField<int>(
+                label: 'Category',
+                value: _categoryId,
+                leadingIcon: Icons.category_outlined,
                 items: categories
-                    .map((c) => DropdownMenuItem(
+                    .map(
+                      (c) => ModernSelectionItem(
                         value: c.id,
-                        child: Row(
-                          children: [
-                            Icon(Icons.folder,
-                                size: 18,
-                                color: c.color != null
-                                    ? Color(c.color!)
-                                    : null),
-                            const SizedBox(width: 8),
-                            Text(c.name),
-                          ],
-                        )))
+                        title: c.name,
+                        subtitle: c.kind,
+                        icon: Icons.category_outlined,
+                      ),
+                    )
                     .toList(),
-                onChanged: (v) =>
-                    setState(() => _categoryId = v),
-                validator: (v) =>
-                    v == null ? 'Select a category' : null,
+                onChanged: (v) => setState(() => _categoryId = v),
+                validator: (v) => v == null ? 'Select a category' : null,
               ),
               error: (e, _) => Text('$e'),
-              loading: () =>
-                  const CircularProgressIndicator(),
+              loading: () => const CircularProgressIndicator(),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Exact Match'),
               subtitle: const Text(
-                  'Only match if the transaction title equals this keyword exactly'),
+                'Only match if the transaction title equals this keyword exactly',
+              ),
               value: _exactMatch,
-              onChanged: (v) =>
-                  setState(() => _exactMatch = v),
+              onChanged: (v) => setState(() => _exactMatch = v),
             ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _save,
-              child: Text(widget.titleId != null
-                  ? 'Update'
-                  : 'Create'),
+              child: Text(widget.titleId != null ? 'Update' : 'Create'),
             ),
           ],
         ),

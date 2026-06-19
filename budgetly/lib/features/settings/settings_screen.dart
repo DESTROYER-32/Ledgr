@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/currency_utils.dart';
+import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -21,7 +23,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoading = true;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
-  String _displayCurrency = 'USD';
+  String _displayCurrency = MoneyUtils.defaultCurrencyCode;
   List<String> _favoriteCurrencies = CurrencyUtils.codes;
 
   static const _themeSeeds = <int>[
@@ -58,7 +60,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
         _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
-        _displayCurrency = displayCurrency ?? 'USD';
+        _displayCurrency = displayCurrency ?? MoneyUtils.defaultCurrencyCode;
         _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
         _isLoading = false;
       });
@@ -99,6 +101,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.invalidate(totalBalanceProvider);
   }
 
+  String? _currencyName(String code) {
+    for (final currency in CurrencyUtils.currencies) {
+      if (currency.code == code) return currency.name;
+    }
+    return null;
+  }
+
+  IconData _walletIcon(String type) => switch (type) {
+    'savings' => Icons.savings_outlined,
+    'cash' => Icons.payments_outlined,
+    'credit_card' => Icons.credit_card_outlined,
+    'loan' => Icons.account_balance_wallet_outlined,
+    _ => Icons.account_balance_outlined,
+  };
+
   List<String> _decodeFavoriteCurrencies(String? raw) {
     if (raw == null || raw.isEmpty) return CurrencyUtils.codes;
     try {
@@ -137,66 +154,204 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _showFavoriteCurrenciesDialog() async {
     final selected = _favoriteCurrencies.toSet();
-    final result = await showDialog<List<String>>(
+    var query = '';
+    final result = await showModalBottomSheet<List<String>>(
       context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Favorite Currencies'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        builder: (context, setDialogState) {
+          final theme = Theme.of(context);
+          final cs = theme.colorScheme;
+          final filtered = CurrencyUtils.currencies.where((currency) {
+            final q = query.trim().toLowerCase();
+            return q.isEmpty ||
+                currency.code.toLowerCase().contains(q) ||
+                currency.name.toLowerCase().contains(q) ||
+                currency.symbol.toLowerCase().contains(q);
+          }).toList();
+
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.82,
+            minChildSize: 0.45,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Currency lists will show only selected currencies. Select all or none to show every currency.',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Favorite Currencies',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Currency lists will show only selected currencies. Select all or none to show every currency.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search currency, code, or symbol',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onChanged: (value) =>
+                            setDialogState(() => query = value),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => setDialogState(() {
+                                selected
+                                  ..clear()
+                                  ..addAll(CurrencyUtils.codes);
+                              }),
+                              icon: const Icon(Icons.done_all_rounded),
+                              label: const Text('Select All'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => setDialogState(selected.clear),
+                              icon: const Icon(Icons.remove_done_rounded),
+                              label: const Text('Unselect All'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: CurrencyUtils.currencies.length,
+                Expanded(
+                  child: ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
-                      final currency = CurrencyUtils.currencies[index];
-                      return CheckboxListTile(
-                        value: selected.contains(currency.code),
-                        title: Text('${currency.code}  ${currency.symbol}'),
-                        subtitle: Text(currency.name),
-                        onChanged: (checked) {
-                          setDialogState(() {
-                            if (checked == true) {
-                              selected.add(currency.code);
-                            } else {
+                      final currency = filtered[index];
+                      final isSelected = selected.contains(currency.code);
+                      return Material(
+                        color: isSelected
+                            ? cs.primaryContainer
+                            : cs.surfaceContainerHighest.withValues(alpha: .55),
+                        borderRadius: BorderRadius.circular(18),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () => setDialogState(() {
+                            if (isSelected) {
                               selected.remove(currency.code);
+                            } else {
+                              selected.add(currency.code);
                             }
-                          });
-                        },
+                          }),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: isSelected
+                                      ? cs.primary
+                                      : cs.surface,
+                                  foregroundColor: isSelected
+                                      ? cs.onPrimary
+                                      : cs.primary,
+                                  child: Text(
+                                    currency.symbol,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        currency.code,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        currency.name,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: cs.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 160),
+                                  child: Icon(
+                                    isSelected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.radio_button_unchecked_rounded,
+                                    key: ValueKey(isSelected),
+                                    color: isSelected
+                                        ? cs.primary
+                                        : cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       );
                     },
                   ),
                 ),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () =>
+                                Navigator.pop(context, selected.toList()),
+                            child: Text('Save (${selected.length})'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => setDialogState(() {
-                selected
-                  ..clear()
-                  ..addAll(CurrencyUtils.codes);
-              }),
-              child: const Text('Select All'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, selected.toList()),
-              child: const Text('Save'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
 
@@ -250,36 +405,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   (w) => w.id == _defaultWalletId,
                 );
                 final selectedId = hasSelected ? _defaultWalletId : null;
-                return ListTile(
-                  leading: Icon(
-                    Icons.account_balance_wallet_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
-                  title: const Text('Default Account'),
-                  subtitle: const Text('Used for quick transaction add'),
-                  trailing: SizedBox(
-                    width: 160,
-                    child: DropdownButton<int?>(
-                      value: selectedId,
-                      isExpanded: true,
-                      items: [
-                        const DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text('None'),
-                        ),
-                        ...wallets.map(
-                          (w) => DropdownMenuItem<int?>(
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: ModernSelectionField<int>(
+                    label: 'Default Account',
+                    value: selectedId,
+                    placeholder: 'None',
+                    allowClear: true,
+                    leadingIcon: Icons.account_balance_wallet_outlined,
+                    items: wallets
+                        .map(
+                          (w) => ModernSelectionItem(
                             value: w.id,
-                            child: Text(
-                              w.name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            title: w.name,
+                            subtitle: 'Used for quick transaction add',
+                            icon: _walletIcon(w.type),
+                            badge: w.currencyCode,
                           ),
-                        ),
-                      ],
-                      onChanged: _setDefaultWallet,
-                      underline: const SizedBox(),
-                    ),
+                        )
+                        .toList(),
+                    onChanged: _setDefaultWallet,
                   ),
                 );
               },
@@ -298,26 +443,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const Divider(height: 1),
-            ListTile(
-              leading: Icon(
-                Icons.monetization_on_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: const Text('Default Currency'),
-              subtitle: Text(_displayCurrency),
-              trailing: DropdownButton<String>(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: ModernSelectionField<String>(
+                label: 'Default Currency',
                 value: _displayCurrency,
+                leadingIcon: Icons.monetization_on_outlined,
                 items:
                     currencyOptionsWithSelection(
                           _favoriteCurrencies,
                           _displayCurrency,
                         )
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .map(
+                          (c) => ModernSelectionItem(
+                            value: c,
+                            title: c,
+                            subtitle: _currencyName(c),
+                            icon: Icons.monetization_on_outlined,
+                            badge: CurrencyUtils.symbolFor(c),
+                          ),
+                        )
                         .toList(),
                 onChanged: (v) {
                   if (v != null) _setDisplayCurrency(v);
                 },
-                underline: const SizedBox(),
               ),
             ),
             const Divider(height: 1),
@@ -351,23 +500,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ]),
           const SizedBox(height: 8),
           _section(theme, 'Theme', [
-            ListTile(
-              leading: Icon(
-                Icons.palette_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: const Text('Theme Mode'),
-              trailing: DropdownButton<String>(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: ModernSelectionField<String>(
+                label: 'Theme Mode',
                 value: _themeMode,
+                leadingIcon: Icons.palette_outlined,
+                searchEnabled: false,
                 items: const [
-                  DropdownMenuItem(value: 'system', child: Text('System')),
-                  DropdownMenuItem(value: 'light', child: Text('Light')),
-                  DropdownMenuItem(value: 'dark', child: Text('Dark')),
+                  ModernSelectionItem(
+                    value: 'system',
+                    title: 'System',
+                    subtitle: 'Follow device theme',
+                    icon: Icons.brightness_auto_outlined,
+                  ),
+                  ModernSelectionItem(
+                    value: 'light',
+                    title: 'Light',
+                    subtitle: 'Always use light mode',
+                    icon: Icons.light_mode_outlined,
+                  ),
+                  ModernSelectionItem(
+                    value: 'dark',
+                    title: 'Dark',
+                    subtitle: 'Always use dark mode',
+                    icon: Icons.dark_mode_outlined,
+                  ),
                 ],
                 onChanged: (v) {
                   if (v != null) _setThemeMode(v);
                 },
-                underline: const SizedBox(),
               ),
             ),
             const Divider(height: 1),

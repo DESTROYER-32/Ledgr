@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/currency_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class WalletFormScreen extends ConsumerStatefulWidget {
   final int? walletId;
@@ -37,7 +38,14 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     if (widget.walletId != null) {
       _loadWallet();
     } else {
-      _currencyCode = 'USD';
+      _loadDefaultCurrency();
+    }
+  }
+
+  Future<void> _loadDefaultCurrency() async {
+    final currencyCode = await ref.read(displayCurrencyProvider.future);
+    if (mounted && _currencyCode.isEmpty) {
+      setState(() => _currencyCode = currencyCode);
     }
   }
 
@@ -127,10 +135,10 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: _currencyCode,
-              decoration: const InputDecoration(labelText: 'Currency'),
+            ModernSelectionField<String>(
+              label: 'Currency',
+              value: _currencyCode,
+              leadingIcon: Icons.payments_outlined,
               items:
                   currencyOptionsWithSelection(
                         ref.watch(favoriteCurrenciesProvider).valueOrNull ??
@@ -138,11 +146,15 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                         _currencyCode,
                       )
                       .map(
-                        (c) => DropdownMenuItem(
+                        (c) => ModernSelectionItem(
                           value: c,
-                          child: Text(
-                            '$c  ${CurrencyUtils.symbolFor(c) ?? ''}',
-                          ),
+                          title: c,
+                          subtitle: CurrencyUtils.currencies
+                              .where((currency) => currency.code == c)
+                              .map((currency) => currency.name)
+                              .firstOrNull,
+                          icon: Icons.monetization_on_outlined,
+                          badge: CurrencyUtils.symbolFor(c),
                         ),
                       )
                       .toList(),
