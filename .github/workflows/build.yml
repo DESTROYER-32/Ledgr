@@ -64,5 +64,5 @@ jobs:
             -F document=@"budgetly-apk.zip" \
             -F chat_id="${CHAT_ID}" \
             -F message_thread_id="${TOPIC_ID}" \
-            -F caption="Budgetly APK — ${{ github.sha:0:7 }}" \
+            -F caption="Budgetly APK — ${GITHUB_SHA:0:7}" \
             "https://api.telegram.org/bot${TOKEN}/sendDocument"
