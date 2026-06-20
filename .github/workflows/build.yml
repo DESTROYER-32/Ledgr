@@ -45,7 +45,24 @@ jobs:
 
       - run: flutter build apk --release
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: budgetly-apk
-          path: budgetly/build/app/outputs/flutter-apk/app-release.apk
+      # - uses: actions/upload-artifact@v4
+      #   with:
+      #     name: budgetly-apk
+      #     path: budgetly/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Zip & send APK to Telegram
+        if: success()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
+        working-directory: budgetly
+        run: |
+          cd build/app/outputs/flutter-apk
+          zip -9 budgetly-apk.zip app-release.apk
+          curl -s -S --max-time 120 \
+            -F document=@"budgetly-apk.zip" \
+            -F chat_id="${CHAT_ID}" \
+            -F message_thread_id="${TOPIC_ID}" \
+            -F caption="Budgetly APK — ${{ github.sha:0:7 }}" \
+            "https://api.telegram.org/bot${TOKEN}/sendDocument"
