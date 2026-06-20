@@ -30,6 +30,22 @@ class BackupScreen extends ConsumerWidget {
     'delete_logs',
   ];
 
+  static const _dateColumnsByTable = <String, Set<String>>{
+    'wallets': {'created_at', 'updated_at'},
+    'categories': {'created_at', 'updated_at'},
+    'budgets': {'period_start', 'period_end', 'created_at', 'updated_at'},
+    'objectives': {'deadline', 'created_at', 'updated_at'},
+    'transactions': {'date', 'created_at', 'updated_at'},
+    'recurring_transactions': {
+      'start_date',
+      'end_date',
+      'next_due_date',
+      'created_at',
+    },
+    'associated_titles': {'created_at'},
+    'delete_logs': {'deleted_at'},
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -165,10 +181,15 @@ class BackupScreen extends ConsumerWidget {
           if (rows is! List) continue;
           for (final row in rows) {
             if (row is Map<String, dynamic>) {
-              await db.customStatement(_insertSql(table, row));
+              await db.customStatement(
+                _insertSql(table, _normalizeRow(table, row)),
+              );
             } else if (row is Map) {
               await db.customStatement(
-                _insertSql(table, Map<String, dynamic>.from(row)),
+                _insertSql(
+                  table,
+                  _normalizeRow(table, Map<String, dynamic>.from(row)),
+                ),
               );
             }
           }
@@ -375,6 +396,22 @@ class BackupScreen extends ConsumerWidget {
     final columns = row.keys.map((column) => '"$column"').join(', ');
     final values = row.values.map(_sqlLiteral).join(', ');
     return 'INSERT OR REPLACE INTO $table ($columns) VALUES ($values)';
+  }
+
+  Map<String, dynamic> _normalizeRow(String table, Map<String, dynamic> row) {
+    final dateColumns = _dateColumnsByTable[table];
+    if (dateColumns == null) return row;
+    final normalized = Map<String, dynamic>.from(row);
+    for (final column in dateColumns) {
+      final value = normalized[column];
+      if (value is String && value.trim().isNotEmpty) {
+        final parsed = DateTime.tryParse(value);
+        if (parsed != null) {
+          normalized[column] = parsed.millisecondsSinceEpoch ~/ 1000;
+        }
+      }
+    }
+    return normalized;
   }
 
   String _sqlLiteral(Object? value) {
