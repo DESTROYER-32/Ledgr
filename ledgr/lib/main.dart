@@ -19,7 +19,10 @@ void main() async {
 
   runApp(
     ProviderScope(
-      overrides: [appDatabaseProvider.overrideWithValue(db)],
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        initialRouteProvider.overrideWithValue(onboarded ? '/' : '/onboarding'),
+      ],
       child: BudgetlyApp(initialRoute: onboarded ? '/' : '/onboarding'),
     ),
   );

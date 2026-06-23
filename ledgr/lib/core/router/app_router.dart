@@ -30,9 +30,11 @@ import '../../features/subscriptions/subscriptions_screen.dart';
 import '../../features/credit_debt/credit_debt_screen.dart';
 import '../widgets/app_scaffold.dart';
 
+final initialRouteProvider = Provider<String>((ref) => '/');
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: ref.watch(initialRouteProvider),
     routes: [
       GoRoute(
         path: '/onboarding',
