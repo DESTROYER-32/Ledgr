@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/analytics/analytics_screen.dart';
 import '../../features/backup/backup_screen.dart';
 import '../../features/budgets/budget_detail_screen.dart';
 import '../../features/budgets/budget_form_screen.dart';
@@ -55,6 +56,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/wallets',
             name: 'wallets',
             builder: (context, state) => const WalletsScreen(),
+          ),
+          GoRoute(
+            path: '/analytics',
+            name: 'analytics',
+            builder: (context, state) => const AnalyticsScreen(),
           ),
           GoRoute(
             path: '/settings',

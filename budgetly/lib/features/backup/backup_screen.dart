@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
@@ -14,6 +15,37 @@ import '../../core/providers/providers.dart';
 class BackupScreen extends ConsumerWidget {
   const BackupScreen({super.key});
 
+  static const _backupVersion = 1;
+  static const _tables = [
+    'wallets',
+    'categories',
+    'budgets',
+    'objectives',
+    'settings',
+    'transactions',
+    'budget_category_limits',
+    'budget_wallets',
+    'recurring_transactions',
+    'associated_titles',
+    'delete_logs',
+  ];
+
+  static const _dateColumnsByTable = <String, Set<String>>{
+    'wallets': {'created_at', 'updated_at'},
+    'categories': {'created_at', 'updated_at'},
+    'budgets': {'period_start', 'period_end', 'created_at', 'updated_at'},
+    'objectives': {'deadline', 'created_at', 'updated_at'},
+    'transactions': {'date', 'created_at', 'updated_at'},
+    'recurring_transactions': {
+      'start_date',
+      'end_date',
+      'next_due_date',
+      'created_at',
+    },
+    'associated_titles': {'created_at'},
+    'delete_logs': {'deleted_at'},
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -26,29 +58,35 @@ class BackupScreen extends ConsumerWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.upload_file),
-                  title: const Text('Export Backup'),
-                  subtitle: const Text('Save all data to a .db file'),
-                  onTap: () => _exportBackup(context),
+                  title: const Text('Export Full Backup'),
+                  subtitle: const Text(
+                    'Save accounts, categories, budgets, goals, settings, and transactions',
+                  ),
+                  onTap: () => _exportBackup(context, ref),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.download),
-                  title: const Text('Restore Backup'),
-                  subtitle: const Text('Restore from a .db file'),
+                  title: const Text('Restore Full Backup'),
+                  subtitle: const Text(
+                    'Restore all data from a Budgetly backup file',
+                  ),
                   onTap: () => _importBackup(context, ref),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.file_upload),
-                  title: const Text('Export CSV'),
+                  title: const Text('Export Transactions CSV'),
                   subtitle: const Text('Export transactions to CSV'),
                   onTap: () => _exportCsv(context, ref),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.file_download),
-                  title: const Text('Import CSV'),
-                  subtitle: const Text('Import transactions from CSV'),
+                  title: const Text('Import Transactions CSV'),
+                  subtitle: const Text(
+                    'Import transactions only. Requires accounts to already exist.',
+                  ),
                   onTap: () => _importCsv(context, ref),
                 ),
               ],
@@ -59,24 +97,32 @@ class BackupScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _exportBackup(BuildContext context) async {
+  Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final dbFile = File('${dir.path}/budgetly.db');
-      if (!dbFile.existsSync()) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('No data to export')));
-        }
-        return;
+      final db = ref.read(appDatabaseProvider);
+      final data = <String, dynamic>{
+        'app': 'budgetly',
+        'version': _backupVersion,
+        'exportedAt': DateTime.now().toIso8601String(),
+        'tables': <String, dynamic>{},
+      };
+      final tables = data['tables'] as Map<String, dynamic>;
+      for (final table in _tables) {
+        final rows = await db.customSelect('SELECT * FROM $table').get();
+        tables[table] = rows.map((row) => _jsonSafeMap(row.data)).toList();
       }
+
       final backupDir = await getTemporaryDirectory();
-      final backupFile = File('${backupDir.path}/budgetly_backup.db');
-      await dbFile.copy(backupFile.path);
+      final stamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+      final backupFile = File(
+        '${backupDir.path}/budgetly_full_backup_$stamp.json',
+      );
+      await backupFile.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(data),
+      );
       await Share.shareXFiles([
         XFile(backupFile.path),
-      ], text: 'Budgetly Backup');
+      ], text: 'Budgetly Full Backup');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -90,9 +136,15 @@ class BackupScreen extends ConsumerWidget {
     try {
       final result = await FilePicker.platform.pickFiles(type: FileType.any);
       if (result == null || result.files.single.path == null) return;
-      final dir = await getApplicationDocumentsDirectory();
-      final dbFile = File('${dir.path}/budgetly.db');
       final sourceFile = File(result.files.single.path!);
+      final decoded = jsonDecode(await sourceFile.readAsString());
+      if (decoded is! Map<String, dynamic> ||
+          decoded['app'] != 'budgetly' ||
+          decoded['tables'] is! Map<String, dynamic>) {
+        throw const FormatException(
+          'This is not a valid Budgetly full backup file.',
+        );
+      }
 
       if (context.mounted) {
         final confirmed = await showDialog<bool>(
@@ -100,7 +152,7 @@ class BackupScreen extends ConsumerWidget {
           builder: (ctx) => AlertDialog(
             title: const Text('Restore backup?'),
             content: const Text(
-              'This will replace the current Budgetly database. A safety copy of the current database will be created first.',
+              'This will replace all current Budgetly data with the backup contents. This action cannot be undone from inside the app.',
             ),
             actions: [
               TextButton(
@@ -117,22 +169,38 @@ class BackupScreen extends ConsumerWidget {
         if (confirmed != true) return;
       }
 
-      if (dbFile.existsSync()) {
-        final safetyFile = File(
-          '${dir.path}/budgetly_pre_restore_${DateTime.now().millisecondsSinceEpoch}.db',
-        );
-        await dbFile.copy(safetyFile.path);
-      }
-
       final db = ref.read(appDatabaseProvider);
-      await db.close();
-      ref.invalidate(appDatabaseProvider);
-
-      await sourceFile.copy(dbFile.path);
+      final tables = decoded['tables'] as Map<String, dynamic>;
+      await db.transaction(() async {
+        await db.customStatement('PRAGMA foreign_keys = OFF');
+        for (final table in _tables.reversed) {
+          await db.customStatement('DELETE FROM $table');
+        }
+        for (final table in _tables) {
+          final rows = tables[table];
+          if (rows is! List) continue;
+          for (final row in rows) {
+            if (row is Map<String, dynamic>) {
+              await db.customStatement(
+                _insertSql(table, _normalizeRow(table, row)),
+              );
+            } else if (row is Map) {
+              await db.customStatement(
+                _insertSql(
+                  table,
+                  _normalizeRow(table, Map<String, dynamic>.from(row)),
+                ),
+              );
+            }
+          }
+        }
+        await db.customStatement('PRAGMA foreign_keys = ON');
+      });
+      _invalidateDataProviders(ref);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Restore complete. Restart app.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Full restore complete')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -316,4 +384,60 @@ class BackupScreen extends ConsumerWidget {
 
   String? _emptyToNull(String value) =>
       value.trim().isEmpty ? null : value.trim();
+
+  Map<String, dynamic> _jsonSafeMap(Map<String, dynamic> source) {
+    return source.map((key, value) {
+      if (value is DateTime) return MapEntry(key, value.toIso8601String());
+      return MapEntry(key, value);
+    });
+  }
+
+  String _insertSql(String table, Map<String, dynamic> row) {
+    final columns = row.keys.map((column) => '"$column"').join(', ');
+    final values = row.values.map(_sqlLiteral).join(', ');
+    return 'INSERT OR REPLACE INTO $table ($columns) VALUES ($values)';
+  }
+
+  Map<String, dynamic> _normalizeRow(String table, Map<String, dynamic> row) {
+    final dateColumns = _dateColumnsByTable[table];
+    if (dateColumns == null) return row;
+    final normalized = Map<String, dynamic>.from(row);
+    for (final column in dateColumns) {
+      final value = normalized[column];
+      if (value is String && value.trim().isNotEmpty) {
+        final parsed = DateTime.tryParse(value);
+        if (parsed != null) {
+          normalized[column] = parsed.millisecondsSinceEpoch ~/ 1000;
+        }
+      }
+    }
+    return normalized;
+  }
+
+  String _sqlLiteral(Object? value) {
+    if (value == null) return 'NULL';
+    if (value is bool) return value ? '1' : '0';
+    if (value is num) return value.toString();
+    final escaped = value.toString().replaceAll("'", "''");
+    return "'$escaped'";
+  }
+
+  void _invalidateDataProviders(WidgetRef ref) {
+    ref.invalidate(activeWalletsProvider);
+    ref.invalidate(allWalletsProvider);
+    ref.invalidate(allTransactionsProvider);
+    ref.invalidate(recentTransactionsProvider);
+    ref.invalidate(activeCategoriesProvider);
+    ref.invalidate(parentCategoriesProvider);
+    ref.invalidate(expenseCategoriesProvider);
+    ref.invalidate(allBudgetsProvider);
+    ref.invalidate(activeRecurringProvider);
+    ref.invalidate(defaultWalletIdProvider);
+    ref.invalidate(displayCurrencyProvider);
+    ref.invalidate(favoriteCurrenciesProvider);
+    ref.invalidate(themeConfigProvider);
+    ref.invalidate(totalBalanceProvider);
+    ref.invalidate(walletBalancesProvider);
+    ref.invalidate(allObjectivesProvider);
+  }
 }
