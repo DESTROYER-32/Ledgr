@@ -605,8 +605,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _section(theme, 'Tracking', [
             ListTile(
               leading: const Icon(Icons.subscriptions),
-              title: const Text('Subscriptions'),
-              subtitle: const Text('View subscription transactions'),
+              title: const Text('Subscriptions & Scheduled'),
+              subtitle: const Text(
+                'View recurring outgoing payments and scheduled money movements',
+              ),
               onTap: () => context.push('/subscriptions'),
             ),
             ListTile(

@@ -48,7 +48,7 @@ void main() {
       await recurringRepo.insert(
         RecurringTransactionsCompanion.insert(
           transactionType: 'transfer',
-          specialType: const Value('repetitive'),
+          specialType: const Value('scheduled'),
           amountMinor: 4250,
           walletId: sourceWalletId,
           transferWalletId: Value(transferWalletId),
@@ -65,7 +65,7 @@ void main() {
       expect(processed, 1);
       expect(transactions, hasLength(1));
       expect(transactions.single.currencyCode, 'EUR');
-      expect(transactions.single.specialType, 'repetitive');
+      expect(transactions.single.specialType, 'scheduled');
       expect(transactions.single.transferWalletId, transferWalletId);
     },
   );
