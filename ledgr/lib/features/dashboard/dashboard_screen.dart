@@ -26,6 +26,7 @@ class DashboardScreen extends ConsumerWidget {
     final recurringAsync = ref.watch(activeRecurringProvider);
     final walletsAsync = ref.watch(activeWalletsProvider);
     final walletBalancesAsync = ref.watch(walletBalancesProvider);
+    final userNameAsync = ref.watch(userNameProvider);
     final budgetsAsync = ref.watch(allBudgetsProvider);
     final activeBudgets =
         budgetsAsync.valueOrNull
@@ -36,7 +37,12 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budgetly'),
+        title: userNameAsync.when(
+          data: (name) =>
+              Text(name == null || name.isEmpty ? 'Budgetly' : 'Hi, $name'),
+          loading: () => const Text('Budgetly'),
+          error: (_, _) => const Text('Budgetly'),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
