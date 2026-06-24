@@ -1223,7 +1223,7 @@ class DashboardScreen extends ConsumerWidget {
         SectionHeader(
           title: 'Transaction History',
           actionLabel: 'See All',
-          onAction: () => context.push('/search'),
+          onAction: () => context.push('/transactions'),
         ),
         recentAsync.when(
           data: (transactions) {
