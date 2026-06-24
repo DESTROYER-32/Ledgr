@@ -9,6 +9,7 @@ import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
+import '../../core/widgets/transaction_grouped_list.dart';
 
 class Debouncer {
   final Duration delay;
@@ -524,14 +525,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         .where((t) => t.type == 'expense')
         .fold<int>(0, (s, t) => s + t.amountMinor);
 
-    final grouped = <String, List<Transaction>>{};
-    for (final t in _results!) {
-      final key =
-          '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}-${t.date.day.toString().padLeft(2, '0')}';
-      grouped.putIfAbsent(key, () => []).add(t);
-    }
-    final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-
     return Column(
       children: [
         Container(
@@ -565,73 +558,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: sortedKeys.length,
-            itemBuilder: (_, sectionIndex) {
-              final dateKey = sortedKeys[sectionIndex];
-              final dayTransactions = grouped[dateKey]!;
-              final parts = dateKey.split('-');
-              final date = DateTime(
-                int.parse(parts[0]),
-                int.parse(parts[1]),
-                int.parse(parts[2]),
-              );
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Text(
-                      MoneyUtils.formatDateShort(date),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  ...dayTransactions.map((t) {
-                    final isExpense = t.type == 'expense';
-                    final isIncome = t.type == 'income';
-                    final color = isExpense
-                        ? AppColors.expense
-                        : (isIncome ? AppColors.income : AppColors.transfer);
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: color.withValues(alpha: 0.15),
-                        radius: 18,
-                        child: Icon(
-                          isExpense
-                              ? Icons.arrow_upward
-                              : (isIncome
-                                    ? Icons.arrow_downward
-                                    : Icons.swap_horiz),
-                          color: color,
-                          size: 18,
-                        ),
-                      ),
-                      title: Text(
-                        t.title ?? t.type,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      trailing: Text(
-                        '${isExpense ? '-' : (isIncome ? '+' : '')}${_formatAmount(t.amountMinor)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                      ),
-                      onTap: () => context.push('/transactions/${t.id}'),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 0,
-                      ),
-                    );
-                  }),
-                ],
-              );
-            },
+          child: TransactionGroupedList(
+            transactions: _results!,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            onTap: (t) => context.push('/transactions/${t.id}'),
           ),
         ),
       ],

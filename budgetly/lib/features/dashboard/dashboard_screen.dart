@@ -11,7 +11,7 @@ import '../../core/utils/money_utils.dart';
 import '../../core/widgets/balance_card.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/stat_tile.dart';
-import '../../core/widgets/transaction_tile.dart';
+import '../../core/widgets/transaction_grouped_list.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -1252,63 +1252,12 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               );
             }
-            final grouped = <String, List<Transaction>>{};
-            for (final t in transactions) {
-              final key =
-                  '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
-              grouped.putIfAbsent(key, () => []).add(t);
-            }
-            final sortedKeys = grouped.keys.toList()
-              ..sort((a, b) => b.compareTo(a));
-            final monthNames = [
-              '',
-              'Jan',
-              'Feb',
-              'Mar',
-              'Apr',
-              'May',
-              'Jun',
-              'Jul',
-              'Aug',
-              'Sep',
-              'Oct',
-              'Nov',
-              'Dec',
-            ];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: sortedKeys.take(3).expand((key) {
-                final parts = key.split('-');
-                final year = int.parse(parts[0]);
-                final month = int.parse(parts[1]);
-                final txns = grouped[key]!;
-                return [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-                    child: Text(
-                      '${monthNames[month]} $year',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  ...txns
-                      .take(10)
-                      .map(
-                        (t) => TransactionTile(
-                          id: t.id,
-                          type: t.type,
-                          amountMinor: t.amountMinor,
-                          title: t.title,
-                          date: t.date,
-                          currencyCode: t.currencyCode,
-                          onTap: () => context.push('/transactions/${t.id}'),
-                        ),
-                      ),
-                ];
-              }).toList(),
+            return TransactionGroupedList(
+              transactions: transactions,
+              maxItems: 30,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              onTap: (t) => context.push('/transactions/${t.id}'),
             );
           },
           error: (e, _) => Center(child: Text('$e')),

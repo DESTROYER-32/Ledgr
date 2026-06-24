@@ -10,7 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 import '../../core/widgets/section_header.dart';
-import '../../core/widgets/transaction_tile.dart';
+import '../../core/widgets/transaction_grouped_list.dart';
 
 class BudgetDetailScreen extends ConsumerStatefulWidget {
   final int budgetId;
@@ -749,19 +749,13 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   actionLabel: null,
                   onAction: null,
                 ),
-                ...filtered
-                    .take(10)
-                    .map(
-                      (t) => TransactionTile(
-                        id: t.id,
-                        type: t.type,
-                        amountMinor: t.amountMinor,
-                        title: t.title,
-                        date: t.date,
-                        currencyCode: t.currencyCode,
-                        onTap: () => context.push('/transactions/${t.id}'),
-                      ),
-                    ),
+                TransactionGroupedList(
+                  transactions: filtered,
+                  maxItems: 10,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onTap: (t) => context.push('/transactions/${t.id}'),
+                ),
               ],
             );
           },
