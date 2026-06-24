@@ -15,11 +15,13 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
+  final _nameController = TextEditingController();
   final _walletNameController = TextEditingController(text: 'Main Checking');
   final _balanceController = TextEditingController(text: '1250');
   int _currentPage = 0;
   String _selectedCurrency = 'USD';
   String _walletType = 'checking';
+  bool _createWallet = true;
   bool _demoMode = false;
   bool _busy = false;
 
@@ -89,6 +91,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       accent: Color(0xFFD81B60),
     ),
     _OnboardingStep(
+      icon: Icons.waving_hand,
+      title: 'What should we call you?',
+      subtitle:
+          'Add a name for a friendlier dashboard greeting, or skip it if you prefer.',
+      accent: Color(0xFF5E35B1),
+      custom: _StepCustom.name,
+    ),
+    _OnboardingStep(
       icon: Icons.currency_exchange,
       title: 'Pick your currency',
       subtitle:
@@ -129,6 +139,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _nameController.dispose();
     _walletNameController.dispose();
     _balanceController.dispose();
     super.dispose();
@@ -140,12 +151,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final settings = ref.read(settingsRepositoryProvider);
       await ref.read(categoryRepositoryProvider).seedDefaults();
+      final userName = _nameController.text.trim();
+      if (userName.isNotEmpty) {
+        await settings.set('user_name', userName);
+      } else {
+        await settings.remove('user_name');
+      }
       if (_demoMode) {
         await _DemoDataSeeder(
           ref.read(appDatabaseProvider),
         ).seed(_selectedCurrency);
         await settings.set('budgetly_demo_mode', 'true');
-      } else {
+      } else if (_createWallet) {
         final balance = double.tryParse(_balanceController.text.trim()) ?? 0;
         final walletId = await ref
             .read(walletRepositoryProvider)
@@ -162,6 +179,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             );
         await settings.set('default_wallet_id', walletId.toString());
         await settings.set('budgetly_demo_mode', 'false');
+      } else {
+        await settings.remove('default_wallet_id');
+        await settings.set('budgetly_demo_mode', 'false');
       }
       await settings.set('display_currency', _selectedCurrency);
       await settings.completeOnboarding();
@@ -176,6 +196,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       duration: const Duration(milliseconds: 320),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  void _skipCurrentStep() {
+    final step = _steps[_currentPage];
+    switch (step.custom) {
+      case _StepCustom.name:
+        _nameController.clear();
+      case _StepCustom.wallet:
+        _createWallet = false;
+      case _StepCustom.demo:
+        _demoMode = false;
+      case _StepCustom.currency:
+      case null:
+        break;
+    }
+    if (_currentPage == _steps.length - 1) {
+      _completeOnboarding();
+    } else {
+      setState(() {});
+      _next();
+    }
   }
 
   @override
@@ -260,6 +301,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         const SizedBox(height: 24),
         if (step.custom == _StepCustom.currency) _buildCurrencyPicker(theme),
+        if (step.custom == _StepCustom.name) _buildNameStep(theme),
         if (step.custom == _StepCustom.wallet) _buildWalletSetup(theme),
         if (step.custom == _StepCustom.demo) _buildDemoToggle(theme),
         if (step.custom == null)
@@ -283,43 +325,74 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }).toList(),
   );
 
+  Widget _buildNameStep(ThemeData theme) => TextField(
+    controller: _nameController,
+    decoration: const InputDecoration(
+      labelText: 'Name',
+      hintText: 'Alex',
+      helperText: 'Optional. Used only to personalize your home screen.',
+      prefixIcon: Icon(Icons.person_outline),
+    ),
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.done,
+  );
+
   Widget _buildWalletSetup(ThemeData theme) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      TextField(
-        controller: _walletNameController,
-        decoration: const InputDecoration(
-          labelText: 'Account name',
-          hintText: 'Main Checking',
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Create a starter account now'),
+        subtitle: const Text('Turn this off to set up accounts later.'),
+        value: _createWallet,
+        onChanged: (value) => setState(() => _createWallet = value),
+      ),
+      if (!_createWallet)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'No problem. Budgetly will still save your currency and open the dashboard.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
-      ),
-      const SizedBox(height: 16),
-      Text('Account type', style: theme.textTheme.titleSmall),
-      const SizedBox(height: 8),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: _walletTypes
-            .map(
-              (wt) => ChoiceChip(
-                label: Text(wt.$2),
-                avatar: Icon(wt.$3, size: 18),
-                selected: _walletType == wt.$1,
-                onSelected: (_) => setState(() => _walletType = wt.$1),
-              ),
-            )
-            .toList(),
-      ),
-      const SizedBox(height: 16),
-      TextField(
-        controller: _balanceController,
-        decoration: InputDecoration(
-          labelText: 'Current balance',
-          hintText: '0.00',
-          prefixText: '$_selectedCurrency ',
+      if (_createWallet) ...[
+        TextField(
+          controller: _walletNameController,
+          decoration: const InputDecoration(
+            labelText: 'Account name',
+            hintText: 'Main Checking',
+          ),
         ),
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      ),
+        const SizedBox(height: 16),
+        Text('Account type', style: theme.textTheme.titleSmall),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _walletTypes
+              .map(
+                (wt) => ChoiceChip(
+                  label: Text(wt.$2),
+                  avatar: Icon(wt.$3, size: 18),
+                  selected: _walletType == wt.$1,
+                  onSelected: (_) => setState(() => _walletType = wt.$1),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _balanceController,
+          decoration: InputDecoration(
+            labelText: 'Current balance',
+            hintText: '0.00',
+            prefixText: '$_selectedCurrency ',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ],
     ],
   );
 
@@ -362,8 +435,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const Spacer(),
           TextButton(
-            onPressed: _busy ? null : _completeOnboarding,
-            child: Text(_demoMode ? 'Start demo' : 'Skip setup'),
+            onPressed: _busy ? null : _skipCurrentStep,
+            child: Text(isLast ? 'Skip and finish' : 'Skip'),
           ),
           const SizedBox(width: 8),
           FilledButton.icon(
@@ -385,7 +458,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-enum _StepCustom { currency, wallet, demo }
+enum _StepCustom { name, currency, wallet, demo }
 
 class _OnboardingStep {
   final IconData icon;
