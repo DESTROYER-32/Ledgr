@@ -38,8 +38,7 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: userNameAsync.when(
-          data: (name) =>
-              Text(name == null || name.isEmpty ? 'Budgetly' : 'Hi, $name'),
+          data: (name) => Text(dashboardGreeting(name: name)),
           loading: () => const Text('Budgetly'),
           error: (_, _) => const Text('Budgetly'),
         ),
@@ -1318,6 +1317,20 @@ class DashboardScreen extends ConsumerWidget {
       ],
     );
   }
+}
+
+@visibleForTesting
+String dashboardGreeting({String? name, DateTime? now}) {
+  final trimmedName = name?.trim();
+  if (trimmedName == null || trimmedName.isEmpty) return 'Budgetly';
+
+  final hour = (now ?? DateTime.now()).hour;
+  final period = switch (hour) {
+    >= 5 && < 12 => 'Good morning',
+    >= 12 && < 17 => 'Good afternoon',
+    _ => 'Good evening',
+  };
+  return '$period, $trimmedName';
 }
 
 class _DashboardInsights {
