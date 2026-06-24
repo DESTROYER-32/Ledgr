@@ -24,6 +24,32 @@ class AppTheme {
     return _buildTheme(colorScheme);
   }
 
+  static ThemeData amoled({Color? seedOverride}) {
+    final seed = seedOverride ?? _defaultSeed;
+    final base = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: Brightness.dark,
+    );
+    final colorScheme = base.copyWith(
+      surface: Colors.black,
+      onSurface: Colors.white,
+      surfaceDim: Colors.black,
+      surfaceBright: const Color(0xFF121212),
+      surfaceContainerLowest: Colors.black,
+      surfaceContainerLow: Colors.black,
+      surfaceContainer: Colors.black,
+      surfaceContainerHigh: const Color(0xFF080808),
+      surfaceContainerHighest: const Color(0xFF101010),
+      outlineVariant: const Color(0xFF2A2A2A),
+      shadow: Colors.black,
+      scrim: Colors.black,
+    );
+    return _buildTheme(colorScheme).copyWith(
+      scaffoldBackgroundColor: Colors.black,
+      canvasColor: Colors.black,
+    );
+  }
+
   static ThemeData _buildTheme(ColorScheme colorScheme) {
     return ThemeData(
       useMaterial3: true,
@@ -57,13 +83,18 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
       ),
 
@@ -76,8 +107,12 @@ class AppTheme {
 
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.5,
+          ),
         ),
       ),
 
@@ -99,9 +134,7 @@ class AppTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
 
