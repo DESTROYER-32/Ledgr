@@ -26,6 +26,7 @@ class DashboardScreen extends ConsumerWidget {
     final recurringAsync = ref.watch(activeRecurringProvider);
     final walletsAsync = ref.watch(activeWalletsProvider);
     final walletBalancesAsync = ref.watch(walletBalancesProvider);
+    final userNameAsync = ref.watch(userNameProvider);
     final budgetsAsync = ref.watch(allBudgetsProvider);
     final activeBudgets =
         budgetsAsync.valueOrNull
@@ -36,7 +37,11 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budgetly'),
+        title: userNameAsync.when(
+          data: (name) => Text(dashboardGreeting(name: name)),
+          loading: () => const Text('Budgetly'),
+          error: (_, _) => const Text('Budgetly'),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -1312,6 +1317,20 @@ class DashboardScreen extends ConsumerWidget {
       ],
     );
   }
+}
+
+@visibleForTesting
+String dashboardGreeting({String? name, DateTime? now}) {
+  final trimmedName = name?.trim();
+  if (trimmedName == null || trimmedName.isEmpty) return 'Budgetly';
+
+  final hour = (now ?? DateTime.now()).hour;
+  final period = switch (hour) {
+    >= 5 && < 12 => 'Good morning',
+    >= 12 && < 17 => 'Good afternoon',
+    _ => 'Good evening',
+  };
+  return '$period, $trimmedName';
 }
 
 class _DashboardInsights {

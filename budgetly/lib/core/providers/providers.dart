@@ -148,6 +148,12 @@ final displayCurrencyProvider = FutureProvider<String>((ref) async {
   return MoneyUtils.defaultCurrencyCode;
 });
 
+final userNameProvider = FutureProvider<String?>((ref) async {
+  final name = await ref.watch(settingsRepositoryProvider).get('user_name');
+  final trimmed = name?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
+});
+
 // Stream providers for reactive queries
 final activeWalletsProvider = StreamProvider<List<Wallet>>(
   (ref) => ref.watch(walletRepositoryProvider).watchActive(),
