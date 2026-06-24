@@ -34,6 +34,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _tagsController = TextEditingController();
   String _type = 'expense';
   String _specialType = 'none';
+  String? _recurrenceRule;
   int? _walletId;
   int? _transferWalletId;
   int? _categoryId;
@@ -77,7 +78,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (t != null && mounted) {
       setState(() {
         _type = t.type;
-        _specialType = t.specialType;
+        _specialType = t.specialType == 'repetitive'
+            ? 'scheduled'
+            : t.specialType;
+        _recurrenceRule = t.recurrenceRule;
         _walletId = t.walletId;
         _transferWalletId = t.transferWalletId;
         _categoryId = t.categoryId;
@@ -148,6 +152,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final companion = TransactionsCompanion(
       type: Value(_type),
       specialType: Value(_specialType),
+      recurrenceRule: Value(_isRecurringSpecial ? _recurrenceRule : null),
       amountMinor: Value(amount.round()),
       currencyCode: Value(currencyCode),
       date: Value(_date),
@@ -174,6 +179,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         TransactionsCompanion.insert(
           type: _type,
           specialType: Value(_specialType),
+          recurrenceRule: Value(_isRecurringSpecial ? _recurrenceRule : null),
           amountMinor: amount.round(),
           currencyCode: currencyCode,
           date: _date,
@@ -268,12 +274,42 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   _specialChip('none', 'Standard'),
                   _specialChip('upcoming', 'Upcoming'),
                   _specialChip('subscription', 'Subscription'),
-                  _specialChip('repetitive', 'Repetitive'),
+                  _specialChip('scheduled', 'Scheduled'),
                   if (_type == 'expense') _specialChip('debt', 'Debt'),
                   if (_type == 'income') _specialChip('credit', 'Credit'),
                 ],
               ),
             ),
+            if (_isRecurringSpecial) ...[
+              const SizedBox(height: 12),
+              ModernSelectionField<String>(
+                label: 'Repeat frequency',
+                value: _recurrenceRule,
+                placeholder: 'Select frequency',
+                leadingIcon: Icons.repeat,
+                items: const [
+                  ModernSelectionItem(
+                    value: 'monthly',
+                    title: 'Monthly',
+                    icon: Icons.calendar_view_month_outlined,
+                  ),
+                  ModernSelectionItem(
+                    value: 'quarterly',
+                    title: 'Quarterly',
+                    icon: Icons.calendar_view_week_outlined,
+                  ),
+                  ModernSelectionItem(
+                    value: 'yearly',
+                    title: 'Yearly',
+                    icon: Icons.event_repeat_outlined,
+                  ),
+                ],
+                onChanged: (v) => setState(() => _recurrenceRule = v),
+                validator: (_) => _isRecurringSpecial && _recurrenceRule == null
+                    ? 'Required for subscriptions and scheduled transactions'
+                    : null,
+              ),
+            ],
             const SizedBox(height: 20),
             AmountField(
               controller: _amountController,
@@ -556,6 +592,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return null;
   }
 
+  bool get _isRecurringSpecial =>
+      _specialType == 'subscription' || _specialType == 'scheduled';
+
   Widget _specialChip(String value, String label) {
     final selected = _specialType == value;
     return Padding(
@@ -563,7 +602,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       child: FilterChip(
         label: Text(label, style: const TextStyle(fontSize: 12)),
         selected: selected,
-        onSelected: (_) => setState(() => _specialType = value),
+        onSelected: (_) => setState(() {
+          _specialType = value;
+          if (!_isRecurringSpecial) _recurrenceRule = null;
+          if (_specialType == 'subscription') _type = 'expense';
+        }),
         visualDensity: VisualDensity.compact,
       ),
     );
