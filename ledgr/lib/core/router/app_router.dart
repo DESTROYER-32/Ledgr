@@ -19,6 +19,7 @@ import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/settings/exchange_rates_screen.dart';
 import '../../features/transactions/transaction_form_screen.dart';
+import '../../features/transactions/transactions_screen.dart';
 import '../../features/wallets/wallet_detail_screen.dart';
 import '../../features/wallets/wallet_form_screen.dart';
 import '../../features/wallets/wallets_screen.dart';
@@ -106,6 +107,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => WalletDetailScreen(
           walletId: int.parse(state.pathParameters['id']!),
         ),
+      ),
+      GoRoute(
+        path: '/transactions',
+        name: 'transactions',
+        builder: (context, state) => const TransactionsScreen(),
       ),
       GoRoute(
         path: '/transactions/new',
