@@ -53,11 +53,13 @@ class WalletRepository {
         await (_db.wallets.select()..where((w) => w.id.equals(walletId)))
             .getSingle();
 
+    final now = DateTime.now();
     final txns =
         await (_db.transactions.select()..where(
               (t) =>
-                  t.walletId.equals(walletId) |
-                  t.transferWalletId.equals(walletId),
+                  (t.walletId.equals(walletId) |
+                      t.transferWalletId.equals(walletId)) &
+                  t.date.isSmallerOrEqualValue(now),
             ))
             .get();
 
