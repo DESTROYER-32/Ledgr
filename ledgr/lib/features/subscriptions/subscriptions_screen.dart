@@ -151,6 +151,7 @@ class _TransactionList extends StatelessWidget {
   }
 
   String? _frequencyLabel(String? recurrenceRule) => switch (recurrenceRule) {
+    'one_time' => 'One time',
     'monthly' => 'Monthly',
     'quarterly' => 'Quarterly',
     'yearly' => 'Yearly',
