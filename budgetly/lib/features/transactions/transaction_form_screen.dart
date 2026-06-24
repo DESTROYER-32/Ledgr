@@ -287,7 +287,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 value: _recurrenceRule,
                 placeholder: 'Select frequency',
                 leadingIcon: Icons.repeat,
+                searchEnabled: false,
                 items: const [
+                  ModernSelectionItem(
+                    value: 'one_time',
+                    title: 'One time',
+                    icon: Icons.event_available_outlined,
+                  ),
                   ModernSelectionItem(
                     value: 'monthly',
                     title: 'Monthly',
