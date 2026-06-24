@@ -526,6 +526,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     subtitle: 'Always use dark mode',
                     icon: Icons.dark_mode_outlined,
                   ),
+                  ModernSelectionItem(
+                    value: 'amoled',
+                    title: 'AMOLED',
+                    subtitle: 'Pure black dark mode for OLED screens',
+                    icon: Icons.contrast_outlined,
+                  ),
                 ],
                 onChanged: (v) {
                   if (v != null) _setThemeMode(v);

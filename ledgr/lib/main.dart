@@ -54,7 +54,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp> {
       data: (config) => MaterialApp.router(
         title: 'Budgetly',
         theme: AppTheme.light(seedOverride: config.seedColor),
-        darkTheme: AppTheme.dark(seedOverride: config.seedColor),
+        darkTheme: config.amoled
+            ? AppTheme.amoled(seedOverride: config.seedColor)
+            : AppTheme.dark(seedOverride: config.seedColor),
         themeMode: config.themeMode,
         routerConfig: router,
         debugShowCheckedModeBanner: false,

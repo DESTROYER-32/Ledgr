@@ -20,12 +20,14 @@ import '../utils/money_utils.dart';
 
 class ThemeConfig {
   final ThemeMode themeMode;
+  final bool amoled;
   final Color seedColor;
   final String fontFamily;
   final double animationSpeed;
   final bool outlinedIcons;
   const ThemeConfig({
     required this.themeMode,
+    this.amoled = false,
     required this.seedColor,
     this.fontFamily = 'System',
     this.animationSpeed = 1.0,
@@ -204,9 +206,10 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
   final fontStr = await repo.get('font_family');
   final animStr = await repo.get('animation_speed');
   final iconStr = await repo.get('outlined_icons');
+  final amoled = modeStr == 'amoled';
   final mode = switch (modeStr) {
     'light' => ThemeMode.light,
-    'dark' => ThemeMode.dark,
+    'dark' || 'amoled' => ThemeMode.dark,
     _ => ThemeMode.system,
   };
   final seed = Color(int.tryParse(seedStr ?? '') ?? 0xFF1A6D4A);
@@ -215,6 +218,7 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
   final outlined = iconStr == 'true';
   return ThemeConfig(
     themeMode: mode,
+    amoled: amoled,
     seedColor: seed,
     fontFamily: font,
     animationSpeed: anim,
