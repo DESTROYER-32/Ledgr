@@ -22,7 +22,8 @@ class DashboardScreen extends ConsumerWidget {
     final cs = theme.colorScheme;
     final totalBalanceAsync = ref.watch(totalBalanceProvider);
     final displayCurrencyAsync = ref.watch(displayCurrencyProvider);
-    final recentAsync = ref.watch(recentTransactionsProvider);
+    final transactionsAsync = ref.watch(allTransactionsProvider);
+    final exchangeRates = ref.watch(exchangeRatesProvider).valueOrNull ?? {};
     final recurringAsync = ref.watch(activeRecurringProvider);
     final walletsAsync = ref.watch(activeWalletsProvider);
     final walletBalancesAsync = ref.watch(walletBalancesProvider);
@@ -56,7 +57,7 @@ class DashboardScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(totalBalanceProvider);
-          ref.invalidate(recentTransactionsProvider);
+          ref.invalidate(allTransactionsProvider);
           ref.invalidate(allBudgetsProvider);
           ref.invalidate(activeWalletsProvider);
           ref.invalidate(activeRecurringProvider);
@@ -82,7 +83,14 @@ class DashboardScreen extends ConsumerWidget {
               walletBalancesAsync,
             ),
             const SizedBox(height: 20),
-            _buildMonthlySummary(context, theme, cs, ref, displayCurrencyAsync),
+            _buildMonthlySummary(
+              context,
+              theme,
+              cs,
+              transactionsAsync,
+              displayCurrencyAsync,
+              exchangeRates,
+            ),
             const SizedBox(height: 16),
             _buildInsightsCard(
               context,
@@ -103,7 +111,13 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             _buildUpcomingRecurring(context, theme, cs, recurringAsync),
             const SizedBox(height: 24),
-            _buildRecentTransactions(context, theme, recentAsync),
+            _buildRecentTransactions(
+              context,
+              theme,
+              transactionsAsync,
+              displayCurrencyAsync,
+              exchangeRates,
+            ),
           ],
         ),
       ),
@@ -667,103 +681,97 @@ class DashboardScreen extends ConsumerWidget {
     BuildContext context,
     ThemeData theme,
     ColorScheme cs,
-    WidgetRef ref,
+    AsyncValue<List<Transaction>> transactionsAsync,
     AsyncValue<String> displayCurrencyAsync,
+    Map<String, double> exchangeRates,
   ) {
     final currencyCode =
         displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 0);
-    final periodKey = '${start.toIso8601String()},${end.toIso8601String()}';
-    final incomeAsync = ref.watch(monthlyIncomeProvider(periodKey));
-    final expensesAsync = ref.watch(monthlyExpensesProvider(periodKey));
+    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
 
-    return incomeAsync.when(
-      data: (income) {
-        return expensesAsync.when(
-          data: (expenses) {
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return transactionsAsync.when(
+      data: (transactions) {
+        var income = 0;
+        var expenses = 0;
+        for (final t in transactions) {
+          if (t.date.isBefore(start) || t.date.isAfter(end)) continue;
+          if (t.date.isAfter(todayEnd)) continue;
+          final converted = MoneyUtils.convertMinor(
+            t.amountMinor,
+            fromCurrency: t.currencyCode,
+            toCurrency: currencyCode,
+            rates: exchangeRates,
+          );
+          if (t.type == 'income') income += converted;
+          if (t.type == 'expense') expenses += converted;
+        }
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'This Month',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
                   children: [
-                    Text(
-                      'This Month',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurfaceVariant,
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.arrow_downward,
+                        label: 'Income',
+                        value: MoneyUtils.format(
+                          income,
+                          currencyCode: currencyCode,
+                        ),
+                        color: AppColors.income,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: StatTile(
-                            icon: Icons.arrow_downward,
-                            label: 'Income',
-                            value: MoneyUtils.format(
-                              income,
-                              currencyCode: currencyCode,
-                            ),
-                            color: AppColors.income,
-                          ),
+                    Container(width: 1, height: 40, color: cs.outlineVariant),
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.arrow_upward,
+                        label: 'Expenses',
+                        value: MoneyUtils.format(
+                          expenses,
+                          currencyCode: currencyCode,
                         ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: cs.outlineVariant,
+                        color: AppColors.expense,
+                      ),
+                    ),
+                    Container(width: 1, height: 40, color: cs.outlineVariant),
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.account_balance_wallet,
+                        label: 'Net',
+                        value: MoneyUtils.format(
+                          income - expenses,
+                          currencyCode: currencyCode,
                         ),
-                        Expanded(
-                          child: StatTile(
-                            icon: Icons.arrow_upward,
-                            label: 'Expenses',
-                            value: MoneyUtils.format(
-                              expenses,
-                              currencyCode: currencyCode,
-                            ),
-                            color: AppColors.expense,
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: cs.outlineVariant,
-                        ),
-                        Expanded(
-                          child: StatTile(
-                            icon: Icons.account_balance_wallet,
-                            label: 'Net',
-                            value: MoneyUtils.format(
-                              income - expenses,
-                              currencyCode: currencyCode,
-                            ),
-                            color: income - expenses >= 0
-                                ? AppColors.income
-                                : AppColors.expense,
-                          ),
-                        ),
-                      ],
+                        color: income - expenses >= 0
+                            ? AppColors.income
+                            : AppColors.expense,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-          error: (_, _) => const Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('Error loading expenses'),
+              ],
             ),
           ),
-          loading: () => _loadingCard,
         );
       },
       error: (_, _) => const Card(
         child: Padding(
           padding: EdgeInsets.all(20),
-          child: Text('Error loading income'),
+          child: Text('Error loading summary'),
         ),
       ),
       loading: () => _loadingCard,
@@ -1215,8 +1223,12 @@ class DashboardScreen extends ConsumerWidget {
   Widget _buildRecentTransactions(
     BuildContext context,
     ThemeData theme,
-    AsyncValue<List<Transaction>> recentAsync,
+    AsyncValue<List<Transaction>> transactionsAsync,
+    AsyncValue<String> displayCurrencyAsync,
+    Map<String, double> exchangeRates,
   ) {
+    final displayCurrency =
+        displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1225,9 +1237,23 @@ class DashboardScreen extends ConsumerWidget {
           actionLabel: 'See All',
           onAction: () => context.push('/transactions'),
         ),
-        recentAsync.when(
+        transactionsAsync.when(
           data: (transactions) {
-            if (transactions.isEmpty) {
+            final now = DateTime.now();
+            final todayEnd = DateTime(
+              now.year,
+              now.month,
+              now.day,
+              23,
+              59,
+              59,
+              999,
+            );
+            final visibleTransactions =
+                transactions.where((t) => !t.date.isAfter(todayEnd)).toList()
+                  ..sort((a, b) => b.date.compareTo(a.date));
+
+            if (visibleTransactions.isEmpty) {
               return Card(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
@@ -1253,7 +1279,7 @@ class DashboardScreen extends ConsumerWidget {
               );
             }
             final grouped = <String, List<Transaction>>{};
-            for (final t in transactions) {
+            for (final t in visibleTransactions) {
               final key =
                   '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}';
               grouped.putIfAbsent(key, () => []).add(t);
@@ -1294,19 +1320,25 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  ...txns
-                      .take(10)
-                      .map(
-                        (t) => TransactionTile(
-                          id: t.id,
-                          type: t.type,
-                          amountMinor: t.amountMinor,
-                          title: t.title,
-                          date: t.date,
-                          currencyCode: t.currencyCode,
-                          onTap: () => context.push('/transactions/${t.id}'),
-                        ),
-                      ),
+                  ...txns.take(10).map((t) {
+                    final converted = MoneyUtils.convertMinor(
+                      t.amountMinor,
+                      fromCurrency: t.currencyCode,
+                      toCurrency: displayCurrency,
+                      rates: exchangeRates,
+                    );
+                    return TransactionTile(
+                      id: t.id,
+                      type: t.type,
+                      amountMinor: t.amountMinor,
+                      title: t.title,
+                      date: t.date,
+                      currencyCode: t.currencyCode,
+                      displayAmountMinor: converted,
+                      displayCurrencyCode: displayCurrency,
+                      onTap: () => context.push('/transactions/${t.id}'),
+                    );
+                  }),
                 ];
               }).toList(),
             );
