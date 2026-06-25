@@ -567,9 +567,13 @@ class _CalendarDayCell extends StatelessWidget {
                   ),
                   const Spacer(),
                   if (summary != null) ...[
-                    if (summary!.expense > 0)
+                    if (summary!.planned > 0)
+                      const _CalendarDot(color: Colors.blue),
+                    if (summary!.postedExpense > 0) ...[
+                      if (summary!.planned > 0) const SizedBox(width: 3),
                       const _CalendarDot(color: AppColors.expense),
-                    if (summary!.income > 0) ...[
+                    ],
+                    if (summary!.postedIncome > 0) ...[
                       const SizedBox(width: 3),
                       const _CalendarDot(color: AppColors.income),
                     ],
@@ -1059,6 +1063,9 @@ class _DaySummary {
   int income = 0;
   int expense = 0;
   int transfer = 0;
+  int planned = 0;
+  int postedIncome = 0;
+  int postedExpense = 0;
   int count = 0;
   final entries = <_LedgerEntry>[];
 
@@ -1067,6 +1074,13 @@ class _DaySummary {
   void add(_LedgerEntry entry) {
     count++;
     entries.add(entry);
+    if (entry.isPlanned) {
+      planned++;
+    } else if (entry.type == 'income') {
+      postedIncome += entry.amountMinor;
+    } else if (entry.type == 'expense') {
+      postedExpense += entry.amountMinor;
+    }
     if (entry.type == 'income') {
       income += entry.amountMinor;
     } else if (entry.type == 'expense') {
@@ -1097,6 +1111,8 @@ class _LedgerEntry {
   final String? currencyCode;
   final Transaction? transaction;
   final RecurringTransaction? recurring;
+
+  bool get isPlanned => transaction == null;
 
   factory _LedgerEntry.transaction(Transaction transaction) => _LedgerEntry._(
     type: transaction.type,
