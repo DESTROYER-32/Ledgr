@@ -18,7 +18,7 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   late final PageController _pageController;
-  int _page = 0;
+  int? _page;
 
   @override
   void initState() {
@@ -61,11 +61,29 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           }
 
           final months = _buildMonths(transactions);
+          final currentMonth = DateTime(
+            DateTime.now().year,
+            DateTime.now().month,
+          );
+          final currentMonthIndex = months.indexWhere(
+            (month) => _isSameMonth(month, currentMonth),
+          );
+          final initialPage = currentMonthIndex == -1
+              ? months.length - 1
+              : currentMonthIndex;
+          if (_page == null) {
+            _page = initialPage;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _pageController.hasClients) {
+                _pageController.jumpToPage(initialPage);
+              }
+            });
+          }
           final categoriesById = {
             for (final c in categoriesAsync.valueOrNull ?? <Category>[])
               c.id: c,
           };
-          final safePage = _page.clamp(0, months.length - 1);
+          final safePage = (_page ?? initialPage).clamp(0, months.length - 1);
           final month = months[safePage];
 
           return Column(
@@ -74,10 +92,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                 child: _MonthSwitcher(
                   label: _formatMonth(month),
-                  canGoNewer: safePage > 0,
-                  canGoOlder: safePage < months.length - 1,
-                  onNewer: () => _animateTo(safePage - 1),
-                  onOlder: () => _animateTo(safePage + 1),
+                  canGoOlder: safePage > 0,
+                  canGoNewer: safePage < months.length - 1,
+                  onOlder: () => _animateTo(safePage - 1),
+                  onNewer: () => _animateTo(safePage + 1),
                 ),
               ),
               Expanded(
@@ -117,13 +135,22 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
   List<DateTime> _buildMonths(List<Transaction> transactions) {
     final now = DateTime.now();
-    final oldest = transactions.last.date;
+    final oldest = transactions
+        .map((transaction) => transaction.date)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final newest = transactions
+        .map((transaction) => transaction.date)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
     final months = <DateTime>[];
-    var cursor = DateTime(now.year, now.month);
-    final last = DateTime(oldest.year, oldest.month);
-    while (!cursor.isBefore(last)) {
+    var cursor = DateTime(oldest.year, oldest.month);
+    final lastTransactionMonth = DateTime(newest.year, newest.month);
+    final currentMonth = DateTime(now.year, now.month);
+    final last = lastTransactionMonth.isAfter(currentMonth)
+        ? lastTransactionMonth
+        : currentMonth;
+    while (!cursor.isAfter(last)) {
       months.add(cursor);
-      cursor = DateTime(cursor.year, cursor.month - 1);
+      cursor = DateTime(cursor.year, cursor.month + 1);
     }
     return months;
   }
@@ -420,9 +447,7 @@ class _MonthSummary {
     var expense = 0;
     for (final transaction in transactions) {
       if (transaction.type == 'income') income += transaction.amountMinor;
-      if (transaction.type == 'expense' && transaction.specialType == 'none') {
-        expense += transaction.amountMinor;
-      }
+      if (transaction.type == 'expense') expense += transaction.amountMinor;
     }
     return _MonthSummary(income: income, expense: expense);
   }

@@ -718,6 +718,34 @@ class _DemoDataSeeder {
           ),
         );
 
+    Future<void> txOn(
+      String type,
+      int amount,
+      int wallet,
+      int? category,
+      String title,
+      DateTime date, {
+      int? transferWallet,
+      String specialType = 'none',
+    }) async {
+      await _db
+          .into(_db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              type: type,
+              specialType: Value(specialType),
+              amountMinor: amount,
+              currencyCode: currency,
+              date: date,
+              walletId: wallet,
+              transferWalletId: Value(transferWallet),
+              categoryId: Value(category),
+              title: Value(title),
+              methodAdded: const Value('demo'),
+            ),
+          );
+    }
+
     Future<void> tx(
       String type,
       int amount,
@@ -726,22 +754,18 @@ class _DemoDataSeeder {
       String title,
       int daysAgo, {
       int? transferWallet,
+      String specialType = 'none',
     }) async {
-      await _db
-          .into(_db.transactions)
-          .insert(
-            TransactionsCompanion.insert(
-              type: type,
-              amountMinor: amount,
-              currencyCode: currency,
-              date: now.subtract(Duration(days: daysAgo)),
-              walletId: wallet,
-              transferWalletId: Value(transferWallet),
-              categoryId: Value(category),
-              title: Value(title),
-              methodAdded: const Value('demo'),
-            ),
-          );
+      await txOn(
+        type,
+        amount,
+        wallet,
+        category,
+        title,
+        now.subtract(Duration(days: daysAgo)),
+        transferWallet: transferWallet,
+        specialType: specialType,
+      );
     }
 
     await tx('income', 420000, checkingId, cat('Salary'), 'Paycheck', 5);
@@ -769,6 +793,86 @@ class _DemoDataSeeder {
       12,
     );
     await tx('expense', 7590, checkingId, cat('Shopping'), 'New shoes', 10);
+
+    for (final offset in [1, 2]) {
+      await txOn(
+        'income',
+        420000,
+        checkingId,
+        cat('Salary'),
+        'Paycheck',
+        DateTime(now.year, now.month - offset, 5),
+      );
+      await txOn(
+        'expense',
+        145000,
+        checkingId,
+        cat('Rent'),
+        'Apartment rent',
+        DateTime(now.year, now.month - offset, 1),
+      );
+      await txOn(
+        'expense',
+        offset == 1 ? 23870 : 18450,
+        checkingId,
+        cat('Groceries'),
+        offset == 1 ? 'Monthly groceries' : 'SuperMart',
+        DateTime(now.year, now.month - offset, offset == 1 ? 12 : 9),
+      );
+      await txOn(
+        'expense',
+        offset == 1 ? 9600 : 6200,
+        offset == 1 ? checkingId : cashId,
+        offset == 1 ? cat('Entertainment') : cat('Transport'),
+        offset == 1 ? 'Movie night' : 'Fuel refill',
+        DateTime(now.year, now.month - offset, offset == 1 ? 18 : 16),
+      );
+    }
+
+    await txOn(
+      'expense',
+      4100,
+      cashId,
+      cat('Dining Out'),
+      'Coffee catchups',
+      DateTime(now.year, now.month - 1, 22),
+    );
+    await txOn(
+      'expense',
+      145000,
+      checkingId,
+      cat('Rent'),
+      'Scheduled rent',
+      DateTime(now.year, now.month + 1, 1),
+      specialType: 'upcoming',
+    );
+    await txOn(
+      'income',
+      420000,
+      checkingId,
+      cat('Salary'),
+      'Scheduled paycheck',
+      DateTime(now.year, now.month + 1, 5),
+      specialType: 'upcoming',
+    );
+    await txOn(
+      'expense',
+      1299,
+      checkingId,
+      cat('Subscriptions'),
+      'StreamBox subscription',
+      DateTime(now.year, now.month + 1, 7),
+      specialType: 'subscription',
+    );
+    await txOn(
+      'expense',
+      999,
+      checkingId,
+      cat('Subscriptions'),
+      'Cloud backup subscription',
+      DateTime(now.year, now.month + 2, 14),
+      specialType: 'subscription',
+    );
 
     await _db
         .into(_db.recurringTransactions)
