@@ -42,6 +42,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final transactionsAsync = ref.watch(allTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
+    final exchangeRates = ref.watch(exchangeRatesProvider).valueOrNull ?? {};
 
     return Scaffold(
       appBar: AppBar(
@@ -133,11 +137,15 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         ? _MonthCalendarPage(
                             month: visibleMonth,
                             entries: monthEntries,
+                            displayCurrency: displayCurrency,
+                            exchangeRates: exchangeRates,
                           )
                         : _MonthTransactionsPage(
                             month: visibleMonth,
                             entries: monthEntries,
                             categoriesById: categoriesById,
+                            displayCurrency: displayCurrency,
+                            exchangeRates: exchangeRates,
                           );
                   },
                 ),
@@ -352,8 +360,15 @@ class _MonthSwitcher extends StatelessWidget {
 class _MonthCalendarPage extends StatefulWidget {
   final DateTime month;
   final List<_LedgerEntry> entries;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
 
-  const _MonthCalendarPage({required this.month, required this.entries});
+  const _MonthCalendarPage({
+    required this.month,
+    required this.entries,
+    required this.displayCurrency,
+    required this.exchangeRates,
+  });
 
   @override
   State<_MonthCalendarPage> createState() => _MonthCalendarPageState();
@@ -445,6 +460,8 @@ class _MonthCalendarPageState extends State<_MonthCalendarPage> {
           _InlineDateTransactions(
             date: selectedDate,
             entries: selectedSummary.entries,
+            displayCurrency: widget.displayCurrency,
+            exchangeRates: widget.exchangeRates,
           ),
         ],
       ],
@@ -621,8 +638,15 @@ class _CalendarDot extends StatelessWidget {
 class _InlineDateTransactions extends StatelessWidget {
   final DateTime date;
   final List<_LedgerEntry> entries;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
 
-  const _InlineDateTransactions({required this.date, required this.entries});
+  const _InlineDateTransactions({
+    required this.date,
+    required this.entries,
+    required this.displayCurrency,
+    required this.exchangeRates,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -671,7 +695,13 @@ class _InlineDateTransactions extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            ...sortedEntries.map((entry) => _DateTransactionRow(entry: entry)),
+            ...sortedEntries.map(
+              (entry) => _DateTransactionRow(
+                entry: entry,
+                displayCurrency: displayCurrency,
+                exchangeRates: exchangeRates,
+              ),
+            ),
           ],
         ),
       ),
@@ -681,8 +711,14 @@ class _InlineDateTransactions extends StatelessWidget {
 
 class _DateTransactionRow extends StatelessWidget {
   final _LedgerEntry entry;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
 
-  const _DateTransactionRow({required this.entry});
+  const _DateTransactionRow({
+    required this.entry,
+    required this.displayCurrency,
+    required this.exchangeRates,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -696,6 +732,16 @@ class _DateTransactionRow extends StatelessWidget {
         : AppColors.transfer;
     final sign = isExpense ? '-' : (isIncome ? '+' : '');
     final isPlanned = entry.transaction == null;
+    final originalCurrency =
+        entry.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final convertedAmount = _convertAmountMinor(
+      entry.amountMinor,
+      originalCurrency,
+      displayCurrency,
+      exchangeRates,
+    );
+    final showOriginal =
+        originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
@@ -727,9 +773,24 @@ class _DateTransactionRow extends StatelessWidget {
           isPlanned ? 'Planned' : MoneyUtils.formatDateShort(entry.date),
           style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
         ),
-        trailing: Text(
-          '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: entry.currencyCode)}',
-          style: TextStyle(color: color, fontWeight: FontWeight.w900),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
+              style: TextStyle(color: color, fontWeight: FontWeight.w900),
+            ),
+            if (showOriginal)
+              Text(
+                '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: originalCurrency)}',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -740,11 +801,15 @@ class _MonthTransactionsPage extends StatelessWidget {
   final DateTime month;
   final List<_LedgerEntry> entries;
   final Map<int, Category> categoriesById;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
 
   const _MonthTransactionsPage({
     required this.month,
     required this.entries,
     required this.categoriesById,
+    required this.displayCurrency,
+    required this.exchangeRates,
   });
 
   @override
@@ -791,6 +856,12 @@ class _MonthTransactionsPage extends StatelessWidget {
           final category = entry.categoryId == null
               ? null
               : categoriesById[entry.categoryId];
+          final convertedAmount = _convertAmountMinor(
+            entry.amountMinor,
+            entry.currencyCode ?? MoneyUtils.defaultCurrencyCode,
+            displayCurrency,
+            exchangeRates,
+          );
           if (entry.transaction != null) {
             final transaction = entry.transaction!;
             return TransactionTile(
@@ -804,6 +875,8 @@ class _MonthTransactionsPage extends StatelessWidget {
                   ? null
                   : Color(category!.color!),
               currencyCode: entry.currencyCode,
+              displayAmountMinor: convertedAmount,
+              displayCurrencyCode: displayCurrency,
               onTap: () => context.push('/transactions/${transaction.id}'),
             );
           }
@@ -1057,6 +1130,27 @@ class _MonthSummary {
     }
     return _MonthSummary(income: income, expense: expense);
   }
+}
+
+int _convertAmountMinor(
+  int amountMinor,
+  String fromCurrency,
+  String toCurrency,
+  Map<String, double> rates,
+) {
+  if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
+    return amountMinor;
+  }
+  final fromRate =
+      rates[fromCurrency.toLowerCase()] ??
+      (fromCurrency.toLowerCase() == 'usd' ? 1.0 : null);
+  final toRate =
+      rates[toCurrency.toLowerCase()] ??
+      (toCurrency.toLowerCase() == 'usd' ? 1.0 : null);
+  if (fromRate == null || toRate == null || fromRate == 0) {
+    return amountMinor;
+  }
+  return (amountMinor * toRate * (1 / fromRate)).round();
 }
 
 class _DaySummary {
