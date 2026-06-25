@@ -151,6 +151,33 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       ...transactions.map(_LedgerEntry.transaction),
     ];
 
+    for (final transaction in transactions) {
+      final rule = transaction.recurrenceRule;
+      if (!_shouldPreviewRecurringTransaction(transaction, rule)) continue;
+
+      final start = _firstRecurringPreviewDate(rule!, transaction.date, today);
+      for (final date in RecurringUtils.generateInstances(
+        rule,
+        start,
+        previewEnd,
+        24,
+      )) {
+        if (date.isBefore(today)) continue;
+        final hasPostedTransaction = transactions.any(
+          (posted) =>
+              posted.id != transaction.id &&
+              posted.type == transaction.type &&
+              posted.amountMinor == transaction.amountMinor &&
+              posted.walletId == transaction.walletId &&
+              posted.title == transaction.title &&
+              _isSameDay(posted.date, date),
+        );
+        if (!hasPostedTransaction) {
+          entries.add(_LedgerEntry.recurringTransaction(transaction, date));
+        }
+      }
+    }
+
     for (final item in recurringItems) {
       final nextDue = item.nextDueDate;
       if (nextDue == null) continue;
@@ -181,6 +208,31 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
     entries.sort((a, b) => b.date.compareTo(a.date));
     return entries;
+  }
+
+  bool _shouldPreviewRecurringTransaction(
+    Transaction transaction,
+    String? rule,
+  ) {
+    if (rule == null || rule == 'one_time') return false;
+    const supportedRules = {'daily', 'weekly', 'monthly', 'yearly'};
+    if (!supportedRules.contains(rule)) return false;
+    const recurringSpecialTypes = {'subscription', 'scheduled', 'repetitive'};
+    return recurringSpecialTypes.contains(transaction.specialType);
+  }
+
+  DateTime _firstRecurringPreviewDate(
+    String rule,
+    DateTime transactionDate,
+    DateTime today,
+  ) {
+    var date = RecurringUtils.computeNextDueDate(rule, transactionDate);
+    while (date.isBefore(today)) {
+      final next = RecurringUtils.computeNextDueDate(rule, date);
+      if (!next.isAfter(date)) break;
+      date = next;
+    }
+    return date;
   }
 
   List<DateTime> _buildMonths(List<_LedgerEntry> entries) {
@@ -366,7 +418,9 @@ class _MonthTransactionsPage extends StatelessWidget {
             categoryColor: category?.color == null
                 ? null
                 : Color(category!.color!),
-            onTap: () => context.push('/recurring/${entry.recurring!.id}'),
+            onTap: entry.recurring == null
+                ? null
+                : () => context.push('/recurring/${entry.recurring!.id}'),
           );
         }),
       ];
@@ -651,5 +705,17 @@ class _LedgerEntry {
     title: recurring.title,
     categoryId: recurring.categoryId,
     recurring: recurring,
+  );
+
+  factory _LedgerEntry.recurringTransaction(
+    Transaction transaction,
+    DateTime date,
+  ) => _LedgerEntry._(
+    type: transaction.type,
+    amountMinor: transaction.amountMinor,
+    date: date,
+    title: transaction.title,
+    categoryId: transaction.categoryId,
+    currencyCode: transaction.currencyCode,
   );
 }
