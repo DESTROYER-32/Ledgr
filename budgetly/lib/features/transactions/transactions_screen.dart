@@ -329,22 +329,12 @@ class _MonthSwitcher extends StatelessWidget {
               icon: const Icon(Icons.chevron_left),
             ),
             Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  Text(
-                    'Swipe to change month',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
             IconButton(
@@ -359,18 +349,41 @@ class _MonthSwitcher extends StatelessWidget {
   }
 }
 
-class _MonthCalendarPage extends StatelessWidget {
+class _MonthCalendarPage extends StatefulWidget {
   final DateTime month;
   final List<_LedgerEntry> entries;
 
   const _MonthCalendarPage({required this.month, required this.entries});
 
   @override
+  State<_MonthCalendarPage> createState() => _MonthCalendarPageState();
+}
+
+class _MonthCalendarPageState extends State<_MonthCalendarPage> {
+  DateTime? _selectedDate;
+
+  @override
+  void didUpdateWidget(covariant _MonthCalendarPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.month.year != widget.month.year ||
+        oldWidget.month.month != widget.month.month) {
+      _selectedDate = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final summary = _MonthSummary.from(entries);
-    final daySummaries = _buildDaySummaries(entries);
-    final cells = _buildCalendarCells(month);
+    final summary = _MonthSummary.from(widget.entries);
+    final daySummaries = _buildDaySummaries(widget.entries);
+    final cells = _buildCalendarCells(widget.month);
+    final selectedDate = _selectedDate;
+    final selectedSummary = selectedDate == null
+        ? null
+        : daySummaries[DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+          )];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
@@ -412,13 +425,12 @@ class _MonthCalendarPage extends StatelessWidget {
                       date: date,
                       summary: daySummaries[key],
                       isToday: _isSameDay(date, DateTime.now()),
+                      selected:
+                          _selectedDate != null &&
+                          _isSameDay(date, _selectedDate!),
                       onTap: daySummaries[key] == null
                           ? null
-                          : () => _showDateTransactions(
-                              context,
-                              date,
-                              daySummaries[key]!.entries,
-                            ),
+                          : () => setState(() => _selectedDate = date),
                       onAddTransaction: () =>
                           _addTransactionOnDate(context, date),
                     );
@@ -428,14 +440,13 @@ class _MonthCalendarPage extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          'Tap the list icon to return to transactions. Calendar includes posted and planned recurring items.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        if (selectedDate != null && selectedSummary != null) ...[
+          const SizedBox(height: 12),
+          _InlineDateTransactions(
+            date: selectedDate,
+            entries: selectedSummary.entries,
           ),
-          textAlign: TextAlign.center,
-        ),
+        ],
       ],
     );
   }
@@ -467,20 +478,6 @@ class _MonthCalendarPage extends StatelessWidget {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  void _showDateTransactions(
-    BuildContext context,
-    DateTime date,
-    List<_LedgerEntry> entries,
-  ) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) =>
-          _DateTransactionsSheet(date: date, entries: entries),
-    );
-  }
-
   void _addTransactionOnDate(BuildContext context, DateTime date) {
     context.push('/transactions/new', extra: {'date': date});
   }
@@ -510,6 +507,7 @@ class _CalendarDayCell extends StatelessWidget {
   final DateTime date;
   final _DaySummary? summary;
   final bool isToday;
+  final bool selected;
   final VoidCallback? onTap;
   final VoidCallback onAddTransaction;
 
@@ -517,6 +515,7 @@ class _CalendarDayCell extends StatelessWidget {
     required this.date,
     required this.summary,
     required this.isToday,
+    required this.selected,
     required this.onTap,
     required this.onAddTransaction,
   });
@@ -546,9 +545,12 @@ class _CalendarDayCell extends StatelessWidget {
                 : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isToday
+              color: selected
+                  ? theme.colorScheme.primary
+                  : isToday
                   ? theme.colorScheme.primary
                   : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+              width: selected ? 2 : 1,
             ),
           ),
           child: Column(
@@ -612,11 +614,11 @@ class _CalendarDot extends StatelessWidget {
   }
 }
 
-class _DateTransactionsSheet extends StatelessWidget {
+class _InlineDateTransactions extends StatelessWidget {
   final DateTime date;
   final List<_LedgerEntry> entries;
 
-  const _DateTransactionsSheet({required this.date, required this.entries});
+  const _InlineDateTransactions({required this.date, required this.entries});
 
   @override
   Widget build(BuildContext context) {
@@ -627,87 +629,47 @@ class _DateTransactionsSheet extends StatelessWidget {
     final net = summary.net;
     final netColor = net >= 0 ? AppColors.income : AppColors.expense;
 
-    return SafeArea(
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.55,
-        minChildSize: 0.32,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) {
-          return ListView(
-            controller: scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          MoneyUtils.formatDate(date),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        MoneyUtils.formatDate(date),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
                         ),
-                        Text(
-                          '${sortedEntries.length} transaction${sortedEntries.length == 1 ? '' : 's'}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                      ),
+                      Text(
+                        '${sortedEntries.length} transaction${sortedEntries.length == 1 ? '' : 's'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${net >= 0 ? '+' : '-'}${MoneyUtils.format(net.abs())}',
-                    style: TextStyle(
-                      color: netColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SummaryPill(
-                      label: 'Incoming',
-                      amount: summary.income,
-                      color: AppColors.income,
-                      icon: Icons.arrow_downward,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SummaryPill(
-                      label: 'Outgoing',
-                      amount: summary.expense,
-                      color: AppColors.expense,
-                      icon: Icons.arrow_upward,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ...sortedEntries.map(
-                (entry) => _DateTransactionRow(
-                  entry: entry,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    if (entry.transaction != null) {
-                      context.push('/transactions/${entry.transaction!.id}');
-                    } else if (entry.recurring != null) {
-                      context.push('/recurring/${entry.recurring!.id}');
-                    }
-                  },
                 ),
-              ),
-            ],
-          );
-        },
+                Text(
+                  '${net >= 0 ? '+' : '-'}${MoneyUtils.format(net.abs())}',
+                  style: TextStyle(
+                    color: netColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...sortedEntries.map((entry) => _DateTransactionRow(entry: entry)),
+          ],
+        ),
       ),
     );
   }
@@ -715,9 +677,8 @@ class _DateTransactionsSheet extends StatelessWidget {
 
 class _DateTransactionRow extends StatelessWidget {
   final _LedgerEntry entry;
-  final VoidCallback onTap;
 
-  const _DateTransactionRow({required this.entry, required this.onTap});
+  const _DateTransactionRow({required this.entry});
 
   @override
   Widget build(BuildContext context) {
@@ -735,7 +696,15 @@ class _DateTransactionRow extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       child: ListTile(
-        onTap: isPlanned && entry.recurring == null ? null : onTap,
+        onTap: isPlanned && entry.recurring == null
+            ? null
+            : () {
+                if (entry.transaction != null) {
+                  context.push('/transactions/${entry.transaction!.id}');
+                } else if (entry.recurring != null) {
+                  context.push('/recurring/${entry.recurring!.id}');
+                }
+              },
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.12),
           child: Icon(
