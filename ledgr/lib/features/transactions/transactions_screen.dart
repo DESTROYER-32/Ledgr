@@ -11,7 +11,9 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
-  const TransactionsScreen({super.key});
+  final bool calendarOnly;
+
+  const TransactionsScreen({super.key, this.calendarOnly = false});
 
   @override
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -25,6 +27,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
+    _showCalendar = widget.calendarOnly;
     _pageController = PageController();
   }
 
@@ -42,13 +45,18 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: Text(widget.calendarOnly ? 'Calendar' : 'Transactions'),
         actions: [
-          IconButton(
-            tooltip: _showCalendar ? 'Show transaction list' : 'Show calendar',
-            icon: Icon(_showCalendar ? Icons.view_list : Icons.calendar_month),
-            onPressed: () => setState(() => _showCalendar = !_showCalendar),
-          ),
+          if (!widget.calendarOnly)
+            IconButton(
+              tooltip: _showCalendar
+                  ? 'Show transaction list'
+                  : 'Show calendar',
+              icon: Icon(
+                _showCalendar ? Icons.view_list : Icons.calendar_month,
+              ),
+              onPressed: () => setState(() => _showCalendar = !_showCalendar),
+            ),
           IconButton(
             tooltip: 'Search and filters',
             icon: const Icon(Icons.search),
@@ -411,6 +419,8 @@ class _MonthCalendarPage extends StatelessWidget {
                               date,
                               daySummaries[key]!.entries,
                             ),
+                      onAddTransaction: () =>
+                          _addTransactionOnDate(context, date),
                     );
                   },
                 ),
@@ -470,6 +480,10 @@ class _MonthCalendarPage extends StatelessWidget {
           _DateTransactionsSheet(date: date, entries: entries),
     );
   }
+
+  void _addTransactionOnDate(BuildContext context, DateTime date) {
+    context.push('/transactions/new', extra: {'date': date});
+  }
 }
 
 class _WeekdayLabel extends StatelessWidget {
@@ -497,12 +511,14 @@ class _CalendarDayCell extends StatelessWidget {
   final _DaySummary? summary;
   final bool isToday;
   final VoidCallback? onTap;
+  final VoidCallback onAddTransaction;
 
   const _CalendarDayCell({
     required this.date,
     required this.summary,
     required this.isToday,
     required this.onTap,
+    required this.onAddTransaction,
   });
 
   @override
@@ -516,6 +532,8 @@ class _CalendarDayCell extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
+        onDoubleTap: onAddTransaction,
+        onLongPress: onAddTransaction,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
           decoration: BoxDecoration(

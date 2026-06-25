@@ -610,6 +610,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 8),
           _section(theme, 'Tracking', [
             ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: const Text('Calendar'),
+              subtitle: const Text(
+                'Open a calendar-only view of daily income and outgoing',
+              ),
+              onTap: () => context.push('/transactions/calendar'),
+            ),
+            ListTile(
               leading: const Icon(Icons.subscriptions),
               title: const Text('Subscriptions & Scheduled'),
               subtitle: const Text(
