@@ -15,11 +15,13 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
   final int? transactionId;
   final int? preselectedWalletId;
   final String? preselectedType;
+  final DateTime? preselectedDate;
   const TransactionFormScreen({
     super.key,
     this.transactionId,
     this.preselectedWalletId,
     this.preselectedType,
+    this.preselectedDate,
   });
 
   @override
@@ -55,6 +57,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _walletId = widget.preselectedWalletId;
     if (widget.preselectedType != null) {
       _type = widget.preselectedType!;
+    }
+    if (widget.preselectedDate != null) {
+      _date = widget.preselectedDate!;
     }
     _isEditing = widget.transactionId != null;
     if (_isEditing) {

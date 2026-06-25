@@ -114,6 +114,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const TransactionsScreen(),
       ),
       GoRoute(
+        path: '/transactions/calendar',
+        name: 'transactions-calendar',
+        builder: (context, state) =>
+            const TransactionsScreen(calendarOnly: true),
+      ),
+      GoRoute(
         path: '/transactions/new',
         name: 'transaction-new',
         builder: (context, state) {
@@ -121,6 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return TransactionFormScreen(
             preselectedWalletId: extra?['walletId'] as int?,
             preselectedType: extra?['type'] as String?,
+            preselectedDate: extra?['date'] as DateTime?,
           );
         },
       ),
