@@ -20,6 +20,7 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   late final PageController _pageController;
   int? _page;
+  bool _showCalendar = false;
 
   @override
   void initState() {
@@ -43,6 +44,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       appBar: AppBar(
         title: const Text('Transactions'),
         actions: [
+          IconButton(
+            tooltip: _showCalendar ? 'Show transaction list' : 'Show calendar',
+            icon: Icon(_showCalendar ? Icons.view_list : Icons.calendar_month),
+            onPressed: () => setState(() => _showCalendar = !_showCalendar),
+          ),
           IconButton(
             tooltip: 'Search and filters',
             icon: const Icon(Icons.search),
@@ -115,11 +121,16 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                           (entry) => _isSameMonth(entry.date, visibleMonth),
                         )
                         .toList();
-                    return _MonthTransactionsPage(
-                      month: visibleMonth,
-                      entries: monthEntries,
-                      categoriesById: categoriesById,
-                    );
+                    return _showCalendar
+                        ? _MonthCalendarPage(
+                            month: visibleMonth,
+                            entries: monthEntries,
+                          )
+                        : _MonthTransactionsPage(
+                            month: visibleMonth,
+                            entries: monthEntries,
+                            categoriesById: categoriesById,
+                          );
                   },
                 ),
               ),
@@ -334,6 +345,234 @@ class _MonthSwitcher extends StatelessWidget {
               icon: const Icon(Icons.chevron_right),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthCalendarPage extends StatelessWidget {
+  final DateTime month;
+  final List<_LedgerEntry> entries;
+
+  const _MonthCalendarPage({required this.month, required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final summary = _MonthSummary.from(entries);
+    final daySummaries = _buildDaySummaries(entries);
+    final cells = _buildCalendarCells(month);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+      children: [
+        _SummaryCard(summary: summary),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                const Row(
+                  children: [
+                    _WeekdayLabel('M'),
+                    _WeekdayLabel('T'),
+                    _WeekdayLabel('W'),
+                    _WeekdayLabel('T'),
+                    _WeekdayLabel('F'),
+                    _WeekdayLabel('S'),
+                    _WeekdayLabel('S'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: cells.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    childAspectRatio: 0.72,
+                  ),
+                  itemBuilder: (context, index) {
+                    final date = cells[index];
+                    if (date == null) return const SizedBox.shrink();
+                    final key = DateTime(date.year, date.month, date.day);
+                    return _CalendarDayCell(
+                      date: date,
+                      summary: daySummaries[key],
+                      isToday: _isSameDay(date, DateTime.now()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Tap the list icon to return to transactions. Calendar includes posted and planned recurring items.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Map<DateTime, _DaySummary> _buildDaySummaries(List<_LedgerEntry> entries) {
+    final map = <DateTime, _DaySummary>{};
+    for (final entry in entries) {
+      final day = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      map.putIfAbsent(day, _DaySummary.new).add(entry);
+    }
+    return map;
+  }
+
+  List<DateTime?> _buildCalendarCells(DateTime month) {
+    final first = DateTime(month.year, month.month);
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final leadingBlanks = first.weekday - 1;
+    final cells = <DateTime?>[
+      for (var i = 0; i < leadingBlanks; i++) null,
+      for (var day = 1; day <= daysInMonth; day++)
+        DateTime(month.year, month.month, day),
+    ];
+    while (cells.length % 7 != 0) {
+      cells.add(null);
+    }
+    return cells;
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+class _WeekdayLabel extends StatelessWidget {
+  final String label;
+
+  const _WeekdayLabel(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w800,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+class _CalendarDayCell extends StatelessWidget {
+  final DateTime date;
+  final _DaySummary? summary;
+  final bool isToday;
+
+  const _CalendarDayCell({
+    required this.date,
+    required this.summary,
+    required this.isToday,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasTransactions = summary != null && summary!.count > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+      decoration: BoxDecoration(
+        color: isToday
+            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
+            : hasTransactions
+            ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isToday
+              ? theme.colorScheme.primary
+              : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '${date.day}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: isToday ? theme.colorScheme.primary : null,
+                ),
+              ),
+              const Spacer(),
+              if (hasTransactions)
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+          const Spacer(),
+          if (summary != null && summary!.income > 0)
+            _CalendarAmount(
+              amount: summary!.income,
+              color: AppColors.income,
+              sign: '+',
+            ),
+          if (summary != null && summary!.expense > 0)
+            _CalendarAmount(
+              amount: summary!.expense,
+              color: AppColors.expense,
+              sign: '-',
+            ),
+          if (summary != null && summary!.transfer > 0)
+            _CalendarAmount(
+              amount: summary!.transfer,
+              color: AppColors.transfer,
+              sign: '',
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CalendarAmount extends StatelessWidget {
+  final int amount;
+  final Color color;
+  final String sign;
+
+  const _CalendarAmount({
+    required this.amount,
+    required this.color,
+    required this.sign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(
+        '$sign${MoneyUtils.formatCompact(amount)}',
+        maxLines: 1,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -660,6 +899,24 @@ class _MonthSummary {
       if (entry.type == 'expense') expense += entry.amountMinor;
     }
     return _MonthSummary(income: income, expense: expense);
+  }
+}
+
+class _DaySummary {
+  int income = 0;
+  int expense = 0;
+  int transfer = 0;
+  int count = 0;
+
+  void add(_LedgerEntry entry) {
+    count++;
+    if (entry.type == 'income') {
+      income += entry.amountMinor;
+    } else if (entry.type == 'expense') {
+      expense += entry.amountMinor;
+    } else {
+      transfer += entry.amountMinor;
+    }
   }
 }
 
