@@ -7,6 +7,7 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/utils/currency_utils.dart';
+import '../../core/utils/recurring_utils.dart';
 import '../../core/widgets/amount_field.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
@@ -32,9 +33,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
   final _tagsController = TextEditingController();
+  final _repeatMonthsController = TextEditingController(text: '1');
   String _type = 'expense';
   String _specialType = 'none';
   String? _recurrenceRule;
+  String _repeatPreset = 'monthly';
+  DateTime? _repeatUntilDate;
   int? _walletId;
   int? _transferWalletId;
   int? _categoryId;
@@ -82,6 +86,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ? 'scheduled'
             : t.specialType;
         _recurrenceRule = t.recurrenceRule;
+        _hydrateRepeatControls(t.recurrenceRule);
         _walletId = t.walletId;
         _transferWalletId = t.transferWalletId;
         _categoryId = t.categoryId;
@@ -110,7 +115,44 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _titleController.dispose();
     _noteController.dispose();
     _tagsController.dispose();
+    _repeatMonthsController.dispose();
     super.dispose();
+  }
+
+  void _hydrateRepeatControls(String? rule) {
+    if (rule == null || rule == 'one_time') {
+      _repeatPreset = rule ?? 'monthly';
+      _repeatUntilDate = null;
+      return;
+    }
+    if (rule == 'monthly' || rule == 'quarterly' || rule == 'yearly') {
+      _repeatPreset = rule;
+      _repeatMonthsController.text = switch (rule) {
+        'quarterly' => '3',
+        'yearly' => '12',
+        _ => '1',
+      };
+      _repeatUntilDate = null;
+      return;
+    }
+    final months = RecurringUtils.monthIntervalForRule(rule);
+    if (months != null) {
+      _repeatPreset = 'custom_months';
+      _recurrenceRule = 'custom_months';
+      _repeatMonthsController.text = '$months';
+      _repeatUntilDate = RecurringUtils.untilDateForRule(rule);
+    }
+  }
+
+  String? get _effectiveRecurrenceRule {
+    if (!_isRecurringSpecial) return null;
+    if (_repeatPreset == 'custom_months') {
+      return RecurringUtils.buildEveryMonthsRule(
+        int.tryParse(_repeatMonthsController.text) ?? 1,
+        until: _repeatUntilDate,
+      );
+    }
+    return _recurrenceRule;
   }
 
   void _duplicate() {
@@ -152,7 +194,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final companion = TransactionsCompanion(
       type: Value(_type),
       specialType: Value(_specialType),
-      recurrenceRule: Value(_isRecurringSpecial ? _recurrenceRule : null),
+      recurrenceRule: Value(_effectiveRecurrenceRule),
       amountMinor: Value(amount.round()),
       currencyCode: Value(currencyCode),
       date: Value(_date),
@@ -179,7 +221,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         TransactionsCompanion.insert(
           type: _type,
           specialType: Value(_specialType),
-          recurrenceRule: Value(_isRecurringSpecial ? _recurrenceRule : null),
+          recurrenceRule: Value(_effectiveRecurrenceRule),
           amountMinor: amount.round(),
           currencyCode: currencyCode,
           date: _date,
@@ -306,15 +348,79 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   ),
                   ModernSelectionItem(
                     value: 'yearly',
-                    title: 'Yearly',
+                    title: 'Every 12 months',
                     icon: Icons.event_repeat_outlined,
                   ),
+                  ModernSelectionItem(
+                    value: 'custom_months',
+                    title: 'Custom months',
+                    subtitle: 'Every N months, optional until date',
+                    icon: Icons.tune,
+                  ),
                 ],
-                onChanged: (v) => setState(() => _recurrenceRule = v),
+                onChanged: (v) => setState(() {
+                  _repeatPreset = v ?? 'monthly';
+                  _recurrenceRule = v;
+                  if (v == 'monthly') _repeatMonthsController.text = '1';
+                  if (v == 'quarterly') _repeatMonthsController.text = '3';
+                  if (v == 'yearly') _repeatMonthsController.text = '12';
+                }),
                 validator: (_) => _isRecurringSpecial && _recurrenceRule == null
                     ? 'Required for subscriptions and scheduled transactions'
                     : null,
               ),
+              if (_repeatPreset == 'custom_months') ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _repeatMonthsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Repeat every _ months',
+                    prefixText: 'Every ',
+                    suffixText: ' months',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (_) {
+                    if (!_isRecurringSpecial ||
+                        _repeatPreset != 'custom_months') {
+                      return null;
+                    }
+                    final value = int.tryParse(_repeatMonthsController.text);
+                    return value == null || value < 1
+                        ? 'Enter at least 1 month'
+                        : null;
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.event_busy_outlined),
+                  title: Text(
+                    _repeatUntilDate == null
+                        ? 'Repeat until: no end date'
+                        : 'Repeat until: ${AppDateUtils.formatDate(_repeatUntilDate!)}',
+                  ),
+                  trailing: _repeatUntilDate == null
+                      ? null
+                      : IconButton(
+                          tooltip: 'Clear until date',
+                          onPressed: () =>
+                              setState(() => _repeatUntilDate = null),
+                          icon: const Icon(Icons.close),
+                        ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate:
+                          _repeatUntilDate ??
+                          DateTime(_date.year + 1, _date.month, _date.day),
+                      firstDate: _date,
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() => _repeatUntilDate = picked);
+                    }
+                  },
+                ),
+              ],
             ],
             const SizedBox(height: 20),
             AmountField(

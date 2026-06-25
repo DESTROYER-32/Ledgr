@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/utils/recurring_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
 class RecurringFormScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
+  final _repeatMonthsController = TextEditingController(text: '1');
   String _type = 'expense';
   String _schedule = 'monthly';
   int? _walletId;
@@ -35,8 +37,17 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     ('daily', 'Daily'),
     ('weekly', 'Weekly'),
     ('monthly', 'Monthly'),
-    ('yearly', 'Yearly'),
+    ('quarterly', 'Every 3 months'),
+    ('yearly', 'Every 12 months'),
+    ('custom_months', 'Custom'),
   ];
+
+  String get _effectiveSchedule => _schedule == 'custom_months'
+      ? RecurringUtils.buildEveryMonthsRule(
+          int.tryParse(_repeatMonthsController.text) ?? 1,
+          until: _endDate,
+        )
+      : _schedule;
 
   @override
   void initState() {
@@ -55,10 +66,20 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
       setState(() {
         _type = r.transactionType;
         _schedule = r.scheduleRule;
+        _endDate = r.endDate;
+        final months = RecurringUtils.monthIntervalForRule(r.scheduleRule);
+        if (months != null &&
+            r.scheduleRule != 'monthly' &&
+            r.scheduleRule != 'quarterly' &&
+            r.scheduleRule != 'yearly') {
+          _schedule = 'custom_months';
+          _repeatMonthsController.text = '$months';
+          _endDate =
+              RecurringUtils.untilDateForRule(r.scheduleRule) ?? r.endDate;
+        }
         _walletId = r.walletId;
         _categoryId = r.categoryId;
         _startDate = r.startDate;
-        _endDate = r.endDate;
         _titleController.text = r.title ?? '';
         _noteController.text = r.note ?? '';
         _amountController.text = (r.amountMinor / 100).toStringAsFixed(2);
@@ -71,6 +92,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     _amountController.dispose();
     _titleController.dispose();
     _noteController.dispose();
+    _repeatMonthsController.dispose();
     super.dispose();
   }
 
@@ -97,7 +119,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
         _titleController.text.isEmpty ? null : _titleController.text,
       ),
       note: Value(_noteController.text.isEmpty ? null : _noteController.text),
-      scheduleRule: Value(_schedule),
+      scheduleRule: Value(_effectiveSchedule),
       startDate: Value(_startDate),
       endDate: Value(_endDate),
       nextDueDate: Value(_startDate),
@@ -183,10 +205,65 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                 return ChoiceChip(
                   label: Text(s.$2),
                   selected: sel,
-                  onSelected: (_) => setState(() => _schedule = s.$1),
+                  onSelected: (_) => setState(() {
+                    _schedule = s.$1;
+                    if (s.$1 == 'monthly') _repeatMonthsController.text = '1';
+                    if (s.$1 == 'quarterly') _repeatMonthsController.text = '3';
+                    if (s.$1 == 'yearly') _repeatMonthsController.text = '12';
+                  }),
                 );
               }).toList(),
             ),
+            if (_schedule == 'custom_months') ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _repeatMonthsController,
+                decoration: const InputDecoration(
+                  labelText: 'Repeat every _ months',
+                  prefixText: 'Every ',
+                  suffixText: ' months',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (_) {
+                  if (_schedule != 'custom_months') return null;
+                  final value = int.tryParse(_repeatMonthsController.text);
+                  return value == null || value < 1
+                      ? 'Enter at least 1 month'
+                      : null;
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.event_busy_outlined),
+                title: Text(
+                  _endDate == null
+                      ? 'Repeat until: no end date'
+                      : 'Repeat until: ${AppDateUtils.formatDate(_endDate!)}',
+                ),
+                trailing: _endDate == null
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear until date',
+                        onPressed: () => setState(() => _endDate = null),
+                        icon: const Icon(Icons.close),
+                      ),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate:
+                        _endDate ??
+                        DateTime(
+                          _startDate.year + 1,
+                          _startDate.month,
+                          _startDate.day,
+                        ),
+                    firstDate: _startDate,
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) setState(() => _endDate = picked);
+                },
+              ),
+            ],
             const SizedBox(height: 16),
             walletsAsync.when(
               data: (wallets) => ModernSelectionField<int>(
