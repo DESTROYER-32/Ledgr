@@ -14,6 +14,8 @@ class TransactionTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDuplicate;
   final String? currencyCode;
+  final int? displayAmountMinor;
+  final String? displayCurrencyCode;
 
   const TransactionTile({
     super.key,
@@ -27,6 +29,8 @@ class TransactionTile extends StatelessWidget {
     this.onTap,
     this.onDuplicate,
     this.currencyCode,
+    this.displayAmountMinor,
+    this.displayCurrencyCode,
   });
 
   @override
@@ -38,6 +42,11 @@ class TransactionTile extends StatelessWidget {
         ? AppColors.expense
         : (isIncome ? AppColors.income : AppColors.transfer);
     final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final originalCurrency = currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final primaryCurrency = displayCurrencyCode ?? originalCurrency;
+    final primaryAmount = displayAmountMinor ?? amountMinor;
+    final showOriginal =
+        originalCurrency.toUpperCase() != primaryCurrency.toUpperCase();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 3),
@@ -114,13 +123,29 @@ class TransactionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '$sign${MoneyUtils.format(amountMinor, currencyCode: currencyCode)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: color,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$sign${MoneyUtils.format(primaryAmount, currencyCode: primaryCurrency)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: color,
+                    ),
+                  ),
+                  if (showOriginal) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '$sign${MoneyUtils.format(amountMinor, currencyCode: originalCurrency)}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
               ),
               if (onDuplicate != null) ...[
                 const SizedBox(width: 4),

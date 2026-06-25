@@ -11,7 +11,9 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
-  const TransactionsScreen({super.key});
+  final bool calendarOnly;
+
+  const TransactionsScreen({super.key, this.calendarOnly = false});
 
   @override
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -20,10 +22,12 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   late final PageController _pageController;
   int? _page;
+  bool _showCalendar = false;
 
   @override
   void initState() {
     super.initState();
+    _showCalendar = widget.calendarOnly;
     _pageController = PageController();
   }
 
@@ -38,11 +42,25 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final transactionsAsync = ref.watch(allTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
+    final exchangeRates = ref.watch(exchangeRatesProvider).valueOrNull ?? {};
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: Text(widget.calendarOnly ? 'Calendar' : 'Transactions'),
         actions: [
+          if (!widget.calendarOnly)
+            IconButton(
+              tooltip: _showCalendar
+                  ? 'Show transaction list'
+                  : 'Show calendar',
+              icon: Icon(
+                _showCalendar ? Icons.view_list : Icons.calendar_month,
+              ),
+              onPressed: () => setState(() => _showCalendar = !_showCalendar),
+            ),
           IconButton(
             tooltip: 'Search and filters',
             icon: const Icon(Icons.search),
@@ -115,11 +133,20 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                           (entry) => _isSameMonth(entry.date, visibleMonth),
                         )
                         .toList();
-                    return _MonthTransactionsPage(
-                      month: visibleMonth,
-                      entries: monthEntries,
-                      categoriesById: categoriesById,
-                    );
+                    return _showCalendar
+                        ? _MonthCalendarPage(
+                            month: visibleMonth,
+                            entries: monthEntries,
+                            displayCurrency: displayCurrency,
+                            exchangeRates: exchangeRates,
+                          )
+                        : _MonthTransactionsPage(
+                            month: visibleMonth,
+                            entries: monthEntries,
+                            categoriesById: categoriesById,
+                            displayCurrency: displayCurrency,
+                            exchangeRates: exchangeRates,
+                          );
                   },
                 ),
               ),
@@ -310,22 +337,12 @@ class _MonthSwitcher extends StatelessWidget {
               icon: const Icon(Icons.chevron_left),
             ),
             Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  Text(
-                    'Swipe to change month',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
             IconButton(
@@ -340,15 +357,459 @@ class _MonthSwitcher extends StatelessWidget {
   }
 }
 
+class _MonthCalendarPage extends StatefulWidget {
+  final DateTime month;
+  final List<_LedgerEntry> entries;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
+
+  const _MonthCalendarPage({
+    required this.month,
+    required this.entries,
+    required this.displayCurrency,
+    required this.exchangeRates,
+  });
+
+  @override
+  State<_MonthCalendarPage> createState() => _MonthCalendarPageState();
+}
+
+class _MonthCalendarPageState extends State<_MonthCalendarPage> {
+  DateTime? _selectedDate;
+
+  @override
+  void didUpdateWidget(covariant _MonthCalendarPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.month.year != widget.month.year ||
+        oldWidget.month.month != widget.month.month) {
+      _selectedDate = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = _MonthSummary.from(widget.entries);
+    final daySummaries = _buildDaySummaries(widget.entries);
+    final cells = _buildCalendarCells(widget.month);
+    final selectedDate = _selectedDate;
+    final selectedSummary = selectedDate == null
+        ? null
+        : daySummaries[DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+          )];
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+      children: [
+        _SummaryCard(summary: summary),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                const Row(
+                  children: [
+                    _WeekdayLabel('M'),
+                    _WeekdayLabel('T'),
+                    _WeekdayLabel('W'),
+                    _WeekdayLabel('T'),
+                    _WeekdayLabel('F'),
+                    _WeekdayLabel('S'),
+                    _WeekdayLabel('S'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: cells.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    childAspectRatio: 0.72,
+                  ),
+                  itemBuilder: (context, index) {
+                    final date = cells[index];
+                    if (date == null) return const SizedBox.shrink();
+                    final key = DateTime(date.year, date.month, date.day);
+                    return _CalendarDayCell(
+                      date: date,
+                      summary: daySummaries[key],
+                      isToday: _isSameDay(date, DateTime.now()),
+                      selected:
+                          _selectedDate != null &&
+                          _isSameDay(date, _selectedDate!),
+                      onTap: daySummaries[key] == null
+                          ? null
+                          : () => setState(() => _selectedDate = date),
+                      onAddTransaction: () =>
+                          _addTransactionOnDate(context, date),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (selectedDate != null && selectedSummary != null) ...[
+          const SizedBox(height: 12),
+          _InlineDateTransactions(
+            date: selectedDate,
+            entries: selectedSummary.entries,
+            displayCurrency: widget.displayCurrency,
+            exchangeRates: widget.exchangeRates,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Map<DateTime, _DaySummary> _buildDaySummaries(List<_LedgerEntry> entries) {
+    final map = <DateTime, _DaySummary>{};
+    for (final entry in entries) {
+      final day = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      map.putIfAbsent(day, _DaySummary.new).add(entry);
+    }
+    return map;
+  }
+
+  List<DateTime?> _buildCalendarCells(DateTime month) {
+    final first = DateTime(month.year, month.month);
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final leadingBlanks = first.weekday - 1;
+    final cells = <DateTime?>[
+      for (var i = 0; i < leadingBlanks; i++) null,
+      for (var day = 1; day <= daysInMonth; day++)
+        DateTime(month.year, month.month, day),
+    ];
+    while (cells.length % 7 != 0) {
+      cells.add(null);
+    }
+    return cells;
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  void _addTransactionOnDate(BuildContext context, DateTime date) {
+    context.push('/transactions/new', extra: {'date': date});
+  }
+}
+
+class _WeekdayLabel extends StatelessWidget {
+  final String label;
+
+  const _WeekdayLabel(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w800,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+class _CalendarDayCell extends StatelessWidget {
+  final DateTime date;
+  final _DaySummary? summary;
+  final bool isToday;
+  final bool selected;
+  final VoidCallback? onTap;
+  final VoidCallback onAddTransaction;
+
+  const _CalendarDayCell({
+    required this.date,
+    required this.summary,
+    required this.isToday,
+    required this.selected,
+    required this.onTap,
+    required this.onAddTransaction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasTransactions = summary != null && summary!.count > 0;
+    final net = summary?.net ?? 0;
+    final netColor = net >= 0 ? AppColors.income : AppColors.expense;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        onDoubleTap: onAddTransaction,
+        onLongPress: onAddTransaction,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+          decoration: BoxDecoration(
+            color: isToday
+                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
+                : hasTransactions
+                ? theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.55,
+                  )
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected
+                  ? theme.colorScheme.primary
+                  : isToday
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '${date.day}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: isToday ? theme.colorScheme.primary : null,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (summary != null) ...[
+                    if (summary!.planned > 0)
+                      const _CalendarDot(color: Colors.blue),
+                    if (summary!.postedExpense > 0) ...[
+                      if (summary!.planned > 0) const SizedBox(width: 3),
+                      const _CalendarDot(color: AppColors.expense),
+                    ],
+                    if (summary!.postedIncome > 0) ...[
+                      const SizedBox(width: 3),
+                      const _CalendarDot(color: AppColors.income),
+                    ],
+                  ],
+                ],
+              ),
+              const Spacer(),
+              if (hasTransactions)
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${net >= 0 ? '+' : '-'}${MoneyUtils.formatCompact(net.abs())}',
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: netColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CalendarDot extends StatelessWidget {
+  final Color color;
+
+  const _CalendarDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 6,
+      height: 6,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _InlineDateTransactions extends StatelessWidget {
+  final DateTime date;
+  final List<_LedgerEntry> entries;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
+
+  const _InlineDateTransactions({
+    required this.date,
+    required this.entries,
+    required this.displayCurrency,
+    required this.exchangeRates,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sortedEntries = entries.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final summary = _MonthSummary.from(sortedEntries);
+    final net = summary.net;
+    final netColor = net >= 0 ? AppColors.income : AppColors.expense;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        MoneyUtils.formatDate(date),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        '${sortedEntries.length} transaction${sortedEntries.length == 1 ? '' : 's'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '${net >= 0 ? '+' : '-'}${MoneyUtils.format(net.abs())}',
+                  style: TextStyle(
+                    color: netColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...sortedEntries.map(
+              (entry) => _DateTransactionRow(
+                entry: entry,
+                displayCurrency: displayCurrency,
+                exchangeRates: exchangeRates,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DateTransactionRow extends StatelessWidget {
+  final _LedgerEntry entry;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
+
+  const _DateTransactionRow({
+    required this.entry,
+    required this.displayCurrency,
+    required this.exchangeRates,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isExpense = entry.type == 'expense';
+    final isIncome = entry.type == 'income';
+    final color = isExpense
+        ? AppColors.expense
+        : isIncome
+        ? AppColors.income
+        : AppColors.transfer;
+    final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final isPlanned = entry.transaction == null;
+    final originalCurrency =
+        entry.currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final convertedAmount = _convertAmountMinor(
+      entry.amountMinor,
+      originalCurrency,
+      displayCurrency,
+      exchangeRates,
+    );
+    final showOriginal =
+        originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListTile(
+        onTap: isPlanned && entry.recurring == null
+            ? null
+            : () {
+                if (entry.transaction != null) {
+                  context.push('/transactions/${entry.transaction!.id}');
+                } else if (entry.recurring != null) {
+                  context.push('/recurring/${entry.recurring!.id}');
+                }
+              },
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.12),
+          child: Icon(
+            isPlanned ? Icons.event_repeat : Icons.receipt_long,
+            color: color,
+            size: 20,
+          ),
+        ),
+        title: Text(
+          entry.title ?? entry.type,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          isPlanned ? 'Planned' : MoneyUtils.formatDateShort(entry.date),
+          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
+              style: TextStyle(color: color, fontWeight: FontWeight.w900),
+            ),
+            if (showOriginal)
+              Text(
+                '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: originalCurrency)}',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MonthTransactionsPage extends StatelessWidget {
   final DateTime month;
   final List<_LedgerEntry> entries;
   final Map<int, Category> categoriesById;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
 
   const _MonthTransactionsPage({
     required this.month,
     required this.entries,
     required this.categoriesById,
+    required this.displayCurrency,
+    required this.exchangeRates,
   });
 
   @override
@@ -395,6 +856,12 @@ class _MonthTransactionsPage extends StatelessWidget {
           final category = entry.categoryId == null
               ? null
               : categoriesById[entry.categoryId];
+          final convertedAmount = _convertAmountMinor(
+            entry.amountMinor,
+            entry.currencyCode ?? MoneyUtils.defaultCurrencyCode,
+            displayCurrency,
+            exchangeRates,
+          );
           if (entry.transaction != null) {
             final transaction = entry.transaction!;
             return TransactionTile(
@@ -408,6 +875,8 @@ class _MonthTransactionsPage extends StatelessWidget {
                   ? null
                   : Color(category!.color!),
               currencyCode: entry.currencyCode,
+              displayAmountMinor: convertedAmount,
+              displayCurrencyCode: displayCurrency,
               onTap: () => context.push('/transactions/${transaction.id}'),
             );
           }
@@ -663,6 +1132,59 @@ class _MonthSummary {
   }
 }
 
+int _convertAmountMinor(
+  int amountMinor,
+  String fromCurrency,
+  String toCurrency,
+  Map<String, double> rates,
+) {
+  if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
+    return amountMinor;
+  }
+  final fromRate =
+      rates[fromCurrency.toLowerCase()] ??
+      (fromCurrency.toLowerCase() == 'usd' ? 1.0 : null);
+  final toRate =
+      rates[toCurrency.toLowerCase()] ??
+      (toCurrency.toLowerCase() == 'usd' ? 1.0 : null);
+  if (fromRate == null || toRate == null || fromRate == 0) {
+    return amountMinor;
+  }
+  return (amountMinor * toRate * (1 / fromRate)).round();
+}
+
+class _DaySummary {
+  int income = 0;
+  int expense = 0;
+  int transfer = 0;
+  int planned = 0;
+  int postedIncome = 0;
+  int postedExpense = 0;
+  int count = 0;
+  final entries = <_LedgerEntry>[];
+
+  int get net => income - expense;
+
+  void add(_LedgerEntry entry) {
+    count++;
+    entries.add(entry);
+    if (entry.isPlanned) {
+      planned++;
+    } else if (entry.type == 'income') {
+      postedIncome += entry.amountMinor;
+    } else if (entry.type == 'expense') {
+      postedExpense += entry.amountMinor;
+    }
+    if (entry.type == 'income') {
+      income += entry.amountMinor;
+    } else if (entry.type == 'expense') {
+      expense += entry.amountMinor;
+    } else {
+      transfer += entry.amountMinor;
+    }
+  }
+}
+
 class _LedgerEntry {
   const _LedgerEntry._({
     required this.type,
@@ -683,6 +1205,8 @@ class _LedgerEntry {
   final String? currencyCode;
   final Transaction? transaction;
   final RecurringTransaction? recurring;
+
+  bool get isPlanned => transaction == null;
 
   factory _LedgerEntry.transaction(Transaction transaction) => _LedgerEntry._(
     type: transaction.type,
