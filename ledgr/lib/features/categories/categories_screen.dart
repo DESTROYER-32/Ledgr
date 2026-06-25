@@ -48,13 +48,18 @@ class CategoriesScreen extends ConsumerWidget {
                   return Column(
                     children: [
                       _buildTile(context, ref, cat, theme),
-                      ...subs.map((sub) => Padding(
-                            padding:
-                                const EdgeInsets.only(left: 32),
-                            child: _buildTile(
-                                context, ref, sub, theme,
-                                isSub: true),
-                          )),
+                      ...subs.map(
+                        (sub) => Padding(
+                          padding: const EdgeInsets.only(left: 32),
+                          child: _buildTile(
+                            context,
+                            ref,
+                            sub,
+                            theme,
+                            isSub: true,
+                          ),
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -63,15 +68,18 @@ class CategoriesScreen extends ConsumerWidget {
           );
         },
         error: (e, _) => Center(child: Text('$e')),
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
   }
 
-  Widget _buildTile(BuildContext context, WidgetRef ref,
-      Category category, ThemeData theme,
-      {bool isSub = false}) {
+  Widget _buildTile(
+    BuildContext context,
+    WidgetRef ref,
+    Category category,
+    ThemeData theme, {
+    bool isSub = false,
+  }) {
     final color = category.color != null
         ? Color(category.color!)
         : theme.colorScheme.primary;
@@ -80,12 +88,10 @@ class CategoriesScreen extends ConsumerWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.15),
-          child: Icon(_materialIcon(category.icon),
-              color: color, size: 20),
+          child: Icon(_materialIcon(category.icon), color: color, size: 20),
         ),
         title: Text(category.name),
-        subtitle: Text(
-            '${category.kind}${isSub ? ' \u2022 Subcategory' : ''}'),
+        subtitle: Text('${category.kind}${isSub ? ' \u2022 Subcategory' : ''}'),
         trailing: PopupMenuButton<String>(
           onSelected: (v) async {
             final repo = ref.read(categoryRepositoryProvider);
@@ -98,22 +104,23 @@ class CategoriesScreen extends ConsumerWidget {
             } else if (v == 'add_sub') {
               if (context.mounted) {
                 // Pass parent as extra
-                context.push('/categories/new', extra: {
-                  'parentId': category.id,
-                });
+                context.push(
+                  '/categories/new',
+                  extra: {'parentId': category.id},
+                );
               }
             }
           },
           itemBuilder: (_) => [
             const PopupMenuItem(value: 'edit', child: Text('Edit')),
             const PopupMenuItem(
-                value: 'add_sub', child: Text('Add Subcategory')),
-            const PopupMenuItem(
-                value: 'archive', child: Text('Archive')),
+              value: 'add_sub',
+              child: Text('Add Subcategory'),
+            ),
+            const PopupMenuItem(value: 'archive', child: Text('Archive')),
           ],
         ),
-        onTap: () =>
-            context.push('/categories/edit/${category.id}'),
+        onTap: () => context.push('/categories/${category.id}/transactions'),
       ),
     );
   }

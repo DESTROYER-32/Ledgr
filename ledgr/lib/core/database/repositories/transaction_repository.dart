@@ -123,6 +123,27 @@ class TransactionRepository {
     return q.get();
   }
 
+  Future<List<Transaction>> searchByCategoriesPaged({
+    required List<int> categoryIds,
+    String? query,
+    int limit = 30,
+    int offset = 0,
+  }) async {
+    if (categoryIds.isEmpty) return [];
+    final q = _db.transactions.select()
+      ..where((t) => t.categoryId.isIn(categoryIds));
+    final trimmed = query?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) {
+      q.where((t) => t.title.like('%$trimmed%') | t.note.like('%$trimmed%'));
+    }
+    q
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+      ])
+      ..limit(limit, offset: offset);
+    return q.get();
+  }
+
   Future<Map<int, int>> spentByCategory(DateTime start, DateTime end) async {
     final rows =
         await (_db.transactions.select()

@@ -8,6 +8,7 @@ import '../../features/budgets/budget_form_screen.dart';
 import '../../features/budgets/budgets_screen.dart';
 import '../../features/categories/categories_screen.dart';
 import '../../features/categories/category_form_screen.dart';
+import '../../features/categories/category_transactions_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/objectives/objective_detail_screen.dart';
 import '../../features/objectives/objective_form_screen.dart';
@@ -157,6 +158,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/categories/edit/:id',
         name: 'category-edit',
         builder: (context, state) => CategoryFormScreen(
+          categoryId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/categories/:id/transactions',
+        name: 'category-transactions',
+        builder: (context, state) => CategoryTransactionsScreen(
           categoryId: int.parse(state.pathParameters['id']!),
         ),
       ),
