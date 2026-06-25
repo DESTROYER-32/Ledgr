@@ -39,6 +39,27 @@ class MoneyUtils {
     return format(amountMinor, currencyCode: currencyCode);
   }
 
+  static int convertMinor(
+    int amountMinor, {
+    required String fromCurrency,
+    required String toCurrency,
+    required Map<String, double> rates,
+  }) {
+    if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
+      return amountMinor;
+    }
+    final fromRate =
+        rates[fromCurrency.toLowerCase()] ??
+        (fromCurrency.toLowerCase() == 'usd' ? 1.0 : null);
+    final toRate =
+        rates[toCurrency.toLowerCase()] ??
+        (toCurrency.toLowerCase() == 'usd' ? 1.0 : null);
+    if (fromRate == null || toRate == null || fromRate == 0) {
+      return amountMinor;
+    }
+    return (amountMinor * toRate * (1 / fromRate)).round();
+  }
+
   static int toMinor(double amount) => (amount * 100).round();
 
   static double toMajor(int minor) => minor / 100;
