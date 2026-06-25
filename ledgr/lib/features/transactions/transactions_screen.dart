@@ -6,6 +6,7 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/utils/recurring_utils.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/transaction_tile.dart';
 
@@ -35,6 +36,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(allTransactionsProvider);
+    final recurringAsync = ref.watch(activeRecurringProvider);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
 
     return Scaffold(
@@ -52,7 +54,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         data: (allTransactions) {
           final transactions = allTransactions.toList()
             ..sort((a, b) => b.date.compareTo(a.date));
-          if (transactions.isEmpty) {
+          final recurringItems =
+              recurringAsync.valueOrNull ?? <RecurringTransaction>[];
+          final entries = _buildLedgerEntries(transactions, recurringItems);
+          if (entries.isEmpty) {
             return const EmptyState(
               icon: Icons.receipt_long,
               title: 'No transactions yet',
@@ -60,7 +65,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             );
           }
 
-          final months = _buildMonths(transactions);
+          final months = _buildMonths(entries);
           final currentMonth = DateTime(
             DateTime.now().year,
             DateTime.now().month,
@@ -105,12 +110,14 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   onPageChanged: (value) => setState(() => _page = value),
                   itemBuilder: (context, index) {
                     final visibleMonth = months[index];
-                    final monthTransactions = transactions
-                        .where((t) => _isSameMonth(t.date, visibleMonth))
+                    final monthEntries = entries
+                        .where(
+                          (entry) => _isSameMonth(entry.date, visibleMonth),
+                        )
                         .toList();
                     return _MonthTransactionsPage(
                       month: visibleMonth,
-                      transactions: monthTransactions,
+                      entries: monthEntries,
                       categoriesById: categoriesById,
                     );
                   },
@@ -133,13 +140,56 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
   }
 
-  List<DateTime> _buildMonths(List<Transaction> transactions) {
+  List<_LedgerEntry> _buildLedgerEntries(
+    List<Transaction> transactions,
+    List<RecurringTransaction> recurringItems,
+  ) {
     final now = DateTime.now();
-    final oldest = transactions
-        .map((transaction) => transaction.date)
+    final today = DateTime(now.year, now.month, now.day);
+    final previewEnd = DateTime(now.year, now.month + 12, 0, 23, 59);
+    final entries = <_LedgerEntry>[
+      ...transactions.map(_LedgerEntry.transaction),
+    ];
+
+    for (final item in recurringItems) {
+      final nextDue = item.nextDueDate;
+      if (nextDue == null) continue;
+      final start = nextDue.isBefore(today) ? today : nextDue;
+      final end = item.endDate != null && item.endDate!.isBefore(previewEnd)
+          ? item.endDate!
+          : previewEnd;
+      for (final date in RecurringUtils.generateInstances(
+        item.scheduleRule,
+        start,
+        end,
+        24,
+      )) {
+        if (date.isBefore(today)) continue;
+        final hasPostedTransaction = transactions.any(
+          (transaction) =>
+              transaction.type == item.transactionType &&
+              transaction.amountMinor == item.amountMinor &&
+              transaction.walletId == item.walletId &&
+              transaction.title == item.title &&
+              _isSameDay(transaction.date, date),
+        );
+        if (!hasPostedTransaction) {
+          entries.add(_LedgerEntry.recurring(item, date));
+        }
+      }
+    }
+
+    entries.sort((a, b) => b.date.compareTo(a.date));
+    return entries;
+  }
+
+  List<DateTime> _buildMonths(List<_LedgerEntry> entries) {
+    final now = DateTime.now();
+    final oldest = entries
+        .map((entry) => entry.date)
         .reduce((a, b) => a.isBefore(b) ? a : b);
-    final newest = transactions
-        .map((transaction) => transaction.date)
+    final newest = entries
+        .map((entry) => entry.date)
         .reduce((a, b) => a.isAfter(b) ? a : b);
     final months = <DateTime>[];
     var cursor = DateTime(oldest.year, oldest.month);
@@ -157,6 +207,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
   bool _isSameMonth(DateTime date, DateTime month) =>
       date.year == month.year && date.month == month.month;
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   String _formatMonth(DateTime month) {
     const names = [
@@ -238,24 +291,24 @@ class _MonthSwitcher extends StatelessWidget {
 
 class _MonthTransactionsPage extends StatelessWidget {
   final DateTime month;
-  final List<Transaction> transactions;
+  final List<_LedgerEntry> entries;
   final Map<int, Category> categoriesById;
 
   const _MonthTransactionsPage({
     required this.month,
-    required this.transactions,
+    required this.entries,
     required this.categoriesById,
   });
 
   @override
   Widget build(BuildContext context) {
-    final summary = _MonthSummary.from(transactions);
+    final summary = _MonthSummary.from(entries);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       children: [
         _SummaryCard(summary: summary),
         const SizedBox(height: 12),
-        if (transactions.isEmpty)
+        if (entries.isEmpty)
           const EmptyState(
             icon: Icons.event_busy,
             title: 'No transactions this month',
@@ -268,18 +321,14 @@ class _MonthTransactionsPage extends StatelessWidget {
   }
 
   List<Widget> _buildDaySections(BuildContext context) {
-    final grouped = <DateTime, List<Transaction>>{};
-    for (final transaction in transactions) {
-      final day = DateTime(
-        transaction.date.year,
-        transaction.date.month,
-        transaction.date.day,
-      );
-      grouped.putIfAbsent(day, () => []).add(transaction);
+    final grouped = <DateTime, List<_LedgerEntry>>{};
+    for (final entry in entries) {
+      final day = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      grouped.putIfAbsent(day, () => []).add(entry);
     }
     final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
     return days.expand((day) {
-      final dayTransactions = grouped[day]!;
+      final dayEntries = grouped[day]!;
       return [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 12, 4, 6),
@@ -291,26 +340,134 @@ class _MonthTransactionsPage extends StatelessWidget {
             ),
           ),
         ),
-        ...dayTransactions.map((transaction) {
-          final category = transaction.categoryId == null
+        ...dayEntries.map((entry) {
+          final category = entry.categoryId == null
               ? null
-              : categoriesById[transaction.categoryId];
-          return TransactionTile(
-            id: transaction.id,
-            type: transaction.type,
-            amountMinor: transaction.amountMinor,
-            title: transaction.title,
-            date: transaction.date,
+              : categoriesById[entry.categoryId];
+          if (entry.transaction != null) {
+            final transaction = entry.transaction!;
+            return TransactionTile(
+              id: transaction.id,
+              type: entry.type,
+              amountMinor: entry.amountMinor,
+              title: entry.title,
+              date: entry.date,
+              categoryName: category?.name,
+              categoryColor: category?.color == null
+                  ? null
+                  : Color(category!.color!),
+              currencyCode: entry.currencyCode,
+              onTap: () => context.push('/transactions/${transaction.id}'),
+            );
+          }
+          return _PlannedTransactionTile(
+            entry: entry,
             categoryName: category?.name,
             categoryColor: category?.color == null
                 ? null
                 : Color(category!.color!),
-            currencyCode: transaction.currencyCode,
-            onTap: () => context.push('/transactions/${transaction.id}'),
+            onTap: () => context.push('/recurring/${entry.recurring!.id}'),
           );
         }),
       ];
     }).toList();
+  }
+}
+
+class _PlannedTransactionTile extends StatelessWidget {
+  const _PlannedTransactionTile({
+    required this.entry,
+    this.categoryName,
+    this.categoryColor,
+    this.onTap,
+  });
+
+  final _LedgerEntry entry;
+  final String? categoryName;
+  final Color? categoryColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isExpense = entry.type == 'expense';
+    final isIncome = entry.type == 'income';
+    final color = isExpense
+        ? AppColors.expense
+        : (isIncome ? AppColors.income : AppColors.transfer);
+    final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 3),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.event_repeat, color: color, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.title ?? entry.type,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      children: [
+                        Text(
+                          'Planned · ${MoneyUtils.formatDateShort(entry.date)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (categoryName != null)
+                          Text(
+                            categoryName!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  categoryColor ??
+                                  theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: entry.currencyCode)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -442,13 +599,57 @@ class _MonthSummary {
 
   int get net => income - expense;
 
-  factory _MonthSummary.from(List<Transaction> transactions) {
+  factory _MonthSummary.from(List<_LedgerEntry> entries) {
     var income = 0;
     var expense = 0;
-    for (final transaction in transactions) {
-      if (transaction.type == 'income') income += transaction.amountMinor;
-      if (transaction.type == 'expense') expense += transaction.amountMinor;
+    for (final entry in entries) {
+      if (entry.type == 'income') income += entry.amountMinor;
+      if (entry.type == 'expense') expense += entry.amountMinor;
     }
     return _MonthSummary(income: income, expense: expense);
   }
+}
+
+class _LedgerEntry {
+  const _LedgerEntry._({
+    required this.type,
+    required this.amountMinor,
+    required this.date,
+    this.title,
+    this.categoryId,
+    this.currencyCode,
+    this.transaction,
+    this.recurring,
+  });
+
+  final String type;
+  final int amountMinor;
+  final DateTime date;
+  final String? title;
+  final int? categoryId;
+  final String? currencyCode;
+  final Transaction? transaction;
+  final RecurringTransaction? recurring;
+
+  factory _LedgerEntry.transaction(Transaction transaction) => _LedgerEntry._(
+    type: transaction.type,
+    amountMinor: transaction.amountMinor,
+    date: transaction.date,
+    title: transaction.title,
+    categoryId: transaction.categoryId,
+    currencyCode: transaction.currencyCode,
+    transaction: transaction,
+  );
+
+  factory _LedgerEntry.recurring(
+    RecurringTransaction recurring,
+    DateTime date,
+  ) => _LedgerEntry._(
+    type: recurring.transactionType,
+    amountMinor: recurring.amountMinor,
+    date: date,
+    title: recurring.title,
+    categoryId: recurring.categoryId,
+    recurring: recurring,
+  );
 }
