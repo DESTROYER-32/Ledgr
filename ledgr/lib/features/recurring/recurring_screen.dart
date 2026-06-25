@@ -119,13 +119,7 @@ class RecurringScreen extends ConsumerWidget {
     );
   }
 
-  String _scheduleLabel(String rule) {
-    if (rule == 'daily') return 'Daily';
-    if (rule == 'weekly') return 'Weekly';
-    if (rule == 'monthly') return 'Monthly';
-    if (rule == 'yearly') return 'Yearly';
-    return rule;
-  }
+  String _scheduleLabel(String rule) => RecurringUtils.describeSchedule(rule);
 
   List<_RecurringPreviewItem> _buildUpcomingInstances(
     List<RecurringTransaction> items,

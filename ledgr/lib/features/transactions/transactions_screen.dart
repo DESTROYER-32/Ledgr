@@ -215,8 +215,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     String? rule,
   ) {
     if (rule == null || rule == 'one_time') return false;
-    const supportedRules = {'daily', 'weekly', 'monthly', 'yearly'};
-    if (!supportedRules.contains(rule)) return false;
+    if (!RecurringUtils.isSupportedRule(rule)) return false;
     const recurringSpecialTypes = {'subscription', 'scheduled', 'repetitive'};
     return recurringSpecialTypes.contains(transaction.specialType);
   }

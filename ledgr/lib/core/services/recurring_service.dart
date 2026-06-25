@@ -5,6 +5,7 @@ import '../database/repositories/recurring_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
 import '../utils/money_utils.dart';
+import '../utils/recurring_utils.dart';
 
 class RecurringService {
   final RecurringRepository _recurringRepo;
@@ -68,17 +69,7 @@ class RecurringService {
   }
 
   DateTime? _nextDate(DateTime from, String rule) {
-    switch (rule) {
-      case 'daily':
-        return DateTime(from.year, from.month, from.day + 1);
-      case 'weekly':
-        return DateTime(from.year, from.month, from.day + 7);
-      case 'monthly':
-        return DateTime(from.year, from.month + 1, from.day);
-      case 'yearly':
-        return DateTime(from.year + 1, from.month, from.day);
-      default:
-        return null;
-    }
+    if (!RecurringUtils.isSupportedRule(rule)) return null;
+    return RecurringUtils.computeNextDueDate(rule, from);
   }
 }

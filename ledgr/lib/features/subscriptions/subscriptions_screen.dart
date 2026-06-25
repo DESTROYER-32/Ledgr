@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/utils/recurring_utils.dart';
 
 class SubscriptionsScreen extends ConsumerWidget {
   const SubscriptionsScreen({super.key});
@@ -150,11 +151,9 @@ class _TransactionList extends StatelessWidget {
     );
   }
 
-  String? _frequencyLabel(String? recurrenceRule) => switch (recurrenceRule) {
-    'one_time' => 'One time',
-    'monthly' => 'Monthly',
-    'quarterly' => 'Quarterly',
-    'yearly' => 'Yearly',
-    _ => null,
-  };
+  String? _frequencyLabel(String? recurrenceRule) => recurrenceRule == null
+      ? null
+      : recurrenceRule == 'one_time'
+      ? 'One time'
+      : RecurringUtils.describeSchedule(recurrenceRule);
 }
