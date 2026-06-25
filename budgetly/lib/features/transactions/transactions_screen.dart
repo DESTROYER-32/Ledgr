@@ -404,6 +404,13 @@ class _MonthCalendarPage extends StatelessWidget {
                       date: date,
                       summary: daySummaries[key],
                       isToday: _isSameDay(date, DateTime.now()),
+                      onTap: daySummaries[key] == null
+                          ? null
+                          : () => _showDateTransactions(
+                              context,
+                              date,
+                              daySummaries[key]!.entries,
+                            ),
                     );
                   },
                 ),
@@ -449,6 +456,20 @@ class _MonthCalendarPage extends StatelessWidget {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
+  void _showDateTransactions(
+    BuildContext context,
+    DateTime date,
+    List<_LedgerEntry> entries,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) =>
+          _DateTransactionsSheet(date: date, entries: entries),
+    );
+  }
 }
 
 class _WeekdayLabel extends StatelessWidget {
@@ -475,104 +496,249 @@ class _CalendarDayCell extends StatelessWidget {
   final DateTime date;
   final _DaySummary? summary;
   final bool isToday;
+  final VoidCallback? onTap;
 
   const _CalendarDayCell({
     required this.date,
     required this.summary,
     required this.isToday,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasTransactions = summary != null && summary!.count > 0;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-      decoration: BoxDecoration(
-        color: isToday
-            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
-            : hasTransactions
-            ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
-            : theme.colorScheme.surface,
+    final net = summary?.net ?? 0;
+    final netColor = net >= 0 ? AppColors.income : AppColors.expense;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isToday
-              ? theme.colorScheme.primary
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+          decoration: BoxDecoration(
+            color: isToday
+                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
+                : hasTransactions
+                ? theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.55,
+                  )
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isToday
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${date.day}',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: isToday ? theme.colorScheme.primary : null,
-                ),
+              Row(
+                children: [
+                  Text(
+                    '${date.day}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: isToday ? theme.colorScheme.primary : null,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (summary != null) ...[
+                    if (summary!.expense > 0)
+                      const _CalendarDot(color: AppColors.expense),
+                    if (summary!.income > 0) ...[
+                      const SizedBox(width: 3),
+                      const _CalendarDot(color: AppColors.income),
+                    ],
+                  ],
+                ],
               ),
               const Spacer(),
               if (hasTransactions)
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${net >= 0 ? '+' : '-'}${MoneyUtils.formatCompact(net.abs())}',
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: netColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
             ],
           ),
-          const Spacer(),
-          if (summary != null && summary!.income > 0)
-            _CalendarAmount(
-              amount: summary!.income,
-              color: AppColors.income,
-              sign: '+',
-            ),
-          if (summary != null && summary!.expense > 0)
-            _CalendarAmount(
-              amount: summary!.expense,
-              color: AppColors.expense,
-              sign: '-',
-            ),
-          if (summary != null && summary!.transfer > 0)
-            _CalendarAmount(
-              amount: summary!.transfer,
-              color: AppColors.transfer,
-              sign: '',
-            ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _CalendarAmount extends StatelessWidget {
-  final int amount;
+class _CalendarDot extends StatelessWidget {
   final Color color;
-  final String sign;
 
-  const _CalendarAmount({
-    required this.amount,
-    required this.color,
-    required this.sign,
-  });
+  const _CalendarDot({required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Text(
-        '$sign${MoneyUtils.formatCompact(amount)}',
-        maxLines: 1,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+    return Container(
+      width: 6,
+      height: 6,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _DateTransactionsSheet extends StatelessWidget {
+  final DateTime date;
+  final List<_LedgerEntry> entries;
+
+  const _DateTransactionsSheet({required this.date, required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sortedEntries = entries.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final summary = _MonthSummary.from(sortedEntries);
+    final net = summary.net;
+    final netColor = net >= 0 ? AppColors.income : AppColors.expense;
+
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.55,
+        minChildSize: 0.32,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          return ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          MoneyUtils.formatDate(date),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          '${sortedEntries.length} transaction${sortedEntries.length == 1 ? '' : 's'}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${net >= 0 ? '+' : '-'}${MoneyUtils.format(net.abs())}',
+                    style: TextStyle(
+                      color: netColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SummaryPill(
+                      label: 'Incoming',
+                      amount: summary.income,
+                      color: AppColors.income,
+                      icon: Icons.arrow_downward,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SummaryPill(
+                      label: 'Outgoing',
+                      amount: summary.expense,
+                      color: AppColors.expense,
+                      icon: Icons.arrow_upward,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...sortedEntries.map(
+                (entry) => _DateTransactionRow(
+                  entry: entry,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    if (entry.transaction != null) {
+                      context.push('/transactions/${entry.transaction!.id}');
+                    } else if (entry.recurring != null) {
+                      context.push('/recurring/${entry.recurring!.id}');
+                    }
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DateTransactionRow extends StatelessWidget {
+  final _LedgerEntry entry;
+  final VoidCallback onTap;
+
+  const _DateTransactionRow({required this.entry, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isExpense = entry.type == 'expense';
+    final isIncome = entry.type == 'income';
+    final color = isExpense
+        ? AppColors.expense
+        : isIncome
+        ? AppColors.income
+        : AppColors.transfer;
+    final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final isPlanned = entry.transaction == null;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListTile(
+        onTap: isPlanned && entry.recurring == null ? null : onTap,
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.12),
+          child: Icon(
+            isPlanned ? Icons.event_repeat : Icons.receipt_long,
+            color: color,
+            size: 20,
+          ),
+        ),
+        title: Text(
+          entry.title ?? entry.type,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          isPlanned ? 'Planned' : MoneyUtils.formatDateShort(entry.date),
+          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        trailing: Text(
+          '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: entry.currencyCode)}',
+          style: TextStyle(color: color, fontWeight: FontWeight.w900),
         ),
       ),
     );
@@ -907,9 +1073,13 @@ class _DaySummary {
   int expense = 0;
   int transfer = 0;
   int count = 0;
+  final entries = <_LedgerEntry>[];
+
+  int get net => income - expense;
 
   void add(_LedgerEntry entry) {
     count++;
+    entries.add(entry);
     if (entry.type == 'income') {
       income += entry.amountMinor;
     } else if (entry.type == 'expense') {
