@@ -115,6 +115,7 @@ class DashboardScreen extends ConsumerWidget {
               context,
               theme,
               transactionsAsync,
+              ref.watch(activeCategoriesProvider),
               displayCurrencyAsync,
               exchangeRates,
             ),
@@ -1224,6 +1225,7 @@ class DashboardScreen extends ConsumerWidget {
     BuildContext context,
     ThemeData theme,
     AsyncValue<List<Transaction>> transactionsAsync,
+    AsyncValue<List<Category>> categoriesAsync,
     AsyncValue<String> displayCurrencyAsync,
     Map<String, double> exchangeRates,
   ) {
@@ -1239,6 +1241,10 @@ class DashboardScreen extends ConsumerWidget {
         ),
         transactionsAsync.when(
           data: (transactions) {
+            final categoriesById = {
+              for (final c in categoriesAsync.valueOrNull ?? <Category>[])
+                c.id: c,
+            };
             final now = DateTime.now();
             final todayEnd = DateTime(
               now.year,
@@ -1321,6 +1327,9 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   ...txns.take(10).map((t) {
+                    final category = t.categoryId == null
+                        ? null
+                        : categoriesById[t.categoryId];
                     final converted = MoneyUtils.convertMinor(
                       t.amountMinor,
                       fromCurrency: t.currencyCode,
@@ -1336,6 +1345,11 @@ class DashboardScreen extends ConsumerWidget {
                       currencyCode: t.currencyCode,
                       displayAmountMinor: converted,
                       displayCurrencyCode: displayCurrency,
+                      categoryName: category?.name,
+                      categoryColor: category?.color == null
+                          ? null
+                          : Color(category!.color!),
+                      categoryIcon: category?.icon,
                       onTap: () => context.push('/transactions/${t.id}'),
                     );
                   }),

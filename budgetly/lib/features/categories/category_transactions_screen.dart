@@ -30,6 +30,7 @@ class _CategoryTransactionsScreenState
 
   Category? _category;
   List<int> _categoryIds = [];
+  Map<int, Category> _categoriesById = {};
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
@@ -57,6 +58,10 @@ class _CategoryTransactionsScreenState
     final category = await categoryRepo.getById(widget.categoryId);
     final subs = await categoryRepo.watchSubcategories(widget.categoryId).first;
     _category = category;
+    _categoriesById = {
+      ?category?.id: ?category,
+      for (final sub in subs) sub.id: sub,
+    };
     _categoryIds = [widget.categoryId, ...subs.map((c) => c.id)];
     await _loadPage(reset: true);
     if (mounted) setState(() => _loading = false);
@@ -159,6 +164,9 @@ class _CategoryTransactionsScreenState
                               );
                             }
                             final t = _transactions[index];
+                            final category = t.categoryId == null
+                                ? null
+                                : _categoriesById[t.categoryId];
                             final converted = MoneyUtils.convertMinor(
                               t.amountMinor,
                               fromCurrency: t.currencyCode,
@@ -174,6 +182,11 @@ class _CategoryTransactionsScreenState
                               currencyCode: t.currencyCode,
                               displayAmountMinor: converted,
                               displayCurrencyCode: displayCurrency,
+                              categoryName: category?.name,
+                              categoryColor: category?.color == null
+                                  ? null
+                                  : Color(category!.color!),
+                              categoryIcon: category?.icon,
                               onTap: () =>
                                   context.push('/transactions/${t.id}'),
                             );

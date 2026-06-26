@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/category_icon_utils.dart';
 import '../../core/widgets/empty_state.dart';
 
 class CategoriesScreen extends ConsumerWidget {
@@ -88,7 +89,11 @@ class CategoriesScreen extends ConsumerWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.15),
-          child: Icon(_materialIcon(category.icon), color: color, size: 20),
+          child: Icon(
+            materialCategoryIcon(category.icon),
+            color: color,
+            size: 20,
+          ),
         ),
         title: Text(category.name),
         subtitle: Text('${category.kind}${isSub ? ' \u2022 Subcategory' : ''}'),
@@ -123,46 +128,5 @@ class CategoriesScreen extends ConsumerWidget {
         onTap: () => context.push('/categories/${category.id}/transactions'),
       ),
     );
-  }
-
-  IconData _materialIcon(String? iconName) {
-    switch (iconName) {
-      case 'work':
-        return Icons.work;
-      case 'code':
-        return Icons.code;
-      case 'trending_up':
-        return Icons.trending_up;
-      case 'shopping_cart':
-        return Icons.shopping_cart;
-      case 'home':
-        return Icons.home;
-      case 'bolt':
-        return Icons.bolt;
-      case 'directions_car':
-        return Icons.directions_car;
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'shopping_bag':
-        return Icons.shopping_bag;
-      case 'movie':
-        return Icons.movie;
-      case 'local_hospital':
-        return Icons.local_hospital;
-      case 'subscriptions':
-        return Icons.subscriptions;
-      case 'security':
-        return Icons.security;
-      case 'school':
-        return Icons.school;
-      case 'card_giftcard':
-        return Icons.card_giftcard;
-      case 'attach_money':
-        return Icons.attach_money;
-      case 'money_off':
-        return Icons.money_off;
-      default:
-        return Icons.category;
-    }
   }
 }

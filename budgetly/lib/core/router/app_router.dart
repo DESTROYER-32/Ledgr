@@ -23,6 +23,8 @@ import '../../features/transactions/transaction_form_screen.dart';
 import '../../features/transactions/transactions_screen.dart';
 import '../../features/wallets/wallet_detail_screen.dart';
 import '../../features/wallets/wallet_form_screen.dart';
+import '../../features/wallets/wallet_analytics_screen.dart';
+import '../../features/wallets/transfer_form_screen.dart';
 import '../../features/wallets/wallets_screen.dart';
 import '../../features/smart_labels/associated_titles_screen.dart';
 import '../../features/smart_labels/associated_title_form_screen.dart';
@@ -101,6 +103,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'wallet-edit',
         builder: (context, state) =>
             WalletFormScreen(walletId: int.parse(state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/wallets/transfer',
+        name: 'wallet-transfer',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return TransferFormScreen(
+            fromWalletId: extra?['fromWalletId'] as int?,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/wallets/:id/analytics',
+        name: 'wallet-analytics',
+        builder: (context, state) => WalletAnalyticsScreen(
+          walletId: int.parse(state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/wallets/:id',

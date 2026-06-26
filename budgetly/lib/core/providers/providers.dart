@@ -185,6 +185,10 @@ final expenseCategoriesProvider = StreamProvider<List<Category>>(
   (ref) => ref.watch(categoryRepositoryProvider).watchByKind('expense'),
 );
 
+final incomeCategoriesProvider = StreamProvider<List<Category>>(
+  (ref) => ref.watch(categoryRepositoryProvider).watchByKind('income'),
+);
+
 final allBudgetsProvider = StreamProvider<List<Budget>>(
   (ref) => ref.watch(budgetRepositoryProvider).watchAll(),
 );
