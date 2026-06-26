@@ -37,13 +37,29 @@ class BudgetlyApp extends ConsumerStatefulWidget {
   ConsumerState<BudgetlyApp> createState() => _BudgetlyAppState();
 }
 
-class _BudgetlyAppState extends ConsumerState<BudgetlyApp> {
+class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(recurringServiceProvider).processDueRecurrings();
+      ref.read(backupServiceProvider).runScheduledBackupIfDue();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(backupServiceProvider).runScheduledBackupIfDue();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
