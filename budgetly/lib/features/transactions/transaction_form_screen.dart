@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/category_icon_utils.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../core/utils/recurring_utils.dart';
@@ -559,7 +560,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         (c) => ModernSelectionItem(
                           value: c.id,
                           title: c.name,
-                          icon: Icons.category_outlined,
+                          icon: materialCategoryIcon(c.icon),
+                          badge: c.kind == 'both'
+                              ? 'Both'
+                              : '${c.kind[0].toUpperCase()}${c.kind.substring(1)}',
                         ),
                       )
                       .toList(),

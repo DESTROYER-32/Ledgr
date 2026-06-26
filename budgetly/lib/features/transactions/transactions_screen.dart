@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/category_icon_utils.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/utils/recurring_utils.dart';
 import '../../core/widgets/empty_state.dart';
@@ -874,6 +875,7 @@ class _MonthTransactionsPage extends StatelessWidget {
               categoryColor: category?.color == null
                   ? null
                   : Color(category!.color!),
+              categoryIcon: category?.icon,
               currencyCode: entry.currencyCode,
               displayAmountMinor: convertedAmount,
               displayCurrencyCode: displayCurrency,
@@ -886,6 +888,7 @@ class _MonthTransactionsPage extends StatelessWidget {
             categoryColor: category?.color == null
                 ? null
                 : Color(category!.color!),
+            categoryIcon: category?.icon,
             onTap: entry.recurring == null
                 ? null
                 : () => context.push('/recurring/${entry.recurring!.id}'),
@@ -901,12 +904,14 @@ class _PlannedTransactionTile extends StatelessWidget {
     required this.entry,
     this.categoryName,
     this.categoryColor,
+    this.categoryIcon,
     this.onTap,
   });
 
   final _LedgerEntry entry;
   final String? categoryName;
   final Color? categoryColor;
+  final String? categoryIcon;
   final VoidCallback? onTap;
 
   @override
@@ -914,9 +919,10 @@ class _PlannedTransactionTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isExpense = entry.type == 'expense';
     final isIncome = entry.type == 'income';
-    final color = isExpense
+    final amountColor = isExpense
         ? AppColors.expense
         : (isIncome ? AppColors.income : AppColors.transfer);
+    final iconColor = categoryColor ?? amountColor;
     final sign = isExpense ? '-' : (isIncome ? '+' : '');
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 3),
@@ -930,10 +936,16 @@ class _PlannedTransactionTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
+                  color: iconColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.event_repeat, color: color, size: 18),
+                child: Icon(
+                  categoryIcon == null
+                      ? Icons.event_repeat
+                      : materialCategoryIcon(categoryIcon),
+                  color: iconColor,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -982,7 +994,7 @@ class _PlannedTransactionTile extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: color,
+                  color: amountColor,
                 ),
               ),
             ],
