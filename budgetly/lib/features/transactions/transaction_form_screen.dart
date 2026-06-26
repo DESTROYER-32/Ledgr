@@ -260,7 +260,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   Widget build(BuildContext context) {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final walletBalances = ref.watch(walletBalancesProvider).valueOrNull ?? {};
-    final catsAsync = ref.watch(expenseCategoriesProvider);
+    final catsAsync = ref.watch(
+      _type == 'income' ? incomeCategoriesProvider : expenseCategoriesProvider,
+    );
     final objectivesAsync = ref.watch(allObjectivesProvider);
     final theme = Theme.of(context);
     final wallets = walletsAsync.valueOrNull ?? [];

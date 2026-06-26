@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/category_icon_utils.dart';
 import '../../core/utils/money_utils.dart';
 
 final _walletDetailFilterProvider = StateProvider.autoDispose
@@ -101,6 +102,9 @@ class WalletDetailScreen extends ConsumerWidget {
           return balanceAsync.when(
             data: (balances) {
               final balance = balances[wallet.id] ?? wallet.initialBalanceMinor;
+              final categories =
+                  ref.watch(activeCategoriesProvider).valueOrNull ?? [];
+              final categoriesById = {for (final c in categories) c.id: c};
               final analytics = _AccountAnalytics.fromTransactions(
                 wallet: wallet,
                 transactions: transactions,
@@ -166,6 +170,7 @@ class WalletDetailScreen extends ConsumerWidget {
                     _TransactionFlowList(
                       wallet: wallet,
                       analytics: analytics,
+                      categoriesById: categoriesById,
                       filter: filter,
                       onChanged: (next) =>
                           ref
@@ -787,11 +792,13 @@ class _FilterChips extends StatelessWidget {
 class _TransactionFlowList extends StatelessWidget {
   final Wallet wallet;
   final _AccountAnalytics analytics;
+  final Map<int, Category> categoriesById;
   final _AccountFilter filter;
   final ValueChanged<_AccountFilter> onChanged;
   const _TransactionFlowList({
     required this.wallet,
     required this.analytics,
+    required this.categoriesById,
     required this.filter,
     required this.onChanged,
   });
@@ -809,22 +816,9 @@ class _TransactionFlowList extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SegmentedButton<_FlowType>(
-              segments: const [
-                ButtonSegment(
-                  value: _FlowType.outgoing,
-                  label: Text('Outgoing'),
-                  icon: Icon(Icons.north_east_rounded),
-                ),
-                ButtonSegment(
-                  value: _FlowType.incoming,
-                  label: Text('Incoming'),
-                  icon: Icon(Icons.south_west_rounded),
-                ),
-              ],
-              selected: {filter.flow},
-              onSelectionChanged: (v) =>
-                  onChanged(filter.copyWith(flow: v.first)),
+            _FlowTabs(
+              selected: filter.flow,
+              onChanged: (flow) => onChanged(filter.copyWith(flow: flow)),
             ),
             const SizedBox(height: 12),
             Text(
@@ -847,9 +841,113 @@ class _TransactionFlowList extends StatelessWidget {
                 ),
               )
             else
-              for (final t in transactions)
-                _ActivityTile(transaction: t, overrideColor: color),
+              for (final t in transactions) ...[
+                _ActivityTile(
+                  transaction: t,
+                  category: t.categoryId == null
+                      ? null
+                      : categoriesById[t.categoryId],
+                  overrideColor: color,
+                ),
+                if (t != transactions.last) const Divider(height: 8),
+              ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FlowTabs extends StatelessWidget {
+  final _FlowType selected;
+  final ValueChanged<_FlowType> onChanged;
+  const _FlowTabs({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: .55),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _FlowTabButton(
+              label: 'Outgoing',
+              icon: Icons.north_east_rounded,
+              color: AppColors.expense,
+              selected: selected == _FlowType.outgoing,
+              onTap: () => onChanged(_FlowType.outgoing),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _FlowTabButton(
+              label: 'Incoming',
+              icon: Icons.south_west_rounded,
+              color: AppColors.income,
+              selected: selected == _FlowType.incoming,
+              onTap: () => onChanged(_FlowType.incoming),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FlowTabButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FlowTabButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Material(
+      color: selected ? color.withValues(alpha: .16) : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected ? color : cs.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: selected ? color : cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -926,14 +1024,25 @@ class _AccountFilter {
 
 class _ActivityTile extends StatelessWidget {
   final Transaction transaction;
+  final Category? category;
   final Color? overrideColor;
-  const _ActivityTile({required this.transaction, this.overrideColor});
+  const _ActivityTile({
+    required this.transaction,
+    this.category,
+    this.overrideColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.type == 'expense';
     final isIncome = transaction.type == 'income';
     final color =
+        (category?.color == null ? null : Color(category!.color!)) ??
+        overrideColor ??
+        (isExpense
+            ? AppColors.expense
+            : (isIncome ? AppColors.income : AppColors.transfer));
+    final amountColor =
         overrideColor ??
         (isExpense
             ? AppColors.expense
@@ -944,18 +1053,24 @@ class _ActivityTile extends StatelessWidget {
       leading: CircleAvatar(
         backgroundColor: color.withValues(alpha: 0.15),
         child: Icon(
-          isExpense
-              ? Icons.arrow_upward
-              : (isIncome ? Icons.arrow_downward : Icons.swap_horiz),
+          category == null
+              ? (transaction.type == 'transfer'
+                    ? Icons.swap_horiz
+                    : Icons.category_outlined)
+              : materialCategoryIcon(category!.icon),
           color: color,
           size: 20,
         ),
       ),
       title: Text(transaction.title ?? transaction.type),
-      subtitle: Text(MoneyUtils.formatDateShort(transaction.date)),
+      subtitle: Text(
+        category == null
+            ? MoneyUtils.formatDateShort(transaction.date)
+            : '${MoneyUtils.formatDateShort(transaction.date)} • ${category!.name}',
+      ),
       trailing: Text(
         '$sign${MoneyUtils.format(transaction.amountMinor)}',
-        style: TextStyle(fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(fontWeight: FontWeight.bold, color: amountColor),
       ),
       onTap: () => context.push('/transactions/${transaction.id}'),
     );
