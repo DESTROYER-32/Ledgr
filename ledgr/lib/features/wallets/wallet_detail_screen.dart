@@ -31,13 +31,17 @@ class WalletDetailScreen extends ConsumerWidget {
         appBar: AppBar(title: const Text('Account')),
         body: Center(child: Text('$e')),
       ),
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
     );
   }
 
-  Widget _buildScaffold(BuildContext context, WidgetRef ref, Wallet wallet, ThemeData theme) {
+  Widget _buildScaffold(
+    BuildContext context,
+    WidgetRef ref,
+    Wallet wallet,
+    ThemeData theme,
+  ) {
     final balanceAsync = ref.watch(walletBalancesProvider);
     return Scaffold(
       appBar: AppBar(
@@ -57,11 +61,13 @@ class WalletDetailScreen extends ConsumerWidget {
                     content: Text('Delete "${wallet.name}"?'),
                     actions: [
                       TextButton(
-                          onPressed: () => Navigator.pop(c, false),
-                          child: const Text('Cancel')),
+                        onPressed: () => Navigator.pop(c, false),
+                        child: const Text('Cancel'),
+                      ),
                       FilledButton(
-                          onPressed: () => Navigator.pop(c, true),
-                          child: const Text('Delete')),
+                        onPressed: () => Navigator.pop(c, true),
+                        child: const Text('Delete'),
+                      ),
                     ],
                   ),
                 );
@@ -85,21 +91,29 @@ class WalletDetailScreen extends ConsumerWidget {
           children: [
             balanceAsync.when(
               data: (balances) {
-                final balance = balances[wallet.id] ?? wallet.initialBalanceMinor;
+                final balance =
+                    balances[wallet.id] ?? wallet.initialBalanceMinor;
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Current Balance',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant)),
+                        Text(
+                          'Current Balance',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         Text(
-                          MoneyUtils.format(balance, currencyCode: wallet.currencyCode),
-                          style: theme.textTheme.headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          MoneyUtils.format(
+                            balance,
+                            currencyCode: wallet.currencyCode,
+                          ),
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -124,23 +138,53 @@ class WalletDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => context.push(
+                      '/wallets/transfer',
+                      extra: <String, dynamic>{'fromWalletId': wallet.id},
+                    ),
+                    icon: const Icon(Icons.swap_horiz_rounded),
+                    label: const Text('Transfer'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        context.push('/wallets/${wallet.id}/analytics'),
+                    icon: const Icon(Icons.insights_outlined),
+                    label: const Text('Analytics'),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             Expanded(child: _buildTransactionList(context, ref, wallet)),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/transactions/new',
-            extra: <String, dynamic>{'walletId': wallet.id}),
+        onPressed: () => context.push(
+          '/transactions/new',
+          extra: <String, dynamic>{'walletId': wallet.id},
+        ),
         child: const Icon(Icons.add),
       ),
     );
   }
 
   Widget _buildTransactionList(
-      BuildContext context, WidgetRef ref, Wallet wallet) {
-    final txStream =
-        ref.read(transactionRepositoryProvider).watchByWallet(wallet.id);
+    BuildContext context,
+    WidgetRef ref,
+    Wallet wallet,
+  ) {
+    final txStream = ref
+        .read(transactionRepositoryProvider)
+        .watchByWallet(wallet.id);
     return StreamBuilder(
       stream: txStream,
       builder: (context, snapshot) {
@@ -150,13 +194,12 @@ class WalletDetailScreen extends ConsumerWidget {
         final transactions = snapshot.data!;
         if (transactions.isEmpty) {
           return Center(
-            child: Text('No transactions yet',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant)),
+            child: Text(
+              'No transactions yet',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           );
         }
         return ListView.separated(
@@ -176,18 +219,17 @@ class WalletDetailScreen extends ConsumerWidget {
                 child: Icon(
                   isExpense
                       ? Icons.arrow_upward
-                      : (isIncome
-                          ? Icons.arrow_downward
-                          : Icons.swap_horiz),
+                      : (isIncome ? Icons.arrow_downward : Icons.swap_horiz),
                   color: color,
                   size: 20,
                 ),
               ),
               title: Text(t.title ?? t.type),
               subtitle: Text(MoneyUtils.formatDateShort(t.date)),
-              trailing: Text('$sign${MoneyUtils.format(t.amountMinor)}',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: color)),
+              trailing: Text(
+                '$sign${MoneyUtils.format(t.amountMinor)}',
+                style: TextStyle(fontWeight: FontWeight.bold, color: color),
+              ),
               onTap: () => context.push('/transactions/${t.id}'),
             );
           },
