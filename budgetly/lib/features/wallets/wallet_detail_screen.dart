@@ -9,6 +9,9 @@ import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 
+final _walletDetailFilterProvider = StateProvider.autoDispose
+    .family<_AccountFilter, int>((ref, walletId) => const _AccountFilter());
+
 class WalletDetailScreen extends ConsumerWidget {
   final int walletId;
   const WalletDetailScreen({super.key, required this.walletId});
@@ -45,6 +48,7 @@ class WalletDetailScreen extends ConsumerWidget {
     ThemeData theme,
   ) {
     final balanceAsync = ref.watch(walletBalancesProvider);
+    final filter = ref.watch(_walletDetailFilterProvider(wallet.id));
     final txStream = ref
         .read(transactionRepositoryProvider)
         .watchByWallet(wallet.id);
@@ -100,6 +104,7 @@ class WalletDetailScreen extends ConsumerWidget {
               final analytics = _AccountAnalytics.fromTransactions(
                 wallet: wallet,
                 transactions: transactions,
+                filter: filter,
               );
               return RefreshIndicator(
                 onRefresh: () async {
@@ -141,14 +146,36 @@ class WalletDetailScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    _FilterChips(
+                      filter: filter,
+                      onChanged: (next) =>
+                          ref
+                                  .read(
+                                    _walletDetailFilterProvider(
+                                      wallet.id,
+                                    ).notifier,
+                                  )
+                                  .state =
+                              next,
+                    ),
+                    const SizedBox(height: 16),
                     _AnalyticsOverview(analytics: analytics),
                     const SizedBox(height: 16),
                     _CashflowChart(analytics: analytics),
                     const SizedBox(height: 16),
-                    _BreakdownRows(analytics: analytics),
-                    const SizedBox(height: 16),
-                    _RecentActivity(
-                      transactions: transactions.take(8).toList(),
+                    _TransactionFlowList(
+                      wallet: wallet,
+                      analytics: analytics,
+                      filter: filter,
+                      onChanged: (next) =>
+                          ref
+                                  .read(
+                                    _walletDetailFilterProvider(
+                                      wallet.id,
+                                    ).notifier,
+                                  )
+                                  .state =
+                              next,
                     ),
                   ],
                 ),
@@ -443,10 +470,10 @@ class _CashflowChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxValue = [
-      ...analytics.monthlyIncoming.values,
-      ...analytics.monthlyOutgoing.values,
+      ...analytics.incomingSeries,
+      ...analytics.outgoingSeries,
     ].fold<int>(0, (a, b) => a > b ? a : b);
-    final labels = analytics.monthlyIncoming.keys.toList();
+    final labels = analytics.chartLabels;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -454,26 +481,35 @@ class _CashflowChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Cashflow',
+              'Cashflow trend',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
-              'Last 6 months, incoming and outgoing separated',
+              analytics.filter.label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 210,
-              child: BarChart(
-                BarChartData(
+              height: 220,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
                   maxY: (maxValue * 1.2).clamp(1, double.infinity).toDouble(),
                   borderData: FlBorderData(show: false),
-                  gridData: const FlGridData(show: false),
+                  gridData: FlGridData(
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outlineVariant.withValues(alpha: .35),
+                      strokeWidth: 1,
+                    ),
+                  ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
@@ -487,93 +523,81 @@ class _CashflowChart extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        interval: labels.length > 6 ? 2 : 1,
                         getTitlesWidget: (value, meta) {
                           final i = value.toInt();
                           if (i < 0 || i >= labels.length) {
                             return const SizedBox.shrink();
                           }
-                          return Text(
-                            labels[i],
-                            style: Theme.of(context).textTheme.labelSmall,
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              labels[i],
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
                           );
                         },
                       ),
                     ),
                   ),
-                  barGroups: [
-                    for (var i = 0; i < labels.length; i++)
-                      BarChartGroupData(
-                        x: i,
-                        barRods: [
-                          BarChartRodData(
-                            toY: (analytics.monthlyIncoming[labels[i]] ?? 0)
-                                .toDouble(),
-                            color: AppColors.income,
-                            width: 9,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          BarChartRodData(
-                            toY: (analytics.monthlyOutgoing[labels[i]] ?? 0)
-                                .toDouble(),
-                            color: AppColors.expense,
-                            width: 9,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ],
-                      ),
+                  lineBarsData: [
+                    _lineData(analytics.incomingSeries, AppColors.income),
+                    _lineData(analytics.outgoingSeries, AppColors.expense),
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 10),
+            const Row(
+              children: [
+                _LegendDot(color: AppColors.income, label: 'Incoming'),
+                SizedBox(width: 16),
+                _LegendDot(color: AppColors.expense, label: 'Outgoing'),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+
+  LineChartBarData _lineData(List<int> values, Color color) => LineChartBarData(
+    spots: [
+      for (var i = 0; i < values.length; i++)
+        FlSpot(i.toDouble(), values[i].toDouble()),
+    ],
+    isCurved: true,
+    color: color,
+    barWidth: 3,
+    dotData: const FlDotData(show: false),
+    belowBarData: BarAreaData(show: true, color: color.withValues(alpha: .10)),
+  );
 }
 
-class _BreakdownRows extends StatelessWidget {
-  final _AccountAnalytics analytics;
-  const _BreakdownRows({required this.analytics});
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: _MiniBreakdown(
-            title: 'Outgoing',
-            entries: analytics.outgoingBreakdown,
-            color: AppColors.expense,
-            currencyCode: analytics.currencyCode,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _MiniBreakdown(
-            title: 'Incoming',
-            entries: analytics.incomingBreakdown,
-            color: AppColors.income,
-            currencyCode: analytics.currencyCode,
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+      const SizedBox(width: 6),
+      Text(label, style: Theme.of(context).textTheme.labelSmall),
+    ],
+  );
 }
 
-class _MiniBreakdown extends StatelessWidget {
-  final String title;
-  final List<MapEntry<String, int>> entries;
-  final Color color;
-  final String currencyCode;
-  const _MiniBreakdown({
-    required this.title,
-    required this.entries,
-    required this.color,
-    required this.currencyCode,
-  });
+class _FilterChips extends StatelessWidget {
+  final _AccountFilter filter;
+  final ValueChanged<_AccountFilter> onChanged;
+  const _FilterChips({required this.filter, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -584,67 +608,175 @@ class _MiniBreakdown extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              title,
+              'Filter',
               style: Theme.of(
                 context,
               ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            if (entries.isEmpty)
-              Text('No data', style: Theme.of(context).textTheme.bodySmall)
-            else
-              for (final entry in entries.take(4)) ...[
-                Text(
-                  entry.key,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  selected: filter.mode == _FilterMode.allTime,
+                  label: const Text('All time'),
+                  onSelected: (_) =>
+                      onChanged(filter.copyWith(mode: _FilterMode.allTime)),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  MoneyUtils.format(entry.value, currencyCode: currencyCode),
-                  style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                ChoiceChip(
+                  selected: filter.mode == _FilterMode.cycle,
+                  label: const Text('Cycle'),
+                  onSelected: (_) =>
+                      onChanged(filter.copyWith(mode: _FilterMode.cycle)),
                 ),
-                const SizedBox(height: 8),
+                ChoiceChip(
+                  selected: filter.mode == _FilterMode.pastDays,
+                  label: Text('Past ${filter.pastDays} days'),
+                  onSelected: (_) => _pickPastDays(context),
+                ),
+                ChoiceChip(
+                  selected: filter.mode == _FilterMode.dateRange,
+                  label: const Text('Date range'),
+                  onSelected: (_) => _pickDateRange(context),
+                ),
               ],
+            ),
           ],
         ),
       ),
     );
   }
+
+  Future<void> _pickPastDays(BuildContext context) async {
+    final controller = TextEditingController(text: '${filter.pastDays}');
+    try {
+      final days = await showDialog<int>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Past days'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Number of days'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                dialogContext,
+                int.tryParse(controller.text.trim()) ?? filter.pastDays,
+              ),
+              child: const Text('Apply'),
+            ),
+          ],
+        ),
+      );
+      if (days != null) {
+        onChanged(
+          filter.copyWith(
+            mode: _FilterMode.pastDays,
+            pastDays: days.clamp(1, 3650),
+          ),
+        );
+      }
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  Future<void> _pickDateRange(BuildContext context) async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 5),
+      initialDateRange: DateTimeRange(
+        start: filter.startDate ?? DateTime(now.year, now.month),
+        end: filter.endDate ?? now,
+      ),
+    );
+    if (picked != null) {
+      onChanged(
+        filter.copyWith(
+          mode: _FilterMode.dateRange,
+          startDate: picked.start,
+          endDate: picked.end,
+        ),
+      );
+    }
+  }
 }
 
-class _RecentActivity extends StatelessWidget {
-  final List<Transaction> transactions;
-  const _RecentActivity({required this.transactions});
+class _TransactionFlowList extends StatelessWidget {
+  final Wallet wallet;
+  final _AccountAnalytics analytics;
+  final _AccountFilter filter;
+  final ValueChanged<_AccountFilter> onChanged;
+  const _TransactionFlowList({
+    required this.wallet,
+    required this.analytics,
+    required this.filter,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isOutgoing = filter.flow == _FlowType.outgoing;
+    final transactions = isOutgoing
+        ? analytics.outgoingTransactions
+        : analytics.incomingTransactions;
+    final color = isOutgoing ? AppColors.expense : AppColors.income;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            SegmentedButton<_FlowType>(
+              segments: const [
+                ButtonSegment(
+                  value: _FlowType.outgoing,
+                  label: Text('Outgoing'),
+                  icon: Icon(Icons.north_east_rounded),
+                ),
+                ButtonSegment(
+                  value: _FlowType.incoming,
+                  label: Text('Incoming'),
+                  icon: Icon(Icons.south_west_rounded),
+                ),
+              ],
+              selected: {filter.flow},
+              onSelectionChanged: (v) =>
+                  onChanged(filter.copyWith(flow: v.first)),
+            ),
+            const SizedBox(height: 12),
             Text(
-              'Recent activity',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              '${transactions.length} transaction${transactions.length == 1 ? '' : 's'} • ${analytics.filter.label}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             if (transactions.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Text(
-                  'No activity yet',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    'No ${isOutgoing ? 'outgoing' : 'incoming'} transactions',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               )
             else
-              for (final t in transactions) _ActivityTile(transaction: t),
+              for (final t in transactions)
+                _ActivityTile(transaction: t, overrideColor: color),
           ],
         ),
       ),
@@ -652,17 +784,88 @@ class _RecentActivity extends StatelessWidget {
   }
 }
 
+enum _FilterMode { allTime, cycle, pastDays, dateRange }
+
+enum _FlowType { outgoing, incoming }
+
+class _AccountFilter {
+  final _FilterMode mode;
+  final int pastDays;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final _FlowType flow;
+
+  const _AccountFilter({
+    this.mode = _FilterMode.cycle,
+    this.pastDays = 30,
+    this.startDate,
+    this.endDate,
+    this.flow = _FlowType.outgoing,
+  });
+
+  _AccountFilter copyWith({
+    _FilterMode? mode,
+    int? pastDays,
+    DateTime? startDate,
+    DateTime? endDate,
+    _FlowType? flow,
+  }) => _AccountFilter(
+    mode: mode ?? this.mode,
+    pastDays: pastDays ?? this.pastDays,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    flow: flow ?? this.flow,
+  );
+
+  DateTime? get effectiveStart {
+    final now = DateTime.now();
+    return switch (mode) {
+      _FilterMode.allTime => null,
+      _FilterMode.cycle => DateTime(now.year, now.month),
+      _FilterMode.pastDays => DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: pastDays - 1)),
+      _FilterMode.dateRange => startDate,
+    };
+  }
+
+  DateTime? get effectiveEnd {
+    if (mode == _FilterMode.dateRange) {
+      return endDate?.add(const Duration(days: 1));
+    }
+    return null;
+  }
+
+  String get label {
+    final now = DateTime.now();
+    return switch (mode) {
+      _FilterMode.allTime => 'All time',
+      _FilterMode.cycle => 'Current cycle • ${now.month}/${now.year}',
+      _FilterMode.pastDays => 'Past $pastDays days',
+      _FilterMode.dateRange =>
+        startDate == null || endDate == null
+            ? 'Date range'
+            : '${MoneyUtils.formatDateShort(startDate!)} - ${MoneyUtils.formatDateShort(endDate!)}',
+    };
+  }
+}
+
 class _ActivityTile extends StatelessWidget {
   final Transaction transaction;
-  const _ActivityTile({required this.transaction});
+  final Color? overrideColor;
+  const _ActivityTile({required this.transaction, this.overrideColor});
 
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.type == 'expense';
     final isIncome = transaction.type == 'income';
-    final color = isExpense
-        ? AppColors.expense
-        : (isIncome ? AppColors.income : AppColors.transfer);
+    final color =
+        overrideColor ??
+        (isExpense
+            ? AppColors.expense
+            : (isIncome ? AppColors.income : AppColors.transfer));
     final sign = isExpense ? '-' : (isIncome ? '+' : '');
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -689,21 +892,29 @@ class _ActivityTile extends StatelessWidget {
 
 class _AccountAnalytics {
   final String currencyCode;
+  final _AccountFilter filter;
   final int incoming;
   final int outgoing;
   final int count;
-  final Map<String, int> monthlyIncoming;
-  final Map<String, int> monthlyOutgoing;
+  final List<String> chartLabels;
+  final List<int> incomingSeries;
+  final List<int> outgoingSeries;
+  final List<Transaction> incomingTransactions;
+  final List<Transaction> outgoingTransactions;
   final List<MapEntry<String, int>> incomingBreakdown;
   final List<MapEntry<String, int>> outgoingBreakdown;
 
   const _AccountAnalytics({
     required this.currencyCode,
+    required this.filter,
     required this.incoming,
     required this.outgoing,
     required this.count,
-    required this.monthlyIncoming,
-    required this.monthlyOutgoing,
+    required this.chartLabels,
+    required this.incomingSeries,
+    required this.outgoingSeries,
+    required this.incomingTransactions,
+    required this.outgoingTransactions,
     required this.incomingBreakdown,
     required this.outgoingBreakdown,
   });
@@ -711,24 +922,30 @@ class _AccountAnalytics {
   factory _AccountAnalytics.fromTransactions({
     required Wallet wallet,
     required List<Transaction> transactions,
+    required _AccountFilter filter,
   }) {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month - 5);
-    final monthlyIncoming = <String, int>{};
-    final monthlyOutgoing = <String, int>{};
+    final start = filter.effectiveStart;
+    final end = filter.effectiveEnd;
+    final chartBuckets = _chartBuckets(
+      start: start,
+      end: end,
+      allTransactions: transactions,
+    );
+    final incomingSeries = List<int>.filled(chartBuckets.length, 0);
+    final outgoingSeries = List<int>.filled(chartBuckets.length, 0);
     final incomingBreakdown = <String, int>{};
     final outgoingBreakdown = <String, int>{};
+    final incomingTransactions = <Transaction>[];
+    final outgoingTransactions = <Transaction>[];
     var incoming = 0;
     var outgoing = 0;
     var count = 0;
 
-    for (var i = 5; i >= 0; i--) {
-      final d = DateTime(now.year, now.month - i);
-      monthlyIncoming[_monthKey(d)] = 0;
-      monthlyOutgoing[_monthKey(d)] = 0;
-    }
+    final sorted = [...transactions]..sort((a, b) => b.date.compareTo(a.date));
+    for (final t in sorted) {
+      if (start != null && t.date.isBefore(start)) continue;
+      if (end != null && !t.date.isBefore(end)) continue;
 
-    for (final t in transactions) {
       final isIncoming =
           t.type == 'income' ||
           (t.type == 'transfer' && t.transferWalletId == wallet.id);
@@ -738,43 +955,134 @@ class _AccountAnalytics {
       if (!isIncoming && !isOutgoing) continue;
       count++;
 
-      final month = _monthKey(t.date);
-      final label = t.type == 'transfer'
-          ? (isIncoming ? 'Transfers in' : 'Transfers out')
-          : (t.title ?? (isIncoming ? 'Income' : 'Expense'));
-
+      final bucketIndex = _bucketIndexFor(t.date, chartBuckets);
       if (isIncoming) {
         incoming += t.amountMinor;
+        incomingTransactions.add(t);
+        if (bucketIndex != null) incomingSeries[bucketIndex] += t.amountMinor;
+        final label = t.type == 'transfer'
+            ? 'Transfers in'
+            : (t.title ?? 'Income');
         incomingBreakdown[label] =
             (incomingBreakdown[label] ?? 0) + t.amountMinor;
-        if (!t.date.isBefore(start) && monthlyIncoming.containsKey(month)) {
-          monthlyIncoming[month] = monthlyIncoming[month]! + t.amountMinor;
-        }
       } else {
         outgoing += t.amountMinor;
+        outgoingTransactions.add(t);
+        if (bucketIndex != null) outgoingSeries[bucketIndex] += t.amountMinor;
+        final label = t.type == 'transfer'
+            ? 'Transfers out'
+            : (t.title ?? 'Expense');
         outgoingBreakdown[label] =
             (outgoingBreakdown[label] ?? 0) + t.amountMinor;
-        if (!t.date.isBefore(start) && monthlyOutgoing.containsKey(month)) {
-          monthlyOutgoing[month] = monthlyOutgoing[month]! + t.amountMinor;
-        }
       }
     }
 
     return _AccountAnalytics(
       currencyCode: wallet.currencyCode,
+      filter: filter,
       incoming: incoming,
       outgoing: outgoing,
       count: count,
-      monthlyIncoming: monthlyIncoming,
-      monthlyOutgoing: monthlyOutgoing,
+      chartLabels: chartBuckets.map((b) => b.label).toList(),
+      incomingSeries: incomingSeries,
+      outgoingSeries: outgoingSeries,
+      incomingTransactions: incomingTransactions,
+      outgoingTransactions: outgoingTransactions,
       incomingBreakdown: _topEntries(incomingBreakdown),
       outgoingBreakdown: _topEntries(outgoingBreakdown),
     );
   }
 }
 
-String _monthKey(DateTime date) =>
-    '${date.month}/${date.year.toString().substring(2)}';
+class _ChartBucket {
+  final DateTime start;
+  final DateTime end;
+  final String label;
+  const _ChartBucket({
+    required this.start,
+    required this.end,
+    required this.label,
+  });
+}
+
+List<_ChartBucket> _chartBuckets({
+  required DateTime? start,
+  required DateTime? end,
+  required List<Transaction> allTransactions,
+}) {
+  final now = DateTime.now();
+  final effectiveStart =
+      start ??
+      _earliestTransactionDate(allTransactions) ??
+      DateTime(now.year, now.month - 5);
+  final effectiveEnd =
+      end ??
+      DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+  final days = effectiveEnd
+      .difference(effectiveStart)
+      .inDays
+      .abs()
+      .clamp(1, 100000);
+
+  if (days <= 45) {
+    final buckets = <_ChartBucket>[];
+    for (
+      var d = DateTime(
+        effectiveStart.year,
+        effectiveStart.month,
+        effectiveStart.day,
+      );
+      d.isBefore(effectiveEnd);
+      d = d.add(const Duration(days: 1))
+    ) {
+      buckets.add(
+        _ChartBucket(
+          start: d,
+          end: d.add(const Duration(days: 1)),
+          label: '${d.day}/${d.month}',
+        ),
+      );
+    }
+    return buckets.isEmpty ? [_singleBucket(now)] : buckets;
+  }
+
+  final buckets = <_ChartBucket>[];
+  var cursor = DateTime(effectiveStart.year, effectiveStart.month);
+  final last = DateTime(effectiveEnd.year, effectiveEnd.month + 1);
+  while (cursor.isBefore(last)) {
+    final next = DateTime(cursor.year, cursor.month + 1);
+    buckets.add(
+      _ChartBucket(
+        start: cursor,
+        end: next,
+        label: '${cursor.month}/${cursor.year.toString().substring(2)}',
+      ),
+    );
+    cursor = next;
+  }
+  return buckets.isEmpty ? [_singleBucket(now)] : buckets;
+}
+
+_ChartBucket _singleBucket(DateTime date) => _ChartBucket(
+  start: DateTime(date.year, date.month, date.day),
+  end: DateTime(date.year, date.month, date.day).add(const Duration(days: 1)),
+  label: '${date.day}/${date.month}',
+);
+
+DateTime? _earliestTransactionDate(List<Transaction> transactions) {
+  if (transactions.isEmpty) return null;
+  return transactions
+      .map((t) => t.date)
+      .reduce((a, b) => a.isBefore(b) ? a : b);
+}
+
+int? _bucketIndexFor(DateTime date, List<_ChartBucket> buckets) {
+  for (var i = 0; i < buckets.length; i++) {
+    final b = buckets[i];
+    if (!date.isBefore(b.start) && date.isBefore(b.end)) return i;
+  }
+  return null;
+}
 
 List<MapEntry<String, int>> _topEntries(Map<String, int> data) {
   final entries = data.entries.toList()
