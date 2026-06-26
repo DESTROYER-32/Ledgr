@@ -714,6 +714,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
         .watch(allTransactionsProvider)
         .when(
           data: (txns) {
+            final categoriesById = {
+              for (final c
+                  in ref.watch(activeCategoriesProvider).valueOrNull ??
+                      <Category>[])
+                c.id: c,
+            };
             final filtered = txns.where((t) {
               final inDateRange =
                   !t.date.isBefore(budget.periodStart) &&
@@ -749,19 +755,25 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   actionLabel: null,
                   onAction: null,
                 ),
-                ...filtered
-                    .take(10)
-                    .map(
-                      (t) => TransactionTile(
-                        id: t.id,
-                        type: t.type,
-                        amountMinor: t.amountMinor,
-                        title: t.title,
-                        date: t.date,
-                        currencyCode: t.currencyCode,
-                        onTap: () => context.push('/transactions/${t.id}'),
-                      ),
-                    ),
+                ...filtered.take(10).map((t) {
+                  final category = t.categoryId == null
+                      ? null
+                      : categoriesById[t.categoryId];
+                  return TransactionTile(
+                    id: t.id,
+                    type: t.type,
+                    amountMinor: t.amountMinor,
+                    title: t.title,
+                    date: t.date,
+                    categoryName: category?.name,
+                    categoryColor: category?.color == null
+                        ? null
+                        : Color(category!.color!),
+                    categoryIcon: category?.icon,
+                    currencyCode: t.currencyCode,
+                    onTap: () => context.push('/transactions/${t.id}'),
+                  );
+                }),
               ],
             );
           },
