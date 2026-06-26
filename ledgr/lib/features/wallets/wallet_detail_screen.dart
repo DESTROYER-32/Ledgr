@@ -347,38 +347,110 @@ class _AnalyticsOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      childAspectRatio: 1.55,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
+    return Column(
       children: [
-        _MetricTile(
-          title: 'Incoming',
-          amount: analytics.incoming,
-          currencyCode: analytics.currencyCode,
-          icon: Icons.south_west_rounded,
-          color: AppColors.income,
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _CashflowPill(
+                    title: 'Incoming',
+                    amount: analytics.incoming,
+                    currencyCode: analytics.currencyCode,
+                    icon: Icons.south_west_rounded,
+                    color: AppColors.income,
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 64,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                Expanded(
+                  child: _CashflowPill(
+                    title: 'Outgoing',
+                    amount: analytics.outgoing,
+                    currencyCode: analytics.currencyCode,
+                    icon: Icons.north_east_rounded,
+                    color: AppColors.expense,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        _MetricTile(
-          title: 'Outgoing',
-          amount: analytics.outgoing,
-          currencyCode: analytics.currencyCode,
-          icon: Icons.north_east_rounded,
-          color: AppColors.expense,
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MetricTile(
+                title: 'Net flow',
+                amount: analytics.incoming - analytics.outgoing,
+                currencyCode: analytics.currencyCode,
+                icon: Icons.show_chart_rounded,
+                color: analytics.incoming >= analytics.outgoing
+                    ? AppColors.income
+                    : Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: _CountTile(count: analytics.count)),
+          ],
         ),
-        _MetricTile(
-          title: 'Net flow',
-          amount: analytics.incoming - analytics.outgoing,
-          currencyCode: analytics.currencyCode,
-          icon: Icons.show_chart_rounded,
-          color: analytics.incoming >= analytics.outgoing
-              ? AppColors.income
-              : Colors.orange,
+      ],
+    );
+  }
+}
+
+class _CashflowPill extends StatelessWidget {
+  final String title;
+  final int amount;
+  final String currencyCode;
+  final IconData icon;
+  final Color color;
+  const _CashflowPill({
+    required this.title,
+    required this.amount,
+    required this.currencyCode,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: color.withValues(alpha: .14),
+          foregroundColor: color,
+          child: Icon(icon, size: 22),
         ),
-        _CountTile(count: analytics.count),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          MoneyUtils.format(amount, currencyCode: currencyCode),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: color,
+          ),
+        ),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../utils/category_icon_utils.dart';
 import '../utils/money_utils.dart';
 
 class TransactionTile extends StatelessWidget {
@@ -11,6 +12,7 @@ class TransactionTile extends StatelessWidget {
   final DateTime date;
   final String? categoryName;
   final Color? categoryColor;
+  final String? categoryIcon;
   final VoidCallback? onTap;
   final VoidCallback? onDuplicate;
   final String? currencyCode;
@@ -26,6 +28,7 @@ class TransactionTile extends StatelessWidget {
     required this.date,
     this.categoryName,
     this.categoryColor,
+    this.categoryIcon,
     this.onTap,
     this.onDuplicate,
     this.currencyCode,
@@ -38,9 +41,10 @@ class TransactionTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isExpense = type == 'expense';
     final isIncome = type == 'income';
-    final color = isExpense
+    final amountColor = isExpense
         ? AppColors.expense
         : (isIncome ? AppColors.income : AppColors.transfer);
+    final iconColor = categoryColor ?? amountColor;
     final sign = isExpense ? '-' : (isIncome ? '+' : '');
     final originalCurrency = currencyCode ?? MoneyUtils.defaultCurrencyCode;
     final primaryCurrency = displayCurrencyCode ?? originalCurrency;
@@ -60,14 +64,16 @@ class TransactionTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
+                  color: iconColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  isExpense
-                      ? Icons.arrow_upward
-                      : (isIncome ? Icons.arrow_downward : Icons.swap_horiz),
-                  color: color,
+                  categoryIcon != null
+                      ? materialCategoryIcon(categoryIcon)
+                      : (isExpense || isIncome
+                            ? Icons.category_outlined
+                            : Icons.swap_horiz),
+                  color: iconColor,
                   size: 18,
                 ),
               ),
@@ -131,7 +137,7 @@ class TransactionTile extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
-                      color: color,
+                      color: amountColor,
                     ),
                   ),
                   if (showOriginal) ...[

@@ -174,6 +174,11 @@ class _CategoryTransactionsScreenState
                               currencyCode: t.currencyCode,
                               displayAmountMinor: converted,
                               displayCurrencyCode: displayCurrency,
+                              categoryName: _category?.name,
+                              categoryColor: _category?.color == null
+                                  ? null
+                                  : Color(_category!.color!),
+                              categoryIcon: _category?.icon,
                               onTap: () =>
                                   context.push('/transactions/${t.id}'),
                             );
