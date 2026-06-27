@@ -54,10 +54,10 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(backupServiceProvider).runScheduledBackupIfDue();
+      ref.read(appLockControllerProvider).handleAppResumed();
     } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
-      ref.read(appLockControllerProvider).lock();
+      ref.read(appLockControllerProvider).markAppLeft();
     }
   }
 
