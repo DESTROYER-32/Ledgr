@@ -21,6 +21,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifications = false;
   int? _defaultWalletId;
   bool _isLoading = true;
+  bool _securityBusy = false;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
   String _displayCurrency = MoneyUtils.defaultCurrencyCode;
@@ -368,10 +369,128 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.invalidate(themeConfigProvider);
   }
 
+  Future<String?> _askForPin({required String title}) async {
+    final first = TextEditingController();
+    final second = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: first,
+                autofocus: true,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                decoration: const InputDecoration(
+                  labelText: 'PIN',
+                  counterText: '',
+                ),
+                validator: (value) {
+                  if (value == null || value.length < 4) {
+                    return 'Use at least 4 digits';
+                  }
+                  if (int.tryParse(value) == null) return 'Digits only';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: second,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm PIN',
+                  counterText: '',
+                ),
+                validator: (value) =>
+                    value == first.text ? null : 'PINs do not match',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(context, first.text);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    first.dispose();
+    second.dispose();
+    return result;
+  }
+
+  Future<void> _setPin({bool changing = false}) async {
+    final pin = await _askForPin(title: changing ? 'Change PIN' : 'Create PIN');
+    if (pin == null) return;
+    setState(() => _securityBusy = true);
+    await ref.read(appLockControllerProvider).setPin(pin);
+    if (mounted) setState(() => _securityBusy = false);
+  }
+
+  Future<void> _disableLock() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Disable app lock?'),
+        content: const Text('Budgetly will open without a PIN or biometrics.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _securityBusy = true);
+    await ref.read(appLockControllerProvider).disable();
+    if (mounted) setState(() => _securityBusy = false);
+  }
+
+  Future<void> _toggleBiometrics(bool enabled) async {
+    setState(() => _securityBusy = true);
+    final ok = await ref
+        .read(appLockControllerProvider)
+        .setBiometricsEnabled(enabled);
+    if (mounted) {
+      setState(() => _securityBusy = false);
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Biometric unlock is not available or was cancelled'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final walletsAsync = ref.watch(activeWalletsProvider);
+    final lockState = ref.watch(appLockStateProvider);
 
     if (_isLoading) {
       return Scaffold(
@@ -396,6 +515,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: _notifications,
               onChanged: _toggleNotifications,
             ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Privacy & Security', [
+            SwitchListTile(
+              secondary: Icon(
+                Icons.lock_outline,
+                color: lockState.isEnabled ? theme.colorScheme.primary : null,
+              ),
+              title: const Text('PIN Lock'),
+              subtitle: Text(
+                lockState.isEnabled
+                    ? 'Require a PIN when opening Budgetly'
+                    : 'Protect Budgetly with a PIN',
+              ),
+              value: lockState.isEnabled,
+              onChanged: _securityBusy
+                  ? null
+                  : (value) => value ? _setPin() : _disableLock(),
+            ),
+            if (lockState.isEnabled) ...[
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.pin_outlined),
+                title: const Text('Change PIN'),
+                subtitle: const Text('Update your Budgetly unlock PIN'),
+                onTap: _securityBusy ? null : () => _setPin(changing: true),
+              ),
+              const Divider(height: 1),
+              SwitchListTile(
+                secondary: Icon(
+                  Icons.fingerprint,
+                  color: lockState.biometricsEnabled
+                      ? theme.colorScheme.primary
+                      : null,
+                ),
+                title: const Text('Biometric Unlock'),
+                subtitle: Text(
+                  lockState.biometricsAvailable
+                      ? 'Use fingerprint, face, or device biometrics like Cashew'
+                      : 'No enrolled biometrics found on this device',
+                ),
+                value: lockState.biometricsEnabled,
+                onChanged: _securityBusy || !lockState.biometricsAvailable
+                    ? null
+                    : _toggleBiometrics,
+              ),
+            ],
           ]),
           const SizedBox(height: 8),
           _section(theme, 'Account Defaults', [
