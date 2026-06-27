@@ -12,6 +12,7 @@ class AppLockState {
   final bool isLocked;
   final bool biometricsEnabled;
   final bool biometricsAvailable;
+  final int lockTimeoutSeconds;
   final bool isLoading;
 
   const AppLockState({
@@ -19,6 +20,7 @@ class AppLockState {
     this.isLocked = false,
     this.biometricsEnabled = false,
     this.biometricsAvailable = false,
+    this.lockTimeoutSeconds = -1,
     this.isLoading = true,
   });
 
@@ -27,6 +29,7 @@ class AppLockState {
     bool? isLocked,
     bool? biometricsEnabled,
     bool? biometricsAvailable,
+    int? lockTimeoutSeconds,
     bool? isLoading,
   }) {
     return AppLockState(
@@ -34,6 +37,7 @@ class AppLockState {
       isLocked: isLocked ?? this.isLocked,
       biometricsEnabled: biometricsEnabled ?? this.biometricsEnabled,
       biometricsAvailable: biometricsAvailable ?? this.biometricsAvailable,
+      lockTimeoutSeconds: lockTimeoutSeconds ?? this.lockTimeoutSeconds,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -48,22 +52,27 @@ class AppLockController extends ChangeNotifier {
   static const _pinHashKey = 'app_lock_pin_hash';
   static const _pinSaltKey = 'app_lock_pin_salt';
   static const _biometricKey = 'app_lock_biometrics_enabled';
+  static const _timeoutKey = 'app_lock_timeout_seconds';
 
   final SettingsRepository _settings;
   final LocalAuthentication _localAuth;
   AppLockState _state = const AppLockState();
+  DateTime? _leftAppAt;
 
   AppLockState get state => _state;
 
   Future<void> refresh() async {
     final pinHash = await _settings.get(_pinHashKey);
     final biometricsEnabled = await _settings.get(_biometricKey) == 'true';
+    final timeoutSeconds =
+        int.tryParse(await _settings.get(_timeoutKey) ?? '') ?? -1;
     final biometricsAvailable = await _canUseBiometrics();
     _state = AppLockState(
       isEnabled: pinHash != null,
       isLocked: pinHash != null,
       biometricsEnabled: biometricsEnabled && biometricsAvailable,
       biometricsAvailable: biometricsAvailable,
+      lockTimeoutSeconds: timeoutSeconds,
       isLoading: false,
     );
     notifyListeners();
@@ -73,6 +82,24 @@ class AppLockController extends ChangeNotifier {
     if (!_state.isEnabled || _state.isLocked) return;
     _state = _state.copyWith(isLocked: true);
     notifyListeners();
+  }
+
+  void markAppLeft() {
+    if (!_state.isEnabled || _state.isLocked) return;
+    _leftAppAt = DateTime.now();
+  }
+
+  void handleAppResumed() {
+    if (!_state.isEnabled || _state.isLocked) return;
+    final timeoutSeconds = _state.lockTimeoutSeconds;
+    final leftAt = _leftAppAt;
+    _leftAppAt = null;
+
+    // -1 means the default Cashew-like behavior: lock on initial app open only,
+    // not when quickly switching away and back.
+    if (timeoutSeconds < 0 || leftAt == null) return;
+    final elapsed = DateTime.now().difference(leftAt).inSeconds;
+    if (elapsed >= timeoutSeconds) lock();
   }
 
   Future<void> setPin(String pin) async {
@@ -87,10 +114,18 @@ class AppLockController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setLockTimeoutSeconds(int seconds) async {
+    await _settings.set(_timeoutKey, seconds.toString());
+    _state = _state.copyWith(lockTimeoutSeconds: seconds);
+    notifyListeners();
+  }
+
   Future<void> disable() async {
     await _settings.remove(_pinHashKey);
     await _settings.remove(_pinSaltKey);
     await _settings.remove(_biometricKey);
+    await _settings.remove(_timeoutKey);
+    _leftAppAt = null;
     _state = _state.copyWith(
       isEnabled: false,
       isLocked: false,

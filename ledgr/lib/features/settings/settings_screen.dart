@@ -39,6 +39,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     0xFF37474F, // Blue Grey
   ];
 
+  static const _lockTimeoutOptions = <ModernSelectionItem<int>>[
+    ModernSelectionItem(
+      value: -1,
+      title: 'When app is opened',
+      subtitle: 'Default. Do not lock just because you switch apps',
+      icon: Icons.lock_open_outlined,
+    ),
+    ModernSelectionItem(
+      value: 0,
+      title: 'Immediately after leaving',
+      subtitle: 'Lock as soon as you return to Budgetly',
+      icon: Icons.lock_clock_outlined,
+    ),
+    ModernSelectionItem(
+      value: 60,
+      title: 'After 1 minute',
+      subtitle: 'Allow quick app switching without unlocking again',
+      icon: Icons.timer_outlined,
+    ),
+    ModernSelectionItem(
+      value: 300,
+      title: 'After 5 minutes',
+      subtitle: 'Longer grace period before locking',
+      icon: Icons.timer_3_select_outlined,
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -486,6 +513,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _setLockTimeout(int? seconds) async {
+    if (seconds == null) return;
+    await ref.read(appLockControllerProvider).setLockTimeoutSeconds(seconds);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -541,6 +573,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: const Text('Change PIN'),
                 subtitle: const Text('Update your Budgetly unlock PIN'),
                 onTap: _securityBusy ? null : () => _setPin(changing: true),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: ModernSelectionField<int>(
+                  label: 'Lock Timeout',
+                  value: lockState.lockTimeoutSeconds,
+                  leadingIcon: Icons.lock_clock_outlined,
+                  searchEnabled: false,
+                  items: _lockTimeoutOptions,
+                  onChanged: (value) {
+                    if (!_securityBusy) _setLockTimeout(value);
+                  },
+                ),
               ),
               const Divider(height: 1),
               SwitchListTile(
