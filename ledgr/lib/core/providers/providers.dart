@@ -10,6 +10,7 @@ import '../database/repositories/category_repository.dart';
 import '../database/repositories/delete_log_repository.dart';
 import '../database/repositories/objective_repository.dart';
 import '../database/repositories/recurring_repository.dart';
+import '../security/app_lock_controller.dart';
 import '../services/backup_service.dart';
 import '../services/exchange_rate_service.dart';
 import '../services/recurring_service.dart';
@@ -67,6 +68,16 @@ final recurringRepositoryProvider = Provider<RecurringRepository>((ref) {
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(appDatabaseProvider));
+});
+
+final appLockControllerProvider = ChangeNotifierProvider<AppLockController>((
+  ref,
+) {
+  return AppLockController(ref.watch(settingsRepositoryProvider));
+});
+
+final appLockStateProvider = Provider<AppLockState>((ref) {
+  return ref.watch(appLockControllerProvider).state;
 });
 
 final backupServiceProvider = Provider<BackupService>((ref) {
