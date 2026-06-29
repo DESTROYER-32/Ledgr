@@ -7,6 +7,7 @@ import 'core/providers/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/security/app_lock_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,13 +38,33 @@ class BudgetlyApp extends ConsumerStatefulWidget {
   ConsumerState<BudgetlyApp> createState() => _BudgetlyAppState();
 }
 
-class _BudgetlyAppState extends ConsumerState<BudgetlyApp> {
+class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(recurringServiceProvider).processDueRecurrings();
+      ref.read(backupServiceProvider).runScheduledBackupIfDue();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(backupServiceProvider).runScheduledBackupIfDue();
+      ref.read(appLockControllerProvider).handleAppResumed();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      ref.read(appLockControllerProvider).markAppLeft();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -60,6 +81,11 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp> {
         themeMode: config.themeMode,
         routerConfig: router,
         debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          final lockState = ref.watch(appLockStateProvider);
+          if (lockState.isLocked) return const AppLockScreen();
+          return child ?? const SizedBox.shrink();
+        },
       ),
       error: (_, _) => MaterialApp.router(
         title: 'Budgetly',

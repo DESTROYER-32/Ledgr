@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
@@ -11,115 +10,228 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/backup_service.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
-class BackupScreen extends ConsumerWidget {
+class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
 
-  static const _backupVersion = 1;
-  static const _tables = [
-    'wallets',
-    'categories',
-    'budgets',
-    'objectives',
-    'settings',
-    'transactions',
-    'budget_category_limits',
-    'budget_wallets',
-    'recurring_transactions',
-    'associated_titles',
-    'delete_logs',
-  ];
+  @override
+  ConsumerState<BackupScreen> createState() => _BackupScreenState();
+}
 
-  static const _dateColumnsByTable = <String, Set<String>>{
-    'wallets': {'created_at', 'updated_at'},
-    'categories': {'created_at', 'updated_at'},
-    'budgets': {'period_start', 'period_end', 'created_at', 'updated_at'},
-    'objectives': {'deadline', 'created_at', 'updated_at'},
-    'transactions': {'date', 'created_at', 'updated_at'},
-    'recurring_transactions': {
-      'start_date',
-      'end_date',
-      'next_due_date',
-      'created_at',
-    },
-    'associated_titles': {'created_at'},
-    'delete_logs': {'deleted_at'},
-  };
+class _BackupScreenState extends ConsumerState<BackupScreen> {
+  int _reloadToken = 0;
+
+  void _reload() => setState(() => _reloadToken++);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final service = ref.watch(backupServiceProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Backup & Restore')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.upload_file),
-                  title: const Text('Export Full Backup'),
-                  subtitle: const Text(
-                    'Save accounts, categories, budgets, goals, settings, and transactions',
-                  ),
-                  onTap: () => _exportBackup(context, ref),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.download),
-                  title: const Text('Restore Full Backup'),
-                  subtitle: const Text(
-                    'Restore all data from a Budgetly backup file',
-                  ),
-                  onTap: () => _importBackup(context, ref),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.file_upload),
-                  title: const Text('Export Transactions CSV'),
-                  subtitle: const Text('Export transactions to CSV'),
-                  onTap: () => _exportCsv(context, ref),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.file_download),
-                  title: const Text('Import Transactions CSV'),
-                  subtitle: const Text(
-                    'Import transactions only. Requires accounts to already exist.',
-                  ),
-                  onTap: () => _importCsv(context, ref),
-                ),
-              ],
-            ),
+      body:
+          FutureBuilder<
+            ({BackupScheduleConfig config, List<BackupSlot> slots})
+          >(
+            key: ValueKey(_reloadToken),
+            future: _loadBackupState(service),
+            builder: (context, snapshot) {
+              final config =
+                  snapshot.data?.config ?? BackupScheduleConfig.defaults;
+              final slots = snapshot.data?.slots ?? const <BackupSlot>[];
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _manualBackupCard(context),
+                  const SizedBox(height: 16),
+                  _automaticBackupCard(context, config),
+                  const SizedBox(height: 16),
+                  _slotCard(context, slots, config),
+                ],
+              );
+            },
           ),
-        ],
-      ),
     );
   }
 
-  Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
-    try {
-      final db = ref.read(appDatabaseProvider);
-      final data = <String, dynamic>{
-        'app': 'budgetly',
-        'version': _backupVersion,
-        'exportedAt': DateTime.now().toIso8601String(),
-        'tables': <String, dynamic>{},
-      };
-      final tables = data['tables'] as Map<String, dynamic>;
-      for (final table in _tables) {
-        final rows = await db.customSelect('SELECT * FROM $table').get();
-        tables[table] = rows.map((row) => _jsonSafeMap(row.data)).toList();
-      }
+  Future<({BackupScheduleConfig config, List<BackupSlot> slots})>
+  _loadBackupState(BackupService service) async {
+    final config = await service.scheduleConfig();
+    final slots = await service.slots();
+    return (config: config, slots: slots);
+  }
 
-      final backupDir = await getTemporaryDirectory();
-      final stamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-      final backupFile = File(
-        '${backupDir.path}/budgetly_full_backup_$stamp.json',
-      );
-      await backupFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(data),
-      );
+  Widget _manualBackupCard(BuildContext context) => Card(
+    child: Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.upload_file),
+          title: const Text('Export Full Backup'),
+          subtitle: const Text('Share a full JSON backup file'),
+          onTap: () => _exportBackup(context),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.download),
+          title: const Text('Restore Full Backup'),
+          subtitle: const Text('Restore all data from a Budgetly backup file'),
+          onTap: () => _importBackup(context),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.file_upload),
+          title: const Text('Export Transactions CSV'),
+          subtitle: const Text('Export transactions to CSV'),
+          onTap: () => _exportCsv(context, ref),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.file_download),
+          title: const Text('Import Transactions CSV'),
+          subtitle: const Text(
+            'Import transactions only. Requires accounts to already exist.',
+          ),
+          onTap: () => _importCsv(context, ref),
+        ),
+      ],
+    ),
+  );
+
+  Widget _automaticBackupCard(
+    BuildContext context,
+    BackupScheduleConfig config,
+  ) => Card(
+    child: Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.schedule),
+          title: const Text('Automatic backup schedule'),
+          subtitle: Text(
+            config.lastRunAt == null
+                ? 'No automatic backup has run yet'
+                : 'Last run: ${_formatDate(config.lastRunAt!)}',
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: ModernSelectionField<AutoBackupFrequency>(
+            label: 'Frequency',
+            value: config.frequency,
+            leadingIcon: Icons.schedule_outlined,
+            searchEnabled: false,
+            items: AutoBackupFrequency.values
+                .map(
+                  (f) => ModernSelectionItem(
+                    value: f,
+                    title: f.label,
+                    subtitle: f == AutoBackupFrequency.off
+                        ? 'Automatic backups disabled'
+                        : 'Run ${f.label.toLowerCase()} and rotate through saved slots',
+                    icon: f == AutoBackupFrequency.off
+                        ? Icons.pause_circle_outline
+                        : Icons.event_repeat_outlined,
+                  ),
+                )
+                .toList(),
+            onChanged: (frequency) async {
+              if (frequency == null) return;
+              await ref
+                  .read(backupServiceProvider)
+                  .saveScheduleConfig(
+                    frequency: frequency,
+                    slotCount: config.slotCount,
+                  );
+              _reload();
+            },
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.storage),
+          title: Text('Backup slots: ${config.slotCount}'),
+          subtitle: const Text('Oldest slots are overwritten in rotation'),
+          trailing: SizedBox(
+            width: 140,
+            child: Slider(
+              value: config.slotCount.toDouble(),
+              min: BackupService.minSlots.toDouble(),
+              max: BackupService.maxSlots.toDouble(),
+              divisions: BackupService.maxSlots - BackupService.minSlots,
+              label: config.slotCount.toString(),
+              onChanged: (value) async {
+                await ref
+                    .read(backupServiceProvider)
+                    .saveScheduleConfig(
+                      frequency: config.frequency,
+                      slotCount: value.round(),
+                    );
+                _reload();
+              },
+            ),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.backup),
+          title: const Text('Run automatic backup now'),
+          subtitle: const Text('Writes the next rotating slot immediately'),
+          onTap: () => _runAutoBackupNow(context),
+        ),
+      ],
+    ),
+  );
+
+  Widget _slotCard(
+    BuildContext context,
+    List<BackupSlot> slots,
+    BackupScheduleConfig config,
+  ) => Card(
+    child: Column(
+      children: [
+        const ListTile(
+          leading: Icon(Icons.inventory_2_outlined),
+          title: Text('Backup slots'),
+          subtitle: Text('Restore or share any saved automatic backup'),
+        ),
+        if (slots.isEmpty)
+          const ListTile(title: Text('Loading slots...'))
+        else
+          for (final slot in slots) ...[
+            const Divider(height: 1),
+            ListTile(
+              leading: CircleAvatar(child: Text('${slot.index + 1}')),
+              title: Text(
+                slot.exists ? _formatDate(slot.createdAt!) : 'Empty slot',
+              ),
+              subtitle: Text(
+                slot.exists
+                    ? '${_formatBytes(slot.sizeBytes)}${slot.index == config.nextSlotIndex ? ' • next overwrite' : ''}'
+                    : slot.index == config.nextSlotIndex
+                    ? 'Next backup will be saved here'
+                    : 'No backup yet',
+              ),
+              trailing: slot.exists
+                  ? PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'restore') _restoreSlot(context, slot);
+                        if (value == 'share') _shareSlot(context, slot);
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(value: 'restore', child: Text('Restore')),
+                        PopupMenuItem(value: 'share', child: Text('Share')),
+                      ],
+                    )
+                  : null,
+            ),
+          ],
+      ],
+    ),
+  );
+
+  Future<void> _exportBackup(BuildContext context) async {
+    try {
+      final backupFile = await ref
+          .read(backupServiceProvider)
+          .writeTemporaryShareBackup();
       await Share.shareXFiles([
         XFile(backupFile.path),
       ], text: 'Budgetly Full Backup');
@@ -132,82 +244,83 @@ class BackupScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
+  Future<void> _importBackup(BuildContext context) async {
     try {
       final result = await FilePicker.platform.pickFiles(type: FileType.any);
-      if (result == null || result.files.single.path == null) return;
-      final sourceFile = File(result.files.single.path!);
-      final decoded = jsonDecode(await sourceFile.readAsString());
-      if (decoded is! Map<String, dynamic> ||
-          decoded['app'] != 'budgetly' ||
-          decoded['tables'] is! Map<String, dynamic>) {
-        throw const FormatException(
-          'This is not a valid Budgetly full backup file.',
-        );
+      if (result == null ||
+          result.files.single.path == null ||
+          !context.mounted) {
+        return;
       }
-
-      if (context.mounted) {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Restore backup?'),
-            content: const Text(
-              'This will replace all current Budgetly data with the backup contents. This action cannot be undone from inside the app.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Restore'),
-              ),
-            ],
-          ),
-        );
-        if (confirmed != true) return;
-      }
-
-      final db = ref.read(appDatabaseProvider);
-      final tables = decoded['tables'] as Map<String, dynamic>;
-      await db.transaction(() async {
-        await db.customStatement('PRAGMA foreign_keys = OFF');
-        for (final table in _tables.reversed) {
-          await db.customStatement('DELETE FROM $table');
-        }
-        for (final table in _tables) {
-          final rows = tables[table];
-          if (rows is! List) continue;
-          for (final row in rows) {
-            if (row is Map<String, dynamic>) {
-              await db.customStatement(
-                _insertSql(table, _normalizeRow(table, row)),
-              );
-            } else if (row is Map) {
-              await db.customStatement(
-                _insertSql(
-                  table,
-                  _normalizeRow(table, Map<String, dynamic>.from(row)),
-                ),
-              );
-            }
-          }
-        }
-        await db.customStatement('PRAGMA foreign_keys = ON');
-      });
-      _invalidateDataProviders(ref);
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Full restore complete')));
-      }
+      await _restoreFile(context, File(result.files.single.path!));
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Restore failed: $e')));
       }
+    }
+  }
+
+  Future<void> _runAutoBackupNow(BuildContext context) async {
+    try {
+      final slot = await ref.read(backupServiceProvider).runAutoBackupNow();
+      _reload();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Saved backup to slot ${slot.index + 1}')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Backup failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _restoreSlot(BuildContext context, BackupSlot slot) =>
+      _restoreFile(context, slot.file, label: 'slot ${slot.index + 1}');
+
+  Future<void> _shareSlot(BuildContext context, BackupSlot slot) async {
+    await Share.shareXFiles([
+      XFile(slot.file.path),
+    ], text: 'Budgetly Backup Slot ${slot.index + 1}');
+  }
+
+  Future<void> _restoreFile(
+    BuildContext context,
+    File file, {
+    String label = 'backup',
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Restore $label?'),
+        content: const Text(
+          'This will replace all current Budgetly data with the backup contents. This action cannot be undone from inside the app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(backupServiceProvider).restoreFromFile(file);
+    _invalidateDataProviders(ref);
+    _reload();
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Full restore complete')));
     }
   }
 
@@ -385,41 +498,17 @@ class BackupScreen extends ConsumerWidget {
   String? _emptyToNull(String value) =>
       value.trim().isEmpty ? null : value.trim();
 
-  Map<String, dynamic> _jsonSafeMap(Map<String, dynamic> source) {
-    return source.map((key, value) {
-      if (value is DateTime) return MapEntry(key, value.toIso8601String());
-      return MapEntry(key, value);
-    });
+  String _formatDate(DateTime date) {
+    final local = date.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
-  String _insertSql(String table, Map<String, dynamic> row) {
-    final columns = row.keys.map((column) => '"$column"').join(', ');
-    final values = row.values.map(_sqlLiteral).join(', ');
-    return 'INSERT OR REPLACE INTO $table ($columns) VALUES ($values)';
-  }
-
-  Map<String, dynamic> _normalizeRow(String table, Map<String, dynamic> row) {
-    final dateColumns = _dateColumnsByTable[table];
-    if (dateColumns == null) return row;
-    final normalized = Map<String, dynamic>.from(row);
-    for (final column in dateColumns) {
-      final value = normalized[column];
-      if (value is String && value.trim().isNotEmpty) {
-        final parsed = DateTime.tryParse(value);
-        if (parsed != null) {
-          normalized[column] = parsed.millisecondsSinceEpoch ~/ 1000;
-        }
-      }
-    }
-    return normalized;
-  }
-
-  String _sqlLiteral(Object? value) {
-    if (value == null) return 'NULL';
-    if (value is bool) return value ? '1' : '0';
-    if (value is num) return value.toString();
-    final escaped = value.toString().replaceAll("'", "''");
-    return "'$escaped'";
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    final kb = bytes / 1024;
+    if (kb < 1024) return '${kb.toStringAsFixed(1)} KB';
+    return '${(kb / 1024).toStringAsFixed(1)} MB';
   }
 
   void _invalidateDataProviders(WidgetRef ref) {

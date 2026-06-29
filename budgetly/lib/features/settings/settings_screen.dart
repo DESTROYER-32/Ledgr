@@ -21,6 +21,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifications = false;
   int? _defaultWalletId;
   bool _isLoading = true;
+  bool _securityBusy = false;
+  bool _demoMode = false;
+  bool _resetBusy = false;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
   String _displayCurrency = MoneyUtils.defaultCurrencyCode;
@@ -38,6 +41,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     0xFF37474F, // Blue Grey
   ];
 
+  static const _lockTimeoutOptions = <ModernSelectionItem<int>>[
+    ModernSelectionItem(
+      value: -1,
+      title: 'When app is opened',
+      subtitle: 'Default. Do not lock just because you switch apps',
+      icon: Icons.lock_open_outlined,
+    ),
+    ModernSelectionItem(
+      value: 0,
+      title: 'Immediately after leaving',
+      subtitle: 'Lock as soon as you return to Budgetly',
+      icon: Icons.lock_clock_outlined,
+    ),
+    ModernSelectionItem(
+      value: 60,
+      title: 'After 1 minute',
+      subtitle: 'Allow quick app switching without unlocking again',
+      icon: Icons.timer_outlined,
+    ),
+    ModernSelectionItem(
+      value: 300,
+      title: 'After 5 minutes',
+      subtitle: 'Longer grace period before locking',
+      icon: Icons.timer_3_select_outlined,
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +82,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeSeed = await repo.get('theme_seed');
     final displayCurrency = await repo.get('display_currency');
     final favoriteCurrencies = await repo.get('favorite_currencies');
+    final demoMode = await repo.get('budgetly_demo_mode');
     if (mounted) {
       setState(() {
         _notifications = notifications == 'true';
@@ -62,9 +93,118 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
         _displayCurrency = displayCurrency ?? MoneyUtils.defaultCurrencyCode;
         _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
+        _demoMode = demoMode == 'true';
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _resetEverything() async {
+    final first = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset everything?'),
+        content: const Text(
+          'This permanently deletes all accounts, transactions, budgets, objectives, categories, recurring items, settings, and demo data. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    if (first != true || !mounted) return;
+
+    final controller = TextEditingController();
+    final second = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Final confirmation'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Type RESET to permanently erase all Budgetly data.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(labelText: 'Confirmation'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(
+              context,
+              controller.text.trim().toUpperCase() == 'RESET',
+            ),
+            child: const Text('Erase everything'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (second != true || !mounted) return;
+
+    setState(() => _resetBusy = true);
+    final db = ref.read(appDatabaseProvider);
+    await db.transaction(() async {
+      await db.customStatement('PRAGMA foreign_keys = OFF');
+      for (final table in [
+        'delete_logs',
+        'associated_titles',
+        'recurring_transactions',
+        'budget_wallets',
+        'budget_category_limits',
+        'transactions',
+        'objectives',
+        'budgets',
+        'categories',
+        'wallets',
+        'settings',
+      ]) {
+        await db.customStatement('DELETE FROM $table');
+        await db.customStatement(
+          "DELETE FROM sqlite_sequence WHERE name = '$table'",
+        );
+      }
+      await db.customStatement('PRAGMA foreign_keys = ON');
+    });
+    ref.invalidate(activeWalletsProvider);
+    ref.invalidate(activeCategoriesProvider);
+    ref.invalidate(allTransactionsProvider);
+    ref.invalidate(allBudgetsProvider);
+    ref.invalidate(allObjectivesProvider);
+    ref.invalidate(activeRecurringProvider);
+    ref.invalidate(themeConfigProvider);
+    ref.invalidate(displayCurrencyProvider);
+    ref.invalidate(favoriteCurrenciesProvider);
+    ref.invalidate(totalBalanceProvider);
+    if (!mounted) return;
+    setState(() {
+      _resetBusy = false;
+      _demoMode = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('All Budgetly data has been reset.')),
+    );
+    context.go('/onboarding');
   }
 
   Future<void> _toggleNotifications(bool value) async {
@@ -368,10 +508,133 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.invalidate(themeConfigProvider);
   }
 
+  Future<String?> _askForPin({required String title}) async {
+    final first = TextEditingController();
+    final second = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: first,
+                autofocus: true,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                decoration: const InputDecoration(
+                  labelText: 'PIN',
+                  counterText: '',
+                ),
+                validator: (value) {
+                  if (value == null || value.length < 4) {
+                    return 'Use at least 4 digits';
+                  }
+                  if (int.tryParse(value) == null) return 'Digits only';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: second,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm PIN',
+                  counterText: '',
+                ),
+                validator: (value) =>
+                    value == first.text ? null : 'PINs do not match',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(context, first.text);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    first.dispose();
+    second.dispose();
+    return result;
+  }
+
+  Future<void> _setPin({bool changing = false}) async {
+    final pin = await _askForPin(title: changing ? 'Change PIN' : 'Create PIN');
+    if (pin == null) return;
+    setState(() => _securityBusy = true);
+    await ref.read(appLockControllerProvider).setPin(pin);
+    if (mounted) setState(() => _securityBusy = false);
+  }
+
+  Future<void> _disableLock() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Disable app lock?'),
+        content: const Text('Budgetly will open without a PIN or biometrics.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _securityBusy = true);
+    await ref.read(appLockControllerProvider).disable();
+    if (mounted) setState(() => _securityBusy = false);
+  }
+
+  Future<void> _toggleBiometrics(bool enabled) async {
+    setState(() => _securityBusy = true);
+    final ok = await ref
+        .read(appLockControllerProvider)
+        .setBiometricsEnabled(enabled);
+    if (mounted) {
+      setState(() => _securityBusy = false);
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Biometric unlock is not available or was cancelled'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _setLockTimeout(int? seconds) async {
+    if (seconds == null) return;
+    await ref.read(appLockControllerProvider).setLockTimeoutSeconds(seconds);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final walletsAsync = ref.watch(activeWalletsProvider);
+    final lockState = ref.watch(appLockStateProvider);
 
     if (_isLoading) {
       return Scaffold(
@@ -385,6 +648,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_demoMode) ...[
+            Card(
+              color: theme.colorScheme.errorContainer,
+              child: ListTile(
+                leading: Icon(
+                  Icons.warning_amber_rounded,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+                title: Text(
+                  'Demo mode is active',
+                  style: TextStyle(
+                    color: theme.colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                subtitle: Text(
+                  'You are viewing sample demo data. Reset everything to start fresh with real data.',
+                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           _section(theme, 'Notifications', [
             SwitchListTile(
               secondary: Icon(
@@ -396,6 +682,67 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: _notifications,
               onChanged: _toggleNotifications,
             ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Privacy & Security', [
+            SwitchListTile(
+              secondary: Icon(
+                Icons.lock_outline,
+                color: lockState.isEnabled ? theme.colorScheme.primary : null,
+              ),
+              title: const Text('PIN Lock'),
+              subtitle: Text(
+                lockState.isEnabled
+                    ? 'Require a PIN when opening Budgetly'
+                    : 'Protect Budgetly with a PIN',
+              ),
+              value: lockState.isEnabled,
+              onChanged: _securityBusy
+                  ? null
+                  : (value) => value ? _setPin() : _disableLock(),
+            ),
+            if (lockState.isEnabled) ...[
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.pin_outlined),
+                title: const Text('Change PIN'),
+                subtitle: const Text('Update your Budgetly unlock PIN'),
+                onTap: _securityBusy ? null : () => _setPin(changing: true),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: ModernSelectionField<int>(
+                  label: 'Lock Timeout',
+                  value: lockState.lockTimeoutSeconds,
+                  leadingIcon: Icons.lock_clock_outlined,
+                  searchEnabled: false,
+                  items: _lockTimeoutOptions,
+                  onChanged: (value) {
+                    if (!_securityBusy) _setLockTimeout(value);
+                  },
+                ),
+              ),
+              const Divider(height: 1),
+              SwitchListTile(
+                secondary: Icon(
+                  Icons.fingerprint,
+                  color: lockState.biometricsEnabled
+                      ? theme.colorScheme.primary
+                      : null,
+                ),
+                title: const Text('Biometric Unlock'),
+                subtitle: Text(
+                  lockState.biometricsAvailable
+                      ? 'Use fingerprint, face, or device biometrics like Cashew'
+                      : 'No enrolled biometrics found on this device',
+                ),
+                value: lockState.biometricsEnabled,
+                onChanged: _securityBusy || !lockState.biometricsAvailable
+                    ? null
+                    : _toggleBiometrics,
+              ),
+            ],
           ]),
           const SizedBox(height: 8),
           _section(theme, 'Account Defaults', [
@@ -665,6 +1012,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: Icon(Icons.info_outline),
               title: Text('Version'),
               subtitle: Text('1.0.0'),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Danger Zone', [
+            ListTile(
+              leading: Icon(
+                Icons.delete_forever_outlined,
+                color: theme.colorScheme.error,
+              ),
+              title: const Text('Reset Everything'),
+              subtitle: const Text(
+                'Erase all Budgetly data and settings after double confirmation',
+              ),
+              trailing: _resetBusy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _resetBusy ? null : _resetEverything,
             ),
           ]),
         ],
