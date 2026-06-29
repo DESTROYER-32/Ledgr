@@ -12,7 +12,6 @@ No known critical issues remain after the latest fix pass.
 | Post-frame callback after disposal | `main.dart` | 47-51 | `ref.read()` after widget disposed throws |
 | Database connection never closed | `main.dart` | 17-24 | Resource leak — `overrideWithValue` skips `onDispose` |
 | `GoRouter` recreated on every invalidation | `app_router.dart` | 39-284 | Loses all navigation state when any provider changes |
-| Budget calc always excludes debt/credit/income | `budget_repository.dart` | 140-152 | `type.equals('expense')` unconditionally applied before `includeIncome` check — logic broken |
 | Historical rates silently use today's rates | `exchange_rate_service.dart` | 183-192 | `fetchRates()` saves under today's key but returns for requested `onDate` |
 | Missing currency silently returns 1.0 | `exchange_rate_service.dart` | 192 | Unknown currency treated as equal to USD — financial error |
 | String-encoded family keys with `DateTime.parse` | `providers.dart` | 300-335 | `key.split(',')` crashes on malformed keys |
@@ -37,8 +36,6 @@ No known critical issues remain after the latest fix pass.
 | Category colors exhaust at 12 | `app_theme.dart` | 189-202 | Categories 1 and 13 share the same color |
 | Hardcoded `DateTime(2030)` in DatePickers | `transaction_form_screen.dart`, `transfer_form_screen.dart` | 469,147 | Y2K-style bug — expires in 2030 |
 | `FutureBuilder` nested in Riverpod `Consumer` | `dashboard_screen.dart` | 438-500,604-648,876-926 | New Future on every rebuild |
-| `intl` decimal digits hardcoded to 2 for all currencies | `money_utils.dart` | 12,23 | JPY shows `¥1.00` instead of `¥1`, BHD shows wrong values |
-| `formatCompact` uses English-centric abbreviations | `money_utils.dart` | 34,37 | "M"/"K" hardcoded regardless of locale |
 | `monthEnd` uses day-0 hack | `money_utils.dart` | 88-89 | `DateTime(year, month+1, 0)` is non-obvious |
 | TOCTOU race in settings upsert | `settings_repository.dart` | 17-27 | Race between select and insert |
 | `watchActive().first` wasteful Stream subscriptions | `budget_detail_screen.dart` | 47,150,176-177 | Should use Future-based getters instead |

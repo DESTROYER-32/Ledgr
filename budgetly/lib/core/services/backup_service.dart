@@ -298,9 +298,17 @@ class BackupService {
   }
 
   String _insertSql(String table, Map<String, dynamic> row) {
-    final columns = row.keys.map((column) => '"$column"').join(', ');
+    final columns = row.keys.map(_quoteIdentifier).join(', ');
     final values = row.values.map(_sqlLiteral).join(', ');
-    return 'INSERT OR REPLACE INTO $table ($columns) VALUES ($values)';
+    return 'INSERT OR REPLACE INTO ${_quoteIdentifier(table)} ($columns) VALUES ($values)';
+  }
+
+  String _quoteIdentifier(String identifier) {
+    final valid = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(identifier);
+    if (!valid) {
+      throw FormatException('Invalid backup column or table name: $identifier');
+    }
+    return '"$identifier"';
   }
 
   Map<String, dynamic> _normalizeRow(String table, Map<String, dynamic> row) {

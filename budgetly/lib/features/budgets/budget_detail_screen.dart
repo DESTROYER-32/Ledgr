@@ -43,7 +43,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
       if (mounted) context.pop();
       return;
     }
-    _currentStart ??= budget.periodStart;
+    _currentStart = budget.periodStart;
     final limits = await repo.watchLimits(budget.id).first;
     final txRepo = ref.read(transactionRepositoryProvider);
     final totalPlanned = limits.isNotEmpty
@@ -439,11 +439,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             Row(
               children: [
                 Icon(
-                  increased
-                      ? (isIncome ? Icons.arrow_upward : Icons.arrow_upward)
-                      : (isIncome
-                            ? Icons.arrow_downward
-                            : Icons.arrow_downward),
+                  increased ? Icons.arrow_upward : Icons.arrow_downward,
                   size: 20,
                   color: isIncome
                       ? (increased ? AppColors.income : AppColors.expense)
