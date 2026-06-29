@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/widgets/empty_state.dart';
 
@@ -20,77 +21,94 @@ class AssociatedTitlesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: Future.wait([
-          ref.read(associatedTitleRepositoryProvider).watchAll().first,
-          ref.read(categoryRepositoryProvider).watchActive().first,
-        ]),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final titles = snapshot.data![0] as List;
-          final categories = snapshot.data![1] as List;
+      body:
+          FutureBuilder<
+            ({List<AssociatedTitle> titles, List<Category> categories})
+          >(
+            future: _load(ref),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('${snapshot.error}'));
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final titles = snapshot.data!.titles;
+              final categories = snapshot.data!.categories;
 
-          if (titles.isEmpty) {
-            return EmptyState(
-              icon: Icons.auto_awesome,
-              title: 'No Smart Labels',
-              subtitle:
-                  'Auto-categorize transactions by keywords.',
-              actionLabel: 'Add Label',
-              onAction: () => context.push('/smart-labels/new'),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {},
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: titles.length,
-              itemBuilder: (context, index) {
-                final t = titles[index] as dynamic;
-                final cat = categories.where(
-                    (c) => (c as dynamic).id == t.categoryId).firstOrNull;
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  child: ListTile(
-                    leading: Icon(
-                      t.exactMatch
-                          ? Icons.text_fields
-                          : Icons.search,
-                      color: cat != null && (cat as dynamic).color != null
-                          ? Color((cat as dynamic).color!)
-                          : null,
-                    ),
-                    title: Text('"${t.title}"'),
-                    subtitle: Text(
-                        '${t.exactMatch ? 'Exact match' : 'Contains'} \u2192 ${cat != null ? (cat as dynamic).name : 'Deleted'}'),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (v) async {
-                        final repo =
-                            ref.read(associatedTitleRepositoryProvider);
-                        if (v == 'edit') {
-                          if (context.mounted) {
-                            context.push('/smart-labels/${t.id}');
-                          }
-                        } else if (v == 'delete') {
-                          await repo.delete(t.id);
-                        }
-                      },
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(
-                            value: 'edit', child: Text('Edit')),
-                        const PopupMenuItem(
-                            value: 'delete', child: Text('Delete')),
-                      ],
-                    ),
-                  ),
+              if (titles.isEmpty) {
+                return EmptyState(
+                  icon: Icons.auto_awesome,
+                  title: 'No Smart Labels',
+                  subtitle: 'Auto-categorize transactions by keywords.',
+                  actionLabel: 'Add Label',
+                  onAction: () => context.push('/smart-labels/new'),
                 );
-              },
-            ),
-          );
-        },
-      ),
+              }
+              return RefreshIndicator(
+                onRefresh: () async {},
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: titles.length,
+                  itemBuilder: (context, index) {
+                    final title = titles[index];
+                    final category = categories
+                        .where((c) => c.id == title.categoryId)
+                        .firstOrNull;
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      child: ListTile(
+                        leading: Icon(
+                          title.exactMatch ? Icons.text_fields : Icons.search,
+                          color: category?.color != null
+                              ? Color(category!.color!)
+                              : null,
+                        ),
+                        title: Text('"${title.title}"'),
+                        subtitle: Text(
+                          '${title.exactMatch ? 'Exact match' : 'Contains'} → ${category?.name ?? 'Deleted'}',
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) async {
+                            final repo = ref.read(
+                              associatedTitleRepositoryProvider,
+                            );
+                            if (value == 'edit') {
+                              if (context.mounted) {
+                                context.push('/smart-labels/${title.id}');
+                              }
+                            } else if (value == 'delete') {
+                              await repo.delete(title.id);
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+    );
+  }
+
+  Future<({List<AssociatedTitle> titles, List<Category> categories})> _load(
+    WidgetRef ref,
+  ) async {
+    final results = await Future.wait([
+      ref.read(associatedTitleRepositoryProvider).watchAll().first,
+      ref.read(categoryRepositoryProvider).watchActive().first,
+    ]);
+    return (
+      titles: results[0] as List<AssociatedTitle>,
+      categories: results[1] as List<Category>,
     );
   }
 }

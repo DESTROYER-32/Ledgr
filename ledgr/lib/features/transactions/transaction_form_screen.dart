@@ -486,7 +486,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   context: context,
                   initialDate: _date,
                   firstDate: DateTime(2020),
-                  lastDate: DateTime(2030),
+                  lastDate: DateTime.now().add(const Duration(days: 36500)),
                 );
                 if (picked != null) {
                   setState(() => _date = picked);

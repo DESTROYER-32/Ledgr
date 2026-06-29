@@ -12,7 +12,12 @@ import 'features/security/app_lock_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await NotificationService.init();
+  try {
+    await NotificationService.init();
+  } catch (_) {
+    // Notifications are optional; startup should continue if the platform
+    // plugin is unavailable or initialization fails.
+  }
 
   final db = AppDatabase();
   final settingsRepo = SettingsRepository(db);

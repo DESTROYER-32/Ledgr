@@ -7,6 +7,7 @@ class AmountField extends StatelessWidget {
   final String? label;
   final String currencySymbol;
   final bool autofocus;
+  final String? Function(String?)? validator;
 
   const AmountField({
     super.key,
@@ -14,14 +15,16 @@ class AmountField extends StatelessWidget {
     this.label = 'Amount',
     this.currencySymbol = MoneyUtils.defaultCurrencyCode,
     this.autofocus = false,
+    this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
-    final symbol = CurrencyUtils.symbolFor(currencySymbol) ?? currencySymbol;
-    return TextField(
+    final symbol = CurrencyUtils.symbolFor(currencySymbol);
+    return TextFormField(
       controller: controller,
       autofocus: autofocus,
+      validator: validator,
       decoration: InputDecoration(
         labelText: label,
         prefixText: '$symbol ',

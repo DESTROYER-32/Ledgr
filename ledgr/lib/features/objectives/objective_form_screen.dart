@@ -27,6 +27,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
   String _currencyCode = MoneyUtils.defaultCurrencyCode;
   DateTime? _deadline;
   int _color = 0xFF43A047;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -191,8 +192,13 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: _save,
-              child: Text(isEdit ? 'Update' : 'Create'),
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isEdit ? 'Update' : 'Create'),
             ),
           ],
         ),
@@ -201,13 +207,17 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
+    final amountValue = double.tryParse(_amountController.text.trim());
+    if (amountValue == null || amountValue < 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter a valid amount.')));
+      return;
+    }
+    setState(() => _saving = true);
     final repo = ref.read(objectiveRepositoryProvider);
-    final amount =
-        (_amountController.text.isEmpty
-                ? 0.0
-                : double.parse(_amountController.text) * 100)
-            .round();
+    final amount = MoneyUtils.toMinor(amountValue, currencyCode: _currencyCode);
     final entry = ObjectivesCompanion.insert(
       name: _nameController.text,
       type: _type,
@@ -216,11 +226,20 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
       deadline: _deadline != null ? Value(_deadline!) : const Value(null),
       color: Value(_color),
     );
-    if (widget.objectiveId != null) {
-      await repo.update(widget.objectiveId!, entry);
-    } else {
-      await repo.insert(entry);
+    try {
+      if (widget.objectiveId != null) {
+        await repo.update(widget.objectiveId!, entry);
+      } else {
+        await repo.insert(entry);
+      }
+      if (mounted) context.pop();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save objective.')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    if (mounted) context.pop();
   }
 }
