@@ -7,12 +7,17 @@ class MoneyUtils {
 
   static const String defaultCurrencyCode = 'USD';
 
-  static String format(int amountMinor, {String? currencyCode}) {
+  static String format(
+    int amountMinor, {
+    String? currencyCode,
+    String? locale,
+  }) {
     final code = currencyCode ?? defaultCurrencyCode;
     final digits = decimalDigitsFor(code);
     final amount = amountMinor / math.pow(10, digits);
     try {
       final format = NumberFormat.simpleCurrency(
+        locale: locale,
         name: code,
         decimalDigits: digits,
       );
@@ -22,11 +27,18 @@ class MoneyUtils {
     }
   }
 
-  static String formatCompact(int amountMinor, {String? currencyCode}) {
+  static String formatCompact(
+    int amountMinor, {
+    String? currencyCode,
+    String? locale,
+  }) {
     final code = currencyCode ?? defaultCurrencyCode;
     final digits = decimalDigitsFor(code);
     final amount = amountMinor / math.pow(10, digits);
-    return NumberFormat.compactSimpleCurrency(name: code).format(amount);
+    return NumberFormat.compactSimpleCurrency(
+      locale: locale,
+      name: code,
+    ).format(amount);
   }
 
   static int decimalDigitsFor(String code) {
@@ -58,9 +70,15 @@ class MoneyUtils {
     return (amountMinor * toRate * (1 / fromRate)).round();
   }
 
-  static int toMinor(double amount) => (amount * 100).round();
+  static int toMinor(double amount, {String? currencyCode}) {
+    final digits = decimalDigitsFor(currencyCode ?? defaultCurrencyCode);
+    return (amount * math.pow(10, digits)).round();
+  }
 
-  static double toMajor(int minor) => minor / 100;
+  static double toMajor(int minor, {String? currencyCode}) {
+    final digits = decimalDigitsFor(currencyCode ?? defaultCurrencyCode);
+    return minor / math.pow(10, digits);
+  }
 
   static String formatDate(DateTime date) => AppDateUtils.formatDate(date);
 

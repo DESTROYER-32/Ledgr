@@ -42,10 +42,20 @@ void main() {
       expect(MoneyUtils.toMinor(0), 0);
     });
 
+    test('toMinor respects currency decimal digits', () {
+      expect(MoneyUtils.toMinor(1234, currencyCode: 'JPY'), 1234);
+      expect(MoneyUtils.toMinor(1.234, currencyCode: 'BHD'), 1234);
+    });
+
     test('toMajor converts cents to dollars', () {
       expect(MoneyUtils.toMajor(1050), 10.50);
       expect(MoneyUtils.toMajor(99), 0.99);
       expect(MoneyUtils.toMajor(0), 0.0);
+    });
+
+    test('toMajor respects currency decimal digits', () {
+      expect(MoneyUtils.toMajor(1234, currencyCode: 'JPY'), 1234);
+      expect(MoneyUtils.toMajor(1234, currencyCode: 'BHD'), 1.234);
     });
 
     test('formatDate formats date correctly', () {
