@@ -137,13 +137,20 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 .toList(),
             onChanged: (frequency) async {
               if (frequency == null) return;
-              await ref
-                  .read(backupServiceProvider)
-                  .saveScheduleConfig(
-                    frequency: frequency,
-                    slotCount: config.slotCount,
-                  );
-              _reload();
+              try {
+                await ref
+                    .read(backupServiceProvider)
+                    .saveScheduleConfig(
+                      frequency: frequency,
+                      slotCount: config.slotCount,
+                    );
+                _reload();
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to save backup schedule: $e')),
+                );
+              }
             },
           ),
         ),
@@ -160,13 +167,20 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               divisions: BackupService.maxSlots - BackupService.minSlots,
               label: config.slotCount.toString(),
               onChanged: (value) async {
-                await ref
-                    .read(backupServiceProvider)
-                    .saveScheduleConfig(
-                      frequency: config.frequency,
-                      slotCount: value.round(),
-                    );
-                _reload();
+                try {
+                  await ref
+                      .read(backupServiceProvider)
+                      .saveScheduleConfig(
+                        frequency: config.frequency,
+                        slotCount: value.round(),
+                      );
+                  _reload();
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to save backup slots: $e')),
+                  );
+                }
               },
             ),
           ),

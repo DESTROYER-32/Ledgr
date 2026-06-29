@@ -14,6 +14,11 @@ class FakeWalletRepository implements WalletRepository {
   Future<int> balanceForWallet(int walletId) async => balance;
 
   @override
+  Future<Map<int, int>> balancesForWallets(Iterable<Wallet> wallets) async => {
+    for (final wallet in wallets) wallet.id: balance,
+  };
+
+  @override
   Future<List<Wallet>> getAll() async => [wallet];
 
   @override
