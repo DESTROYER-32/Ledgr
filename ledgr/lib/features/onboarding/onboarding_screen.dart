@@ -214,7 +214,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_currentPage == _steps.length - 1) {
       _completeOnboarding();
     } else {
-      setState(() {});
       _next();
     }
   }

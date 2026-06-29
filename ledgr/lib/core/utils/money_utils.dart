@@ -72,7 +72,17 @@ class MoneyUtils {
 
   static int toMinor(double amount, {String? currencyCode}) {
     final digits = decimalDigitsFor(currencyCode ?? defaultCurrencyCode);
-    return (amount * math.pow(10, digits)).round();
+    final fixed = amount.toStringAsFixed(digits);
+    final negative = fixed.startsWith('-');
+    final normalized = negative ? fixed.substring(1) : fixed;
+    final parts = normalized.split('.');
+    final major = int.tryParse(parts[0]) ?? 0;
+    final fraction = parts.length > 1
+        ? parts[1].padRight(digits, '0')
+        : ''.padRight(digits, '0');
+    final minor =
+        major * math.pow(10, digits).toInt() + (int.tryParse(fraction) ?? 0);
+    return negative ? -minor : minor;
   }
 
   static double toMajor(int minor, {String? currencyCode}) {
