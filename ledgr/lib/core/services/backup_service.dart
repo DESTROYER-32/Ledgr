@@ -83,6 +83,7 @@ class BackupService {
     'objectives',
     'settings',
     'transactions',
+    'transaction_budgets',
     'budget_category_limits',
     'budget_wallets',
     'recurring_transactions',

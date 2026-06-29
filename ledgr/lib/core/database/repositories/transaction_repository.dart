@@ -50,11 +50,62 @@ class TransactionRepository {
       (_db.transactions.select()..where((t) => t.id.equals(id)))
           .getSingleOrNull();
 
-  Future<void> insert(TransactionsCompanion entry) =>
+  Future<int> insert(TransactionsCompanion entry) =>
       _db.into(_db.transactions).insert(entry);
+
+  Future<int> insertWithBudgets(
+    TransactionsCompanion entry,
+    Iterable<int> budgetIds,
+  ) async {
+    return _db.transaction(() async {
+      final id = await insert(entry);
+      await setTransactionBudgets(id, budgetIds);
+      return id;
+    });
+  }
 
   Future<void> update(int id, TransactionsCompanion entry) =>
       (_db.transactions.update()..where((t) => t.id.equals(id))).write(entry);
+
+  Future<void> updateWithBudgets(
+    int id,
+    TransactionsCompanion entry,
+    Iterable<int> budgetIds,
+  ) async {
+    await _db.transaction(() async {
+      await update(id, entry);
+      await setTransactionBudgets(id, budgetIds);
+    });
+  }
+
+  Future<Set<int>> getBudgetIdsForTransaction(int transactionId) async {
+    final rows =
+        await (_db.transactionBudgets.select()
+              ..where((tb) => tb.transactionId.equals(transactionId)))
+            .get();
+    return rows.map((row) => row.budgetId).toSet();
+  }
+
+  Future<void> setTransactionBudgets(
+    int transactionId,
+    Iterable<int> budgetIds,
+  ) async {
+    final uniqueIds = budgetIds.toSet();
+    await (_db.transactionBudgets.delete()
+          ..where((tb) => tb.transactionId.equals(transactionId)))
+        .go();
+    for (final budgetId in uniqueIds) {
+      await _db
+          .into(_db.transactionBudgets)
+          .insert(
+            TransactionBudgetsCompanion.insert(
+              transactionId: transactionId,
+              budgetId: budgetId,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    }
+  }
 
   Future<void> delete(int id) async {
     final t = await getById(id);
@@ -80,6 +131,9 @@ class TransactionRepository {
             ),
           );
     }
+    await (_db.transactionBudgets.delete()
+          ..where((tb) => tb.transactionId.equals(id)))
+        .go();
     await (_db.transactions.delete()..where((t) => t.id.equals(id))).go();
   }
 
@@ -181,6 +235,65 @@ class TransactionRepository {
               (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
             ]))
           .get();
+
+  Future<List<Transaction>> getByBudget({
+    required int budgetId,
+    required DateTime start,
+    required DateTime end,
+    required String type,
+  }) async {
+    final rows = await _db
+        .customSelect(
+          '''
+          SELECT t.*
+          FROM transactions t
+          INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
+          WHERE tb.budget_id = ?
+            AND t.date >= ?
+            AND t.date <= ?
+            AND t.type = ?
+          ORDER BY t.date DESC
+          ''',
+          readsFrom: {_db.transactions, _db.transactionBudgets},
+          variables: [
+            Variable.withInt(budgetId),
+            Variable.withDateTime(start),
+            Variable.withDateTime(end),
+            Variable.withString(type),
+          ],
+        )
+        .get();
+    return rows.map((row) => _db.transactions.map(row.data)).toList();
+  }
+
+  Future<int> totalByBudget({
+    required int budgetId,
+    required DateTime start,
+    required DateTime end,
+    required String type,
+  }) async {
+    final row = await _db
+        .customSelect(
+          '''
+          SELECT COALESCE(SUM(t.amount_minor), 0) AS total
+          FROM transactions t
+          INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
+          WHERE tb.budget_id = ?
+            AND t.date >= ?
+            AND t.date <= ?
+            AND t.type = ?
+          ''',
+          readsFrom: {_db.transactions, _db.transactionBudgets},
+          variables: [
+            Variable.withInt(budgetId),
+            Variable.withDateTime(start),
+            Variable.withDateTime(end),
+            Variable.withString(type),
+          ],
+        )
+        .getSingle();
+    return row.data['total'] as int;
+  }
 
   Future<int> totalByObjective(int objectiveId) async {
     final row = await _db
