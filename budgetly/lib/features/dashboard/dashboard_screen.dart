@@ -802,23 +802,12 @@ class DashboardScreen extends ConsumerWidget {
     bool isGoal,
   ) async {
     if (budget.specificMode) {
-      final txns = await txRepo.search(
-        startDate: budget.periodStart,
-        endDate: budget.periodEnd,
+      return txRepo.totalByBudget(
+        budgetId: budget.id,
+        start: budget.periodStart,
+        end: budget.periodEnd,
         type: isGoal ? 'income' : 'expense',
       );
-      return txns
-          .where((t) {
-            if (t.budgetFks == null) return false;
-            final fks = t.budgetFks!
-                .split(',')
-                .map((s) => int.tryParse(s.trim()))
-                .where((n) => n != null)
-                .cast<int>()
-                .toList();
-            return fks.contains(budget.id);
-          })
-          .fold<int>(0, (sum, t) => sum + t.amountMinor);
     }
     return isGoal
         ? txRepo.totalIncome(budget.periodStart, budget.periodEnd)

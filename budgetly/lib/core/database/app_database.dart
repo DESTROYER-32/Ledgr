@@ -14,6 +14,7 @@ part 'app_database.g.dart';
     Wallets,
     Categories,
     Transactions,
+    TransactionBudgets,
     Budgets,
     BudgetCategoryLimits,
     BudgetWallets,
@@ -57,6 +58,12 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_transactions_special_type ON transactions(special_type)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transaction_budgets_transaction_id ON transaction_budgets(transaction_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transaction_budgets_budget_id ON transaction_budgets(budget_id)',
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_budget_limits_budget_id ON budget_category_limits(budget_id)',

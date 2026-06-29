@@ -89,6 +89,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final repo = ref.read(transactionRepositoryProvider);
     final t = await repo.getById(widget.transactionId!);
     if (t != null && mounted) {
+      final budgetIds = await repo.getBudgetIdsForTransaction(t.id);
+      if (!mounted) return;
       setState(() {
         _type = t.type;
         _specialType = t.specialType;
@@ -99,14 +101,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _categoryId = t.categoryId;
         _objectiveId = t.objectiveFk;
         _currencyCode = t.currencyCode;
-        if (t.budgetFks != null && t.budgetFks!.isNotEmpty) {
-          _budgetIds = t.budgetFks!
-              .split(',')
-              .map((s) => int.tryParse(s.trim()))
-              .where((n) => n != null)
-              .cast<int>()
-              .toSet();
-        }
+        _budgetIds = budgetIds;
         _date = t.date;
         _titleController.text = t.title ?? '';
         _noteController.text = t.note ?? '';
@@ -225,18 +220,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ),
       note: Value(_noteController.text.isEmpty ? null : _noteController.text),
       tags: Value(_tagsController.text.isEmpty ? null : _tagsController.text),
-      budgetFks: _budgetIds.isNotEmpty
-          ? Value(_budgetIds.join(','))
-          : const Value(null),
       objectiveFk: _objectiveId != null
           ? Value(_objectiveId!)
           : const Value(null),
     );
 
     if (_isEditing) {
-      await repo.update(widget.transactionId!, companion);
+      await repo.updateWithBudgets(
+        widget.transactionId!,
+        companion,
+        _budgetIds,
+      );
     } else {
-      await repo.insert(
+      await repo.insertWithBudgets(
         TransactionsCompanion.insert(
           type: _type,
           specialType: Value(_specialType),
@@ -256,13 +252,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           tags: Value(
             _tagsController.text.isEmpty ? null : _tagsController.text,
           ),
-          budgetFks: _budgetIds.isNotEmpty
-              ? Value(_budgetIds.join(','))
-              : const Value(null),
           objectiveFk: _objectiveId != null
               ? Value(_objectiveId!)
               : const Value(null),
         ),
+        _budgetIds,
       );
     }
 

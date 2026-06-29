@@ -28,6 +28,9 @@ class BudgetRepository {
       (_db.budgets.update()..where((b) => b.id.equals(id))).write(entry);
 
   Future<void> delete(int id) async {
+    await (_db.transactionBudgets.delete()
+          ..where((tb) => tb.budgetId.equals(id)))
+        .go();
     await (_db.budgetCategoryLimits.delete()
           ..where((l) => l.budgetId.equals(id)))
         .go();
@@ -158,15 +161,46 @@ class BudgetRepository {
       q.where((t) => t.specialType.equals('none') | t.specialType.isNull());
     }
 
-    var rows = await q.get();
     if (budget.specificMode) {
-      final budgetIdStr = budget.id.toString();
-      rows = rows.where((t) {
-        if (t.budgetFks == null) return false;
-        final ids = t.budgetFks!.split(',').map((s) => s.trim());
-        return ids.contains(budgetIdStr);
-      }).toList();
+      final typeClause = budget.includeIncome
+          ? "(t.type = 'expense' OR t.type = 'income')"
+          : "t.type = 'expense'";
+      final specialClause = budget.includeDebtCredit
+          ? '1 = 1'
+          : "(t.special_type = 'none' OR t.special_type IS NULL)";
+      final walletClause = wallets.isEmpty
+          ? '1 = 1'
+          : 't.wallet_id IN (${List.filled(wallets.length, '?').join(', ')})';
+      final rows = await _db
+          .customSelect(
+            '''
+            SELECT t.category_id, SUM(t.amount_minor) AS total
+            FROM transactions t
+            INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
+            WHERE tb.budget_id = ?
+              AND t.category_id IS NOT NULL
+              AND t.date >= ?
+              AND t.date <= ?
+              AND $typeClause
+              AND $specialClause
+              AND $walletClause
+            GROUP BY t.category_id
+            ''',
+            readsFrom: {_db.transactions, _db.transactionBudgets},
+            variables: [
+              Variable.withInt(budget.id),
+              Variable.withDateTime(start),
+              Variable.withDateTime(end),
+              ...wallets.map((w) => Variable.withInt(w.walletId)),
+            ],
+          )
+          .get();
+      return {
+        for (final row in rows)
+          row.data['category_id'] as int: row.data['total'] as int,
+      };
     }
+    final rows = await q.get();
     final map = <int, int>{};
     for (final t in rows) {
       if (t.categoryId != null) {

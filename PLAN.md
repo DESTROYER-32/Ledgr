@@ -12,7 +12,6 @@ No known high-priority issues remain after the latest fix pass.
 
 | Issue | File | Lines | Details |
 |-------|------|-------|---------|
-| Non-normalized `budgetFks` stored as JSON/text | `tables.dart` | 52-53 | Violates 1NF; should be join table |
 | Wallet-specific decimals should be currency-derived | `tables.dart` | 14 | `decimals` per-wallet allows inconsistencies |
 | AMOLED theme wasteful ColorScheme computation | `app_theme.dart` | 27-51 | Computes 30+ colors then overrides 11 |
 | `monthEnd` uses day-0 hack | `money_utils.dart` | 88-89 | `DateTime(year, month+1, 0)` is non-obvious |

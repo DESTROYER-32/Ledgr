@@ -49,8 +49,6 @@ class Transactions extends Table {
   TextColumn get note => text().nullable()();
   TextColumn get tags => text().nullable()();
   TextColumn get recurrenceRule => text().nullable()();
-  TextColumn get budgetFksExclude => text().nullable()();
-  TextColumn get budgetFks => text().nullable()();
   IntColumn get objectiveFk =>
       integer().references(Objectives, #id).nullable()();
   TextColumn get attachmentPath => text().nullable()();
@@ -85,6 +83,18 @@ class Budgets extends Table {
   TextColumn get recurrenceRule => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DataClassName('TransactionBudget')
+class TransactionBudgets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get transactionId => integer().references(Transactions, #id)();
+  IntColumn get budgetId => integer().references(Budgets, #id)();
+
+  @override
+  List<Set<Column<Object>>>? get uniqueKeys => [
+    {transactionId, budgetId},
+  ];
 }
 
 @DataClassName('BudgetCategoryLimit')
