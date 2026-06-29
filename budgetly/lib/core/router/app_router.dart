@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -35,6 +36,19 @@ import '../../features/credit_debt/credit_debt_screen.dart';
 import '../widgets/app_scaffold.dart';
 
 final initialRouteProvider = Provider<String>((ref) => '/');
+
+int? _idParam(GoRouterState state) =>
+    int.tryParse(state.pathParameters['id'] ?? '');
+
+Map<String, dynamic>? _extraMap(GoRouterState state) {
+  final extra = state.extra;
+  return extra is Map<String, dynamic> ? extra : null;
+}
+
+Widget _invalidRoute(String message) => Scaffold(
+  appBar: AppBar(title: const Text('Invalid link')),
+  body: Center(child: Text(message)),
+);
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -83,15 +97,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/budgets/:id',
         name: 'budget-detail',
-        builder: (context, state) => BudgetDetailScreen(
-          budgetId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid budget id.')
+              : BudgetDetailScreen(budgetId: id);
+        },
       ),
       GoRoute(
         path: '/budgets/:id/edit',
         name: 'budget-edit',
-        builder: (context, state) =>
-            BudgetFormScreen(budgetId: int.parse(state.pathParameters['id']!)),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid budget id.')
+              : BudgetFormScreen(budgetId: id);
+        },
       ),
       GoRoute(
         path: '/wallets/new',
@@ -101,14 +122,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/wallets/edit/:id',
         name: 'wallet-edit',
-        builder: (context, state) =>
-            WalletFormScreen(walletId: int.parse(state.pathParameters['id']!)),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid wallet id.')
+              : WalletFormScreen(walletId: id);
+        },
       ),
       GoRoute(
         path: '/wallets/transfer',
         name: 'wallet-transfer',
         builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
+          final extra = _extraMap(state);
           return TransferFormScreen(
             fromWalletId: extra?['fromWalletId'] as int?,
           );
@@ -117,16 +142,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/wallets/:id/analytics',
         name: 'wallet-analytics',
-        builder: (context, state) => WalletAnalyticsScreen(
-          walletId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid wallet id.')
+              : WalletAnalyticsScreen(walletId: id);
+        },
       ),
       GoRoute(
         path: '/wallets/:id',
         name: 'wallet-detail',
-        builder: (context, state) => WalletDetailScreen(
-          walletId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid wallet id.')
+              : WalletDetailScreen(walletId: id);
+        },
       ),
       GoRoute(
         path: '/transactions',
@@ -143,7 +174,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/transactions/new',
         name: 'transaction-new',
         builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
+          final extra = _extraMap(state);
           return TransactionFormScreen(
             preselectedWalletId: extra?['walletId'] as int?,
             preselectedType: extra?['type'] as String?,
@@ -154,9 +185,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/transactions/:id',
         name: 'transaction-detail',
-        builder: (context, state) => TransactionFormScreen(
-          transactionId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid transaction id.')
+              : TransactionFormScreen(transactionId: id);
+        },
       ),
       GoRoute(
         path: '/categories',
@@ -167,7 +201,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/categories/new',
         name: 'category-new',
         builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
+          final extra = _extraMap(state);
           return CategoryFormScreen(
             preselectedParentId: extra?['parentId'] as int?,
           );
@@ -176,16 +210,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/categories/edit/:id',
         name: 'category-edit',
-        builder: (context, state) => CategoryFormScreen(
-          categoryId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid category id.')
+              : CategoryFormScreen(categoryId: id);
+        },
       ),
       GoRoute(
         path: '/categories/:id/transactions',
         name: 'category-transactions',
-        builder: (context, state) => CategoryTransactionsScreen(
-          categoryId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid category id.')
+              : CategoryTransactionsScreen(categoryId: id);
+        },
       ),
       GoRoute(
         path: '/search',
@@ -210,9 +250,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/recurring/:id',
         name: 'recurring-edit',
-        builder: (context, state) => RecurringFormScreen(
-          recurringId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid recurring transaction id.')
+              : RecurringFormScreen(recurringId: id);
+        },
       ),
       GoRoute(
         path: '/objectives',
@@ -227,16 +270,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/objectives/:id',
         name: 'objective-detail',
-        builder: (context, state) => ObjectiveDetailScreen(
-          objectiveId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid objective id.')
+              : ObjectiveDetailScreen(objectiveId: id);
+        },
       ),
       GoRoute(
         path: '/objectives/:id/edit',
         name: 'objective-edit',
-        builder: (context, state) => ObjectiveFormScreen(
-          objectiveId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid objective id.')
+              : ObjectiveFormScreen(objectiveId: id);
+        },
       ),
       GoRoute(
         path: '/smart-labels',
@@ -251,9 +300,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/smart-labels/:id',
         name: 'smart-label-edit',
-        builder: (context, state) => AssociatedTitleFormScreen(
-          titleId: int.parse(state.pathParameters['id']!),
-        ),
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid smart label id.')
+              : AssociatedTitleFormScreen(titleId: id);
+        },
       ),
       GoRoute(
         path: '/activity',

@@ -13,6 +13,9 @@ class AppLockScreen extends ConsumerStatefulWidget {
 class _AppLockScreenState extends ConsumerState<AppLockScreen> {
   final _controller = TextEditingController();
   String? _error;
+  bool _verifying = false;
+  int _failedAttempts = 0;
+  DateTime? _lockedUntil;
 
   @override
   void initState() {
@@ -31,15 +34,47 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
   }
 
   Future<void> _verify() async {
+    final now = DateTime.now();
+    final lockedUntil = _lockedUntil;
+    if (lockedUntil != null && now.isBefore(lockedUntil)) {
+      setState(() {
+        _error =
+            'Too many attempts. Try again in ${lockedUntil.difference(now).inSeconds + 1}s';
+      });
+      return;
+    }
+    if (_verifying) return;
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
     final ok = await ref
         .read(appLockControllerProvider)
         .verifyPin(_controller.text);
-    if (!ok && mounted) {
+    if (!mounted) return;
+    if (ok) {
       setState(() {
-        _error = 'Incorrect PIN';
-        _controller.clear();
+        _verifying = false;
+        _failedAttempts = 0;
+        _lockedUntil = null;
       });
+      return;
     }
+
+    _failedAttempts++;
+    if (_failedAttempts >= 5) {
+      final delaySeconds = (_failedAttempts - 4).clamp(1, 6) * 5;
+      _lockedUntil = DateTime.now().add(Duration(seconds: delaySeconds));
+    }
+
+    final until = _lockedUntil;
+    setState(() {
+      _verifying = false;
+      _error = until == null
+          ? 'Incorrect PIN'
+          : 'Too many attempts. Try again in ${until.difference(DateTime.now()).inSeconds + 1}s';
+      _controller.clear();
+    });
   }
 
   @override
@@ -93,8 +128,13 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: _verify,
-                      child: const Text('Unlock'),
+                      onPressed: _verifying ? null : _verify,
+                      child: _verifying
+                          ? const SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Unlock'),
                     ),
                   ),
                   if (state.biometricsEnabled) ...[

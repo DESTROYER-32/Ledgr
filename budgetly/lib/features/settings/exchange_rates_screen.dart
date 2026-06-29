@@ -370,7 +370,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
 
   void _showAddCurrencyDialog() {
     final controller = TextEditingController();
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Add Currency'),
@@ -400,6 +400,6 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
           ),
         ],
       ),
-    );
+    ).whenComplete(controller.dispose);
   }
 }

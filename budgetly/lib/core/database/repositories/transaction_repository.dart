@@ -109,7 +109,12 @@ class TransactionRepository {
     if (type != null) q.where((t) => t.type.equals(type));
     if (specialType != null) q.where((t) => t.specialType.equals(specialType));
     if (query != null && query.isNotEmpty) {
-      q.where((t) => t.title.like('%$query%') | t.note.like('%$query%'));
+      final pattern = _containsLikePattern(query);
+      q.where(
+        (t) =>
+            t.title.like(pattern, escapeChar: '\\') |
+            t.note.like(pattern, escapeChar: '\\'),
+      );
     }
     if (minAmount != null) {
       q.where((t) => t.amountMinor.isBiggerOrEqualValue(minAmount));
@@ -134,7 +139,12 @@ class TransactionRepository {
       ..where((t) => t.categoryId.isIn(categoryIds));
     final trimmed = query?.trim();
     if (trimmed != null && trimmed.isNotEmpty) {
-      q.where((t) => t.title.like('%$trimmed%') | t.note.like('%$trimmed%'));
+      final pattern = _containsLikePattern(trimmed);
+      q.where(
+        (t) =>
+            t.title.like(pattern, escapeChar: '\\') |
+            t.note.like(pattern, escapeChar: '\\'),
+      );
     }
     q
       ..orderBy([
@@ -235,4 +245,7 @@ class TransactionRepository {
               (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
             ]))
           .get();
+
+  String _containsLikePattern(String value) =>
+      '%${value.replaceAll('\\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
 }
