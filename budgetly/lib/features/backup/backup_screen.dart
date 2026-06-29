@@ -11,6 +11,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/backup_service.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -114,11 +115,24 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: DropdownButtonFormField<AutoBackupFrequency>(
-            initialValue: config.frequency,
-            decoration: const InputDecoration(labelText: 'Frequency'),
+          child: ModernSelectionField<AutoBackupFrequency>(
+            label: 'Frequency',
+            value: config.frequency,
+            leadingIcon: Icons.schedule_outlined,
+            searchEnabled: false,
             items: AutoBackupFrequency.values
-                .map((f) => DropdownMenuItem(value: f, child: Text(f.label)))
+                .map(
+                  (f) => ModernSelectionItem(
+                    value: f,
+                    title: f.label,
+                    subtitle: f == AutoBackupFrequency.off
+                        ? 'Automatic backups disabled'
+                        : 'Run ${f.label.toLowerCase()} and rotate through saved slots',
+                    icon: f == AutoBackupFrequency.off
+                        ? Icons.pause_circle_outline
+                        : Icons.event_repeat_outlined,
+                  ),
+                )
                 .toList(),
             onChanged: (frequency) async {
               if (frequency == null) return;
