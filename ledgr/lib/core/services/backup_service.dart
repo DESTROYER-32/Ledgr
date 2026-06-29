@@ -70,7 +70,7 @@ class BackupService {
 
   static const backupVersion = 1;
   static const minSlots = 1;
-  static const maxSlots = 30;
+  static const maxSlots = 5;
   static const _frequencyKey = 'auto_backup_frequency';
   static const _slotCountKey = 'auto_backup_slot_count';
   static const _lastRunKey = 'auto_backup_last_run_at';

@@ -22,6 +22,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   int? _defaultWalletId;
   bool _isLoading = true;
   bool _securityBusy = false;
+  bool _demoMode = false;
+  bool _resetBusy = false;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
   String _displayCurrency = MoneyUtils.defaultCurrencyCode;
@@ -80,6 +82,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeSeed = await repo.get('theme_seed');
     final displayCurrency = await repo.get('display_currency');
     final favoriteCurrencies = await repo.get('favorite_currencies');
+    final demoMode = await repo.get('budgetly_demo_mode');
     if (mounted) {
       setState(() {
         _notifications = notifications == 'true';
@@ -90,9 +93,118 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
         _displayCurrency = displayCurrency ?? MoneyUtils.defaultCurrencyCode;
         _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
+        _demoMode = demoMode == 'true';
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _resetEverything() async {
+    final first = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset everything?'),
+        content: const Text(
+          'This permanently deletes all accounts, transactions, budgets, objectives, categories, recurring items, settings, and demo data. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    if (first != true || !mounted) return;
+
+    final controller = TextEditingController();
+    final second = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Final confirmation'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Type RESET to permanently erase all Budgetly data.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(labelText: 'Confirmation'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(
+              context,
+              controller.text.trim().toUpperCase() == 'RESET',
+            ),
+            child: const Text('Erase everything'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (second != true || !mounted) return;
+
+    setState(() => _resetBusy = true);
+    final db = ref.read(appDatabaseProvider);
+    await db.transaction(() async {
+      await db.customStatement('PRAGMA foreign_keys = OFF');
+      for (final table in [
+        'delete_logs',
+        'associated_titles',
+        'recurring_transactions',
+        'budget_wallets',
+        'budget_category_limits',
+        'transactions',
+        'objectives',
+        'budgets',
+        'categories',
+        'wallets',
+        'settings',
+      ]) {
+        await db.customStatement('DELETE FROM $table');
+        await db.customStatement(
+          "DELETE FROM sqlite_sequence WHERE name = '$table'",
+        );
+      }
+      await db.customStatement('PRAGMA foreign_keys = ON');
+    });
+    ref.invalidate(activeWalletsProvider);
+    ref.invalidate(activeCategoriesProvider);
+    ref.invalidate(allTransactionsProvider);
+    ref.invalidate(allBudgetsProvider);
+    ref.invalidate(allObjectivesProvider);
+    ref.invalidate(activeRecurringProvider);
+    ref.invalidate(themeConfigProvider);
+    ref.invalidate(displayCurrencyProvider);
+    ref.invalidate(favoriteCurrenciesProvider);
+    ref.invalidate(totalBalanceProvider);
+    if (!mounted) return;
+    setState(() {
+      _resetBusy = false;
+      _demoMode = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('All Budgetly data has been reset.')),
+    );
+    context.go('/onboarding');
   }
 
   Future<void> _toggleNotifications(bool value) async {
@@ -536,6 +648,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_demoMode) ...[
+            Card(
+              color: theme.colorScheme.errorContainer,
+              child: ListTile(
+                leading: Icon(
+                  Icons.warning_amber_rounded,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+                title: Text(
+                  'Demo mode is active',
+                  style: TextStyle(
+                    color: theme.colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                subtitle: Text(
+                  'You are viewing sample demo data. Reset everything to start fresh with real data.',
+                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           _section(theme, 'Notifications', [
             SwitchListTile(
               secondary: Icon(
@@ -877,6 +1012,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: Icon(Icons.info_outline),
               title: Text('Version'),
               subtitle: Text('1.0.0'),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          _section(theme, 'Danger Zone', [
+            ListTile(
+              leading: Icon(
+                Icons.delete_forever_outlined,
+                color: theme.colorScheme.error,
+              ),
+              title: const Text('Reset Everything'),
+              subtitle: const Text(
+                'Erase all Budgetly data and settings after double confirmation',
+              ),
+              trailing: _resetBusy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _resetBusy ? null : _resetEverything,
             ),
           ]),
         ],

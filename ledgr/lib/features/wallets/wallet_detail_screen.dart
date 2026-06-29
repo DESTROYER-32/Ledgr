@@ -104,6 +104,11 @@ class WalletDetailScreen extends ConsumerWidget {
               final balance = balances[wallet.id] ?? wallet.initialBalanceMinor;
               final categories =
                   ref.watch(activeCategoriesProvider).valueOrNull ?? [];
+              final displayCurrency =
+                  ref.watch(displayCurrencyProvider).valueOrNull ??
+                  MoneyUtils.defaultCurrencyCode;
+              final exchangeRates =
+                  ref.watch(exchangeRatesProvider).valueOrNull ?? {};
               final categoriesById = {for (final c in categories) c.id: c};
               final analytics = _AccountAnalytics.fromTransactions(
                 wallet: wallet,
@@ -171,6 +176,8 @@ class WalletDetailScreen extends ConsumerWidget {
                       wallet: wallet,
                       analytics: analytics,
                       categoriesById: categoriesById,
+                      displayCurrency: displayCurrency,
+                      exchangeRates: exchangeRates,
                       filter: filter,
                       onChanged: (next) =>
                           ref
@@ -793,12 +800,16 @@ class _TransactionFlowList extends StatelessWidget {
   final Wallet wallet;
   final _AccountAnalytics analytics;
   final Map<int, Category> categoriesById;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
   final _AccountFilter filter;
   final ValueChanged<_AccountFilter> onChanged;
   const _TransactionFlowList({
     required this.wallet,
     required this.analytics,
     required this.categoriesById,
+    required this.displayCurrency,
+    required this.exchangeRates,
     required this.filter,
     required this.onChanged,
   });
@@ -848,6 +859,8 @@ class _TransactionFlowList extends StatelessWidget {
                       ? null
                       : categoriesById[t.categoryId],
                   overrideColor: color,
+                  displayCurrency: displayCurrency,
+                  exchangeRates: exchangeRates,
                 ),
                 if (t != transactions.last) const Divider(height: 8),
               ],
@@ -1026,10 +1039,14 @@ class _ActivityTile extends StatelessWidget {
   final Transaction transaction;
   final Category? category;
   final Color? overrideColor;
+  final String displayCurrency;
+  final Map<String, double> exchangeRates;
   const _ActivityTile({
     required this.transaction,
     this.category,
     this.overrideColor,
+    required this.displayCurrency,
+    required this.exchangeRates,
   });
 
   @override
@@ -1048,6 +1065,15 @@ class _ActivityTile extends StatelessWidget {
             ? AppColors.expense
             : (isIncome ? AppColors.income : AppColors.transfer));
     final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final originalCurrency = transaction.currencyCode;
+    final convertedAmount = MoneyUtils.convertMinor(
+      transaction.amountMinor,
+      fromCurrency: originalCurrency,
+      toCurrency: displayCurrency,
+      rates: exchangeRates,
+    );
+    final showOriginal =
+        originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
@@ -1068,9 +1094,26 @@ class _ActivityTile extends StatelessWidget {
             ? MoneyUtils.formatDateShort(transaction.date)
             : '${MoneyUtils.formatDateShort(transaction.date)} • ${category!.name}',
       ),
-      trailing: Text(
-        '$sign${MoneyUtils.format(transaction.amountMinor)}',
-        style: TextStyle(fontWeight: FontWeight.bold, color: amountColor),
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
+            style: TextStyle(fontWeight: FontWeight.bold, color: amountColor),
+          ),
+          if (showOriginal) ...[
+            const SizedBox(height: 2),
+            Text(
+              '$sign${MoneyUtils.format(transaction.amountMinor, currencyCode: originalCurrency)}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
       ),
       onTap: () => context.push('/transactions/${transaction.id}'),
     );
