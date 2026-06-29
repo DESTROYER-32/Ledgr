@@ -21,6 +21,12 @@ class WalletRepository {
             ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
           .watch();
 
+  Future<List<Wallet>> getActive() =>
+      (_db.wallets.select()
+            ..where((w) => w.archived.equals(false))
+            ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
+          .get();
+
   Future<Wallet?> getById(int id) =>
       (_db.wallets.select()..where((w) => w.id.equals(id))).getSingleOrNull();
 
@@ -29,6 +35,18 @@ class WalletRepository {
 
   Future<void> update(int id, WalletsCompanion entry) =>
       (_db.wallets.update()..where((w) => w.id.equals(id))).write(entry);
+
+  Future<void> updateSortOrders(List<int> walletIds) async {
+    await _db.batch((batch) {
+      for (var i = 0; i < walletIds.length; i++) {
+        batch.update(
+          _db.wallets,
+          WalletsCompanion(sortOrder: Value(i)),
+          where: (w) => w.id.equals(walletIds[i]),
+        );
+      }
+    });
+  }
 
   Future<void> archive(int id) =>
       (_db.wallets.update()..where((w) => w.id.equals(id))).write(

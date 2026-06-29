@@ -22,6 +22,9 @@ class FakeWalletRepository implements WalletRepository {
   Future<List<Wallet>> getAll() async => [wallet];
 
   @override
+  Future<List<Wallet>> getActive() async => [wallet];
+
+  @override
   Stream<List<Wallet>> watchActive() => Stream.value([wallet]);
 
   @override
@@ -38,6 +41,10 @@ class FakeWalletRepository implements WalletRepository {
 
   @override
   Future<void> update(int id, WalletsCompanion entry) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> updateSortOrders(List<int> walletIds) =>
       throw UnimplementedError();
 
   @override
@@ -60,7 +67,6 @@ void main() {
       sortOrder: 0,
       color: null,
       icon: null,
-      decimals: 2,
       createdAt: now,
       updatedAt: now,
     );

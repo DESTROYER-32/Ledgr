@@ -127,7 +127,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Future<void> _addLimit() async {
-    final cats = await ref.read(categoryRepositoryProvider).watchActive().first;
+    final cats = await ref.read(categoryRepositoryProvider).getActive();
     if (!mounted) return;
     final cat = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -151,10 +151,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Future<void> _addMoneyToGoal(Budget budget) async {
-    final wallets = await ref
-        .read(walletRepositoryProvider)
-        .watchActive()
-        .first;
+    final wallets = await ref.read(walletRepositoryProvider).getActive();
     if (!mounted) return;
     final result = await showDialog<Map<String, dynamic>>(
       context: context,

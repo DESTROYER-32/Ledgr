@@ -287,7 +287,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                             code,
                           );
                           final hasOverride = customRates.containsKey(key);
-                          final symbol = CurrencyUtils.symbolFor(code) ?? code;
+                          final symbol = CurrencyUtils.symbolFor(code);
 
                           return ListTile(
                             key: ValueKey('$code-$rate-$hasOverride'),

@@ -167,8 +167,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               controller: _balanceController,
               decoration: InputDecoration(
                 labelText: 'Current balance',
-                prefixText:
-                    '${CurrencyUtils.symbolFor(_currencyCode) ?? _currencyCode} ',
+                prefixText: '${CurrencyUtils.symbolFor(_currencyCode)} ',
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
