@@ -441,9 +441,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 Icon(
                   increased ? Icons.arrow_upward : Icons.arrow_downward,
                   size: 20,
-                  color: isIncome
-                      ? (increased ? AppColors.income : AppColors.expense)
-                      : (increased ? AppColors.expense : AppColors.income),
+                  color: increased == isIncome
+                      ? AppColors.income
+                      : AppColors.expense,
                 ),
                 const SizedBox(width: 8),
                 Column(
