@@ -52,7 +52,7 @@ Widget _invalidRoute(String message) => Scaffold(
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: ref.watch(initialRouteProvider),
+    initialLocation: ref.read(initialRouteProvider),
     routes: [
       GoRoute(
         path: '/onboarding',

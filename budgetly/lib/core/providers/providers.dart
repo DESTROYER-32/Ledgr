@@ -304,9 +304,9 @@ final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final parts = key.split(',');
-  final start = DateTime.parse(parts[0]);
-  final end = DateTime.parse(parts[1]);
+  final range = _dateRangeFromKey(key);
+  if (range == null) return {};
+  final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).spentByCategory(start, end);
 });
 
@@ -315,9 +315,9 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final parts = key.split(',');
-  final start = DateTime.parse(parts[0]);
-  final end = DateTime.parse(parts[1]);
+  final range = _dateRangeFromKey(key);
+  if (range == null) return 0;
+  final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
 });
 
@@ -330,11 +330,20 @@ final monthlyExpensesProvider = FutureProvider.family<int, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final parts = key.split(',');
-  final start = DateTime.parse(parts[0]);
-  final end = DateTime.parse(parts[1]);
+  final range = _dateRangeFromKey(key);
+  if (range == null) return 0;
+  final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).totalExpenses(start, end);
 });
+
+(DateTime, DateTime)? _dateRangeFromKey(String key) {
+  final parts = key.split(',');
+  if (parts.length != 2) return null;
+  final start = DateTime.tryParse(parts[0]);
+  final end = DateTime.tryParse(parts[1]);
+  if (start == null || end == null) return null;
+  return (start, end);
+}
 
 final deleteLogsProvider = StreamProvider<List<DeleteLog>>(
   (ref) => ref.watch(deleteLogRepositoryProvider).watchAll(),

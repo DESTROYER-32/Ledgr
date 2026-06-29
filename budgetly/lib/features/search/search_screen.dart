@@ -161,61 +161,57 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             : _type == 'income'
                             ? 'Income'
                             : 'Transfer',
-                        onRemove: () => setState(() {
-                          _type = null;
+                        onRemove: () {
+                          setState(() => _type = null);
                           _runSearch();
-                        }),
+                        },
                       ),
                     if (_walletId != null)
                       _buildWalletChip(
                         onRemove: () {
-                          setState(() {
-                            _walletId = null;
-                            _runSearch();
-                          });
+                          setState(() => _walletId = null);
+                          _runSearch();
                         },
                       ),
                     if (_categoryId != null)
                       _buildCategoryChip(
                         onRemove: () {
-                          setState(() {
-                            _categoryId = null;
-                            _runSearch();
-                          });
+                          setState(() => _categoryId = null);
+                          _runSearch();
                         },
                       ),
                     if (_startDate != null)
                       _filterChip(
                         label:
                             'From ${MoneyUtils.formatDateShort(_startDate!)}',
-                        onRemove: () => setState(() {
-                          _startDate = null;
+                        onRemove: () {
+                          setState(() => _startDate = null);
                           _runSearch();
-                        }),
+                        },
                       ),
                     if (_endDate != null)
                       _filterChip(
                         label: 'To ${MoneyUtils.formatDateShort(_endDate!)}',
-                        onRemove: () => setState(() {
-                          _endDate = null;
+                        onRemove: () {
+                          setState(() => _endDate = null);
                           _runSearch();
-                        }),
+                        },
                       ),
                     if (_minAmountMinor != null)
                       _filterChip(
                         label: 'Min ${_formatAmount(_minAmountMinor!)}',
-                        onRemove: () => setState(() {
-                          _minAmountMinor = null;
+                        onRemove: () {
+                          setState(() => _minAmountMinor = null);
                           _runSearch();
-                        }),
+                        },
                       ),
                     if (_maxAmountMinor != null)
                       _filterChip(
                         label: 'Max ${_formatAmount(_maxAmountMinor!)}',
-                        onRemove: () => setState(() {
-                          _maxAmountMinor = null;
+                        onRemove: () {
+                          setState(() => _maxAmountMinor = null);
                           _runSearch();
-                        }),
+                        },
                       ),
                   ],
                 ),

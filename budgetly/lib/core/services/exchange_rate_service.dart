@@ -186,13 +186,25 @@ class ExchangeRateService {
         ? await _getCachedRates()
         : await _getRatesForDate(onDate);
     if (!cached.containsKey(key)) {
-      try {
-        cached = await fetchRates();
-      } catch (_) {}
+      if (onDate != null && !_isSameDate(onDate, DateTime.now())) {
+        throw ExchangeRateException(
+          'No historical exchange rate for ${currencyCode.toUpperCase()} on ${_dateKey(onDate)}.',
+        );
+      }
+      cached = await fetchRates();
     }
 
-    return cached[key] ?? 1.0;
+    final rate = cached[key];
+    if (rate == null) {
+      throw ExchangeRateException(
+        'Missing exchange rate for ${currencyCode.toUpperCase()}.',
+      );
+    }
+    return rate;
   }
+
+  bool _isSameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<double> ratio(String from, String to, {DateTime? onDate}) async {
     if (from.toLowerCase() == to.toLowerCase()) return 1.0;

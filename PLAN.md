@@ -8,23 +8,12 @@ No known critical issues remain after the latest fix pass.
 
 | Issue | File | Lines | Details |
 |-------|------|-------|---------|
-| Floating-point currency arithmetic | 10+ files | various | `(double * 100).round()` causes off-by-1-cent errors (e.g., `1.15 → 114`) |
-| Post-frame callback after disposal | `main.dart` | 47-51 | `ref.read()` after widget disposed throws |
-| Database connection never closed | `main.dart` | 17-24 | Resource leak — `overrideWithValue` skips `onDispose` |
-| `GoRouter` recreated on every invalidation | `app_router.dart` | 39-284 | Loses all navigation state when any provider changes |
-| Historical rates silently use today's rates | `exchange_rate_service.dart` | 183-192 | `fetchRates()` saves under today's key but returns for requested `onDate` |
-| Missing currency silently returns 1.0 | `exchange_rate_service.dart` | 192 | Unknown currency treated as equal to USD — financial error |
-| String-encoded family keys with `DateTime.parse` | `providers.dart` | 300-335 | `key.split(',')` crashes on malformed keys |
 | All rows fetched to sum in Dart | `transaction_repository.dart` | 147-229 | Should use SQL `SUM()`, `GROUP BY` instead |
 | N+1 queries in wallet balance | `wallet_repository.dart` | 41-49 | 1+N queries instead of single query |
-| `_autoCategorize` fires on every keystroke | `transaction_form_screen.dart` | 445 | No debounce — DB query per keystroke |
 | `refresh()` re-locks app on every call | `app_lock_controller.dart` | 64-79 | No way to refresh without re-locking |
 | `hasData` hides Insights card when all zero | `dashboard_screen.dart` | 880,1400-1404 | Brand-new user sees no Insights card |
 | Wallet analytics chart capped at 6 months | `wallet_analytics_screen.dart` | 141-145 | Summary shows all-time but chart only plots 6mo |
-| CSV import crashes if no wallets exist | `backup_screen.dart` | 437-439 | `wallets.first` throws `Bad state: No element` |
 | Fire-and-forget async void callbacks | `backup_screen.dart` | 137-146,161-169 | Unhandled future rejections on save failures |
-| `_runSearch()` called inside `setState` | `search_screen.dart` | 157-219 | Calling `setState` during `setState` is invalid |
-| Empty `setState(() {})` before navigation | `onboarding_screen.dart` | 217 | Useless rebuild |
 
 ## 🟡 MEDIUM
 

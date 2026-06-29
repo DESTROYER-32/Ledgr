@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +53,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   DateTime _date = DateTime.now();
   bool _isLoading = false;
   bool _isEditing = false;
+  Timer? _autoCategorizeDebounce;
 
   @override
   void initState() {
@@ -122,6 +125,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _noteController.dispose();
     _tagsController.dispose();
     _repeatMonthsController.dispose();
+    _autoCategorizeDebounce?.cancel();
     super.dispose();
   }
 
@@ -165,7 +169,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     setState(() => _isEditing = false);
   }
 
-  Future<void> _autoCategorize(String title) async {
+  void _autoCategorize(String title) {
+    _autoCategorizeDebounce?.cancel();
+    _autoCategorizeDebounce = Timer(
+      const Duration(milliseconds: 350),
+      () => _autoCategorizeNow(title),
+    );
+  }
+
+  Future<void> _autoCategorizeNow(String title) async {
     if (title.isEmpty) return;
     final repo = ref.read(associatedTitleRepositoryProvider);
     final catId = await repo.findCategoryIdForTitle(title);
@@ -191,17 +203,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     setState(() => _isLoading = true);
 
     final repo = ref.read(transactionRepositoryProvider);
-    final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
     final wallet = await ref.read(walletRepositoryProvider).getById(_walletId!);
     final walletCurrency =
         wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
     final currencyCode = _currencyCode ?? walletCurrency;
+    final amount = MoneyUtils.toMinor(
+      double.tryParse(_amountController.text) ?? 0,
+      currencyCode: currencyCode,
+    );
 
     final companion = TransactionsCompanion(
       type: Value(_type),
       specialType: Value(_specialType),
       recurrenceRule: Value(_effectiveRecurrenceRule),
-      amountMinor: Value(amount.round()),
+      amountMinor: Value(amount),
       currencyCode: Value(currencyCode),
       date: Value(_date),
       walletId: Value(_walletId!),
@@ -228,7 +243,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           type: _type,
           specialType: Value(_specialType),
           recurrenceRule: Value(_effectiveRecurrenceRule),
-          amountMinor: amount.round(),
+          amountMinor: amount,
           currencyCode: currencyCode,
           date: _date,
           walletId: _walletId!,
