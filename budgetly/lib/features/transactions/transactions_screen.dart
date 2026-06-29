@@ -46,6 +46,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final displayCurrency =
         ref.watch(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
+    final showDefaultCurrency =
+        ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;
     final exchangeRates = ref.watch(exchangeRatesProvider).valueOrNull ?? {};
 
     return Scaffold(
@@ -139,6 +141,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                             month: visibleMonth,
                             entries: monthEntries,
                             displayCurrency: displayCurrency,
+                            showDefaultCurrency: showDefaultCurrency,
                             exchangeRates: exchangeRates,
                           )
                         : _MonthTransactionsPage(
@@ -146,6 +149,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                             entries: monthEntries,
                             categoriesById: categoriesById,
                             displayCurrency: displayCurrency,
+                            showDefaultCurrency: showDefaultCurrency,
                             exchangeRates: exchangeRates,
                           );
                   },
@@ -362,12 +366,14 @@ class _MonthCalendarPage extends StatefulWidget {
   final DateTime month;
   final List<_LedgerEntry> entries;
   final String displayCurrency;
+  final bool showDefaultCurrency;
   final Map<String, double> exchangeRates;
 
   const _MonthCalendarPage({
     required this.month,
     required this.entries,
     required this.displayCurrency,
+    required this.showDefaultCurrency,
     required this.exchangeRates,
   });
 
@@ -462,6 +468,7 @@ class _MonthCalendarPageState extends State<_MonthCalendarPage> {
             date: selectedDate,
             entries: selectedSummary.entries,
             displayCurrency: widget.displayCurrency,
+            showDefaultCurrency: widget.showDefaultCurrency,
             exchangeRates: widget.exchangeRates,
           ),
         ],
@@ -640,12 +647,14 @@ class _InlineDateTransactions extends StatelessWidget {
   final DateTime date;
   final List<_LedgerEntry> entries;
   final String displayCurrency;
+  final bool showDefaultCurrency;
   final Map<String, double> exchangeRates;
 
   const _InlineDateTransactions({
     required this.date,
     required this.entries,
     required this.displayCurrency,
+    required this.showDefaultCurrency,
     required this.exchangeRates,
   });
 
@@ -700,6 +709,7 @@ class _InlineDateTransactions extends StatelessWidget {
               (entry) => _DateTransactionRow(
                 entry: entry,
                 displayCurrency: displayCurrency,
+                showDefaultCurrency: showDefaultCurrency,
                 exchangeRates: exchangeRates,
               ),
             ),
@@ -713,11 +723,13 @@ class _InlineDateTransactions extends StatelessWidget {
 class _DateTransactionRow extends StatelessWidget {
   final _LedgerEntry entry;
   final String displayCurrency;
+  final bool showDefaultCurrency;
   final Map<String, double> exchangeRates;
 
   const _DateTransactionRow({
     required this.entry,
     required this.displayCurrency,
+    required this.showDefaultCurrency,
     required this.exchangeRates,
   });
 
@@ -741,7 +753,8 @@ class _DateTransactionRow extends StatelessWidget {
       displayCurrency,
       exchangeRates,
     );
-    final showOriginal =
+    final showConverted =
+        showDefaultCurrency &&
         originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
 
     return Card(
@@ -779,12 +792,12 @@ class _DateTransactionRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
+              '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: originalCurrency)}',
               style: TextStyle(color: color, fontWeight: FontWeight.w900),
             ),
-            if (showOriginal)
+            if (showConverted)
               Text(
-                '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: originalCurrency)}',
+                '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
                 style: TextStyle(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontSize: 11,
@@ -803,6 +816,7 @@ class _MonthTransactionsPage extends StatelessWidget {
   final List<_LedgerEntry> entries;
   final Map<int, Category> categoriesById;
   final String displayCurrency;
+  final bool showDefaultCurrency;
   final Map<String, double> exchangeRates;
 
   const _MonthTransactionsPage({
@@ -810,6 +824,7 @@ class _MonthTransactionsPage extends StatelessWidget {
     required this.entries,
     required this.categoriesById,
     required this.displayCurrency,
+    required this.showDefaultCurrency,
     required this.exchangeRates,
   });
 
@@ -879,6 +894,7 @@ class _MonthTransactionsPage extends StatelessWidget {
               currencyCode: entry.currencyCode,
               displayAmountMinor: convertedAmount,
               displayCurrencyCode: displayCurrency,
+              showDisplayCurrency: showDefaultCurrency,
               onTap: () => context.push('/transactions/${transaction.id}'),
             );
           }

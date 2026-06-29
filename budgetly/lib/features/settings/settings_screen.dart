@@ -27,6 +27,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
   String _displayCurrency = MoneyUtils.defaultCurrencyCode;
+  bool _showDefaultCurrency = true;
   List<String> _favoriteCurrencies = CurrencyUtils.codes;
 
   static const _themeSeeds = <int>[
@@ -81,6 +82,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = await repo.get('theme_mode');
     final themeSeed = await repo.get('theme_seed');
     final displayCurrency = await repo.get('display_currency');
+    final showDefaultCurrency = await repo.get('show_default_currency');
     final favoriteCurrencies = await repo.get('favorite_currencies');
     final demoMode = await repo.get('budgetly_demo_mode');
     if (mounted) {
@@ -92,6 +94,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _themeMode = themeMode ?? 'system';
         _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
         _displayCurrency = displayCurrency ?? MoneyUtils.defaultCurrencyCode;
+        _showDefaultCurrency = showDefaultCurrency != 'false';
         _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
         _demoMode = demoMode == 'true';
         _isLoading = false;
@@ -239,6 +242,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref.read(settingsRepositoryProvider).set('display_currency', code);
     ref.invalidate(displayCurrencyProvider);
     ref.invalidate(totalBalanceProvider);
+  }
+
+  Future<void> _setShowDefaultCurrency(bool value) async {
+    setState(() => _showDefaultCurrency = value);
+    await ref
+        .read(settingsRepositoryProvider)
+        .set('show_default_currency', value.toString());
+    ref.invalidate(showDefaultCurrencyProvider);
   }
 
   String? _currencyName(String code) {
@@ -815,6 +826,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (v != null) _setDisplayCurrency(v);
                 },
               ),
+            ),
+            const Divider(height: 1),
+            SwitchListTile(
+              secondary: Icon(
+                Icons.currency_exchange,
+                color: _showDefaultCurrency ? theme.colorScheme.primary : null,
+              ),
+              title: const Text('Show Default Currency'),
+              subtitle: const Text(
+                'Show the converted default amount below transaction currency',
+              ),
+              value: _showDefaultCurrency,
+              onChanged: _setShowDefaultCurrency,
             ),
             const Divider(height: 1),
             ListTile(

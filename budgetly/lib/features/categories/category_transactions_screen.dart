@@ -109,6 +109,8 @@ class _CategoryTransactionsScreenState
     final displayCurrency =
         ref.watch(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
+    final showDefaultCurrency =
+        ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;
     final exchangeRates = ref.watch(exchangeRatesProvider).valueOrNull ?? {};
     final title = _category?.name ?? 'Category';
 
@@ -182,6 +184,7 @@ class _CategoryTransactionsScreenState
                               currencyCode: t.currencyCode,
                               displayAmountMinor: converted,
                               displayCurrencyCode: displayCurrency,
+                              showDisplayCurrency: showDefaultCurrency,
                               categoryName: category?.name,
                               categoryColor: category?.color == null
                                   ? null
