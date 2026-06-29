@@ -22,6 +22,8 @@ class DashboardScreen extends ConsumerWidget {
     final cs = theme.colorScheme;
     final totalBalanceAsync = ref.watch(totalBalanceProvider);
     final displayCurrencyAsync = ref.watch(displayCurrencyProvider);
+    final showDefaultCurrency =
+        ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;
     final transactionsAsync = ref.watch(allTransactionsProvider);
     final exchangeRates = ref.watch(exchangeRatesProvider).valueOrNull ?? {};
     final recurringAsync = ref.watch(activeRecurringProvider);
@@ -117,6 +119,7 @@ class DashboardScreen extends ConsumerWidget {
               transactionsAsync,
               ref.watch(activeCategoriesProvider),
               displayCurrencyAsync,
+              showDefaultCurrency,
               exchangeRates,
             ),
           ],
@@ -1227,6 +1230,7 @@ class DashboardScreen extends ConsumerWidget {
     AsyncValue<List<Transaction>> transactionsAsync,
     AsyncValue<List<Category>> categoriesAsync,
     AsyncValue<String> displayCurrencyAsync,
+    bool showDefaultCurrency,
     Map<String, double> exchangeRates,
   ) {
     final displayCurrency =
@@ -1345,6 +1349,7 @@ class DashboardScreen extends ConsumerWidget {
                       currencyCode: t.currencyCode,
                       displayAmountMinor: converted,
                       displayCurrencyCode: displayCurrency,
+                      showDisplayCurrency: showDefaultCurrency,
                       categoryName: category?.name,
                       categoryColor: category?.color == null
                           ? null

@@ -169,6 +169,13 @@ final displayCurrencyProvider = FutureProvider<String>((ref) async {
   return MoneyUtils.defaultCurrencyCode;
 });
 
+final showDefaultCurrencyProvider = FutureProvider<bool>((ref) async {
+  final setting = await ref
+      .watch(settingsRepositoryProvider)
+      .get('show_default_currency');
+  return setting != 'false';
+});
+
 final userNameProvider = FutureProvider<String?>((ref) async {
   final name = await ref.watch(settingsRepositoryProvider).get('user_name');
   final trimmed = name?.trim();

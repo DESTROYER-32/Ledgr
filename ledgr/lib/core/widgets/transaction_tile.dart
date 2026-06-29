@@ -18,6 +18,7 @@ class TransactionTile extends StatelessWidget {
   final String? currencyCode;
   final int? displayAmountMinor;
   final String? displayCurrencyCode;
+  final bool showDisplayCurrency;
 
   const TransactionTile({
     super.key,
@@ -34,6 +35,7 @@ class TransactionTile extends StatelessWidget {
     this.currencyCode,
     this.displayAmountMinor,
     this.displayCurrencyCode,
+    this.showDisplayCurrency = true,
   });
 
   @override
@@ -46,11 +48,12 @@ class TransactionTile extends StatelessWidget {
         : (isIncome ? AppColors.income : AppColors.transfer);
     final iconColor = categoryColor ?? amountColor;
     final sign = isExpense ? '-' : (isIncome ? '+' : '');
-    final originalCurrency = currencyCode ?? MoneyUtils.defaultCurrencyCode;
-    final primaryCurrency = displayCurrencyCode ?? originalCurrency;
-    final primaryAmount = displayAmountMinor ?? amountMinor;
-    final showOriginal =
-        originalCurrency.toUpperCase() != primaryCurrency.toUpperCase();
+    final transactionCurrency = currencyCode ?? MoneyUtils.defaultCurrencyCode;
+    final defaultCurrency = displayCurrencyCode ?? transactionCurrency;
+    final defaultAmount = displayAmountMinor ?? amountMinor;
+    final showDefaultCurrency =
+        showDisplayCurrency &&
+        transactionCurrency.toUpperCase() != defaultCurrency.toUpperCase();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 3),
@@ -133,17 +136,17 @@ class TransactionTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '$sign${MoneyUtils.format(primaryAmount, currencyCode: primaryCurrency)}',
+                    '$sign${MoneyUtils.format(amountMinor, currencyCode: transactionCurrency)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                       color: amountColor,
                     ),
                   ),
-                  if (showOriginal) ...[
+                  if (showDefaultCurrency) ...[
                     const SizedBox(height: 2),
                     Text(
-                      '$sign${MoneyUtils.format(amountMinor, currencyCode: originalCurrency)}',
+                      '$sign${MoneyUtils.format(defaultAmount, currencyCode: defaultCurrency)}',
                       style: TextStyle(
                         fontSize: 11,
                         color: theme.colorScheme.onSurfaceVariant,
