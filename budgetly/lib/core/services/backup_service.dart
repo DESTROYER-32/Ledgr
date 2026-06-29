@@ -261,9 +261,9 @@ class BackupService {
       );
     }
     final tableData = decoded['tables'] as Map<String, dynamic>;
-    await _db.transaction(() async {
-      await _db.customStatement('PRAGMA foreign_keys = OFF');
-      try {
+    await _db.customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      await _db.transaction(() async {
         for (final table in tables.reversed) {
           await _db.customStatement('DELETE FROM $table');
         }
@@ -285,10 +285,10 @@ class BackupService {
             }
           }
         }
-      } finally {
-        await _db.customStatement('PRAGMA foreign_keys = ON');
-      }
-    });
+      });
+    } finally {
+      await _db.customStatement('PRAGMA foreign_keys = ON');
+    }
   }
 
   Map<String, dynamic> _jsonSafeMap(Map<String, dynamic> source) {

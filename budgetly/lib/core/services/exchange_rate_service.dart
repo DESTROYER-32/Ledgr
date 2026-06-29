@@ -187,11 +187,19 @@ class ExchangeRateService {
         : await _getRatesForDate(onDate);
     if (!cached.containsKey(key)) {
       if (onDate != null && !_isSameDate(onDate, DateTime.now())) {
-        throw ExchangeRateException(
-          'No historical exchange rate for ${currencyCode.toUpperCase()} on ${_dateKey(onDate)}.',
-        );
+        cached = await _getCachedRates();
+        if (!cached.containsKey(key)) {
+          try {
+            cached = await fetchRates();
+          } catch (_) {
+            // Preserve the final missing-rate error below with the requested
+            // currency code. Historical precision is best-effort because old
+            // local caches may be absent after restore or device migration.
+          }
+        }
+      } else {
+        cached = await fetchRates();
       }
-      cached = await fetchRates();
     }
 
     final rate = cached[key];

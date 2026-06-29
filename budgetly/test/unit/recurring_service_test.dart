@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:budgetly/core/database/app_database.dart';
 import 'package:budgetly/core/database/repositories/recurring_repository.dart';
-import 'package:budgetly/core/database/repositories/settings_repository.dart';
 import 'package:budgetly/core/database/repositories/transaction_repository.dart';
 import 'package:budgetly/core/database/repositories/wallet_repository.dart';
 import 'package:budgetly/core/services/exchange_rate_service.dart';
 import 'package:budgetly/core/services/recurring_service.dart';
+import 'package:budgetly/core/database/repositories/settings_repository.dart';
 
 void main() {
   test(
@@ -22,11 +22,7 @@ void main() {
       final walletRepo = WalletRepository(db, exchangeRates);
       final recurringRepo = RecurringRepository(db);
       final transactionRepo = TransactionRepository(db);
-      final service = RecurringService(
-        recurringRepo,
-        transactionRepo,
-        walletRepo,
-      );
+      final service = RecurringService(recurringRepo, transactionRepo);
 
       final sourceWalletId = await walletRepo.insert(
         WalletsCompanion.insert(
@@ -50,6 +46,7 @@ void main() {
           transactionType: 'transfer',
           specialType: const Value('scheduled'),
           amountMinor: 4250,
+          currencyCode: const Value('EUR'),
           walletId: sourceWalletId,
           transferWalletId: Value(transferWalletId),
           title: const Value('Monthly savings'),

@@ -107,11 +107,15 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     setState(() => _isLoading = true);
 
     final repo = ref.read(recurringRepositoryProvider);
+    final wallet = await ref.read(walletRepositoryProvider).getById(_walletId!);
     final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
 
     final companion = RecurringTransactionsCompanion(
       transactionType: Value(_type),
       amountMinor: Value(amount.round()),
+      currencyCode: Value(
+        wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode,
+      ),
       walletId: Value(_walletId!),
       transferWalletId: const Value(null),
       categoryId: Value(_categoryId),

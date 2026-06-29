@@ -58,8 +58,46 @@ class CategoryRepository {
         const CategoriesCompanion(archived: Value(true)),
       );
 
-  Future<void> delete(int id) =>
-      (_db.categories.delete()..where((c) => c.id.equals(id))).go();
+  Future<void> delete(int id) async {
+    if (await _hasReferences(id)) {
+      await archive(id);
+      return;
+    }
+    await (_db.categories.delete()..where((c) => c.id.equals(id))).go();
+  }
+
+  Future<bool> _hasReferences(int id) async {
+    final child =
+        await (_db.categories.select()
+              ..where((c) => c.mainCategoryPk.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    if (child != null) return true;
+    final transaction =
+        await (_db.transactions.select()
+              ..where((t) => t.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    if (transaction != null) return true;
+    final recurring =
+        await (_db.recurringTransactions.select()
+              ..where((r) => r.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    if (recurring != null) return true;
+    final limit =
+        await (_db.budgetCategoryLimits.select()
+              ..where((l) => l.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    if (limit != null) return true;
+    final associatedTitle =
+        await (_db.associatedTitles.select()
+              ..where((a) => a.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    return associatedTitle != null;
+  }
 
   Future<void> seedDefaults() async {
     final count = await _db.categories.select().get().then((l) => l.length);

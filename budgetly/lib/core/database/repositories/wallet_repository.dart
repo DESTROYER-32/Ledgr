@@ -53,8 +53,50 @@ class WalletRepository {
         const WalletsCompanion(archived: Value(true)),
       );
 
-  Future<void> delete(int id) =>
-      (_db.wallets.delete()..where((w) => w.id.equals(id))).go();
+  Future<void> delete(int id) async {
+    if (await _hasReferences(id)) {
+      await archive(id);
+      return;
+    }
+    await (_db.wallets.delete()..where((w) => w.id.equals(id))).go();
+  }
+
+  Future<bool> _hasReferences(int id) async {
+    final transaction =
+        await (_db.transactions.select()
+              ..where(
+                (t) => t.walletId.equals(id) | t.transferWalletId.equals(id),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (transaction != null) return true;
+    final recurring =
+        await (_db.recurringTransactions.select()
+              ..where(
+                (r) => r.walletId.equals(id) | r.transferWalletId.equals(id),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (recurring != null) return true;
+    final budgetWallet =
+        await (_db.budgetWallets.select()
+              ..where((w) => w.walletId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    if (budgetWallet != null) return true;
+    final budgetLimit =
+        await (_db.budgetCategoryLimits.select()
+              ..where((l) => l.walletId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    if (budgetLimit != null) return true;
+    final objective =
+        await (_db.objectives.select()
+              ..where((o) => o.walletId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
+    return objective != null;
+  }
 
   Future<int> totalBalance({required String currencyCode}) async {
     final wallets = (await _db.wallets.select().get())
