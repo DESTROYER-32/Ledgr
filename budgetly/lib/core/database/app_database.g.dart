@@ -105,18 +105,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _decimalsMeta = const VerificationMeta(
-    'decimals',
-  );
-  @override
-  late final GeneratedColumn<int> decimals = GeneratedColumn<int>(
-    'decimals',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(2),
-  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -152,7 +140,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
     sortOrder,
     color,
     icon,
-    decimals,
     createdAt,
     updatedAt,
   ];
@@ -233,12 +220,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
         icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
       );
     }
-    if (data.containsKey('decimals')) {
-      context.handle(
-        _decimalsMeta,
-        decimals.isAcceptableOrUnknown(data['decimals']!, _decimalsMeta),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -296,10 +277,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
         DriftSqlType.string,
         data['${effectivePrefix}icon'],
       ),
-      decimals: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}decimals'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -327,7 +304,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
   final int sortOrder;
   final int? color;
   final String? icon;
-  final int decimals;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Wallet({
@@ -340,7 +316,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     required this.sortOrder,
     this.color,
     this.icon,
-    required this.decimals,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -360,7 +335,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     if (!nullToAbsent || icon != null) {
       map['icon'] = Variable<String>(icon);
     }
-    map['decimals'] = Variable<int>(decimals);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -379,7 +353,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
           ? const Value.absent()
           : Value(color),
       icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
-      decimals: Value(decimals),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -402,7 +375,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       color: serializer.fromJson<int?>(json['color']),
       icon: serializer.fromJson<String?>(json['icon']),
-      decimals: serializer.fromJson<int>(json['decimals']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -420,7 +392,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
       'sortOrder': serializer.toJson<int>(sortOrder),
       'color': serializer.toJson<int?>(color),
       'icon': serializer.toJson<String?>(icon),
-      'decimals': serializer.toJson<int>(decimals),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -436,7 +407,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     int? sortOrder,
     Value<int?> color = const Value.absent(),
     Value<String?> icon = const Value.absent(),
-    int? decimals,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Wallet(
@@ -449,7 +419,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     sortOrder: sortOrder ?? this.sortOrder,
     color: color.present ? color.value : this.color,
     icon: icon.present ? icon.value : this.icon,
-    decimals: decimals ?? this.decimals,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -468,7 +437,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       color: data.color.present ? data.color.value : this.color,
       icon: data.icon.present ? data.icon.value : this.icon,
-      decimals: data.decimals.present ? data.decimals.value : this.decimals,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -486,7 +454,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
           ..write('sortOrder: $sortOrder, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
-          ..write('decimals: $decimals, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -504,7 +471,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     sortOrder,
     color,
     icon,
-    decimals,
     createdAt,
     updatedAt,
   );
@@ -521,7 +487,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
           other.sortOrder == this.sortOrder &&
           other.color == this.color &&
           other.icon == this.icon &&
-          other.decimals == this.decimals &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -536,7 +501,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
   final Value<int> sortOrder;
   final Value<int?> color;
   final Value<String?> icon;
-  final Value<int> decimals;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const WalletsCompanion({
@@ -549,7 +513,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     this.sortOrder = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
-    this.decimals = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -563,7 +526,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     this.sortOrder = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
-    this.decimals = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : name = Value(name),
@@ -580,7 +542,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     Expression<int>? sortOrder,
     Expression<int>? color,
     Expression<String>? icon,
-    Expression<int>? decimals,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -595,7 +556,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
       if (sortOrder != null) 'sort_order': sortOrder,
       if (color != null) 'color': color,
       if (icon != null) 'icon': icon,
-      if (decimals != null) 'decimals': decimals,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -611,7 +571,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     Value<int>? sortOrder,
     Value<int?>? color,
     Value<String?>? icon,
-    Value<int>? decimals,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -625,7 +584,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
       sortOrder: sortOrder ?? this.sortOrder,
       color: color ?? this.color,
       icon: icon ?? this.icon,
-      decimals: decimals ?? this.decimals,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -661,9 +619,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     if (icon.present) {
       map['icon'] = Variable<String>(icon.value);
     }
-    if (decimals.present) {
-      map['decimals'] = Variable<int>(decimals.value);
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -685,7 +640,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
           ..write('sortOrder: $sortOrder, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
-          ..write('decimals: $decimals, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -6894,7 +6848,6 @@ typedef $$WalletsTableCreateCompanionBuilder =
       Value<int> sortOrder,
       Value<int?> color,
       Value<String?> icon,
-      Value<int> decimals,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -6909,7 +6862,6 @@ typedef $$WalletsTableUpdateCompanionBuilder =
       Value<int> sortOrder,
       Value<int?> color,
       Value<String?> icon,
-      Value<int> decimals,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -7132,11 +7084,6 @@ class $$WalletsTableFilterComposer
 
   ColumnFilters<String> get icon => $composableBuilder(
     column: $table.icon,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get decimals => $composableBuilder(
-    column: $table.decimals,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7382,11 +7329,6 @@ class $$WalletsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get decimals => $composableBuilder(
-    column: $table.decimals,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -7437,9 +7379,6 @@ class $$WalletsTableAnnotationComposer
 
   GeneratedColumn<String> get icon =>
       $composableBuilder(column: $table.icon, builder: (column) => column);
-
-  GeneratedColumn<int> get decimals =>
-      $composableBuilder(column: $table.decimals, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -7671,7 +7610,6 @@ class $$WalletsTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 Value<String?> icon = const Value.absent(),
-                Value<int> decimals = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => WalletsCompanion(
@@ -7684,7 +7622,6 @@ class $$WalletsTableTableManager
                 sortOrder: sortOrder,
                 color: color,
                 icon: icon,
-                decimals: decimals,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -7699,7 +7636,6 @@ class $$WalletsTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 Value<String?> icon = const Value.absent(),
-                Value<int> decimals = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => WalletsCompanion.insert(
@@ -7712,7 +7648,6 @@ class $$WalletsTableTableManager
                 sortOrder: sortOrder,
                 color: color,
                 icon: icon,
-                decimals: decimals,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

@@ -112,7 +112,8 @@ class AppDateUtils {
   }
 
   static DateTime monthEnd(DateTime date) {
-    return DateTime(date.year, date.month + 1, 0);
+    final nextMonthStart = DateTime(date.year, date.month + 1, 1);
+    return nextMonthStart.subtract(const Duration(days: 1));
   }
 
   static DateTime previousMonth(DateTime date) {

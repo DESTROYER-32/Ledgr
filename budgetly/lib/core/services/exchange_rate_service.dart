@@ -208,8 +208,12 @@ class ExchangeRateService {
 
   Future<double> ratio(String from, String to, {DateTime? onDate}) async {
     if (from.toLowerCase() == to.toLowerCase()) return 1.0;
-    final toRate = await getRate(to, onDate: onDate);
-    final fromRate = await getRate(from, onDate: onDate);
+    final rates = await Future.wait([
+      getRate(to, onDate: onDate),
+      getRate(from, onDate: onDate),
+    ]);
+    final toRate = rates[0];
+    final fromRate = rates[1];
     if (fromRate == 0) return 1.0;
     return toRate * (1 / fromRate);
   }

@@ -12,14 +12,9 @@ No known high-priority issues remain after the latest fix pass.
 
 | Issue | File | Lines | Details |
 |-------|------|-------|---------|
-| Wallet-specific decimals should be currency-derived | `tables.dart` | 14 | `decimals` per-wallet allows inconsistencies |
 | AMOLED theme wasteful ColorScheme computation | `app_theme.dart` | 27-51 | Computes 30+ colors then overrides 11 |
-| `monthEnd` uses day-0 hack | `money_utils.dart` | 88-89 | `DateTime(year, month+1, 0)` is non-obvious |
-| `watchActive().first` wasteful Stream subscriptions | `budget_detail_screen.dart` | 47,150,176-177 | Should use Future-based getters instead |
-| Sequential DB updates in reorder loop | `wallets_screen.dart` | 79-84 | N updates for N wallets |
 | No loading indicator during mutations | multiple files | various | User can tap save multiple times |
 | `_topEntries` duplicated in two files | `wallet_detail_screen.dart`, `wallet_analytics_screen.dart` | 1326,488 | DRY violation |
-| Exchange rate `ratio()` fetches sequentially | `exchange_rate_service.dart` | 197-198 | Could be parallelized with `Future.wait` |
 
 ## 🔵 LOW (code smells / style)
 
@@ -28,7 +23,6 @@ No known high-priority issues remain after the latest fix pass.
 | Utility functions in providers file | `providers.dart` | 148-162,280-290 | `currencyOptionsWithSelection`, `walletBalancesByWalletCurrency` |
 | `mainCategoryPk` misleading column name | `tables.dart` | 26-27 | `Pk` suffix implies primary key; should be `parentId` |
 | `ref.watch` on singletons instead of `ref.read` | `providers.dart` | ~30 locations | Unnecessary subscription overhead |
-| `app_router.dart` has no `errorBuilder` | `app_router.dart` | entire file | Blank screen on undefined routes |
 | Hardcoded `Colors.red`/`Colors.green` instead of theme | `wallet_analytics_screen.dart` | 100,386,227-252 | Bypasses theming system |
 | Nested ternary chains instead of switch expressions | multiple files | various | Harder to read and maintain |
 | `SizedBox.shrink()` in error handlers | multiple files | 10+ locations | Errors silently swallowed; no logging |
@@ -48,8 +42,6 @@ No known high-priority issues remain after the latest fix pass.
 | `category_icon_utils.dart` null param silently falls through | `category_icon_utils.dart` | 3-41 | Null maps to "category" without logging |
 | bare `catch (_)` in multiple locations | multiple files | various | Hides programming errors |
 | `amount_field.dart` misleading `currencySymbol` param | `amount_field.dart` | 8,15 | Actually expects a currency code, not a symbol |
-| `symbolFor` returns `String?` but never null | `currency_utils.dart` | 174 | Dead `??` at all call sites |
-| `CurrencyUtils` O(n) linear scan on every symbol lookup | `currency_utils.dart` | 176 | Should use `Map` for O(1) lookup |
 | No `.gitignore` for `*.g.dart` generated files | `.gitignore` | — | Generated drift/riverpod files tracked in git |
 
 ## Cross-Cutting
@@ -59,5 +51,4 @@ No known high-priority issues remain after the latest fix pass.
 | No localization / i18n | App cannot be translated; every string is hardcoded English |
 | No error logging | `catch` blocks show snackbars but never log — production debugging impossible |
 | No loading states on mutations | Users can double-tap save; no feedback during long saves |
-| Inconsistent currency symbol resolution | 3 different mechanisms (`CurrencyUtils`, `MoneyUtils._symbol`, `NumberFormat`) may give different results |
 | `FlutterLocalNotificationsPlugin` iOS class deprecated | `IOSFlutterLocalNotificationsPlugin` renamed to `DarwinFlutterLocalNotificationsPlugin` in v14+ |

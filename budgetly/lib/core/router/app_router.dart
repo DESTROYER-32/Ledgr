@@ -53,6 +53,8 @@ Widget _invalidRoute(String message) => Scaffold(
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: ref.read(initialRouteProvider),
+    errorBuilder: (context, state) =>
+        _invalidRoute(state.error?.message ?? 'Route not found.'),
     routes: [
       GoRoute(
         path: '/onboarding',
