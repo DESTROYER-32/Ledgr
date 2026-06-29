@@ -879,6 +879,7 @@ class _DemoDataSeeder {
           RecurringTransactionsCompanion.insert(
             transactionType: 'expense',
             amountMinor: 145000,
+            currencyCode: const Value('USD'),
             walletId: checkingId,
             categoryId: Value(cat('Rent')),
             title: const Value('Rent'),
@@ -893,6 +894,7 @@ class _DemoDataSeeder {
           RecurringTransactionsCompanion.insert(
             transactionType: 'income',
             amountMinor: 420000,
+            currencyCode: const Value('USD'),
             walletId: checkingId,
             categoryId: Value(cat('Salary')),
             title: const Value('Paycheck'),

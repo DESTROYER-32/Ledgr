@@ -167,9 +167,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _resetBusy = true);
     final db = ref.read(appDatabaseProvider);
-    await db.transaction(() async {
-      await db.customStatement('PRAGMA foreign_keys = OFF');
-      try {
+    await db.customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      await db.transaction(() async {
         for (final table in [
           'delete_logs',
           'associated_titles',
@@ -188,10 +188,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             "DELETE FROM sqlite_sequence WHERE name = '$table'",
           );
         }
-      } finally {
-        await db.customStatement('PRAGMA foreign_keys = ON');
-      }
-    });
+      });
+    } finally {
+      await db.customStatement('PRAGMA foreign_keys = ON');
+    }
     ref.invalidate(activeWalletsProvider);
     ref.invalidate(activeCategoriesProvider);
     ref.invalidate(allTransactionsProvider);

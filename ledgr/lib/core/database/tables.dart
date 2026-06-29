@@ -123,6 +123,7 @@ class RecurringTransactions extends Table {
   TextColumn get transactionType => text()();
   TextColumn get specialType => text().withDefault(const Constant('none'))();
   IntColumn get amountMinor => integer()();
+  TextColumn get currencyCode => text().withDefault(const Constant('USD'))();
   IntColumn get walletId => integer().references(Wallets, #id)();
   @ReferenceName('recurringTransferWallet')
   IntColumn get transferWalletId =>

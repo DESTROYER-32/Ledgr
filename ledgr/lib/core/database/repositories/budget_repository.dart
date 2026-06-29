@@ -1,10 +1,12 @@
 import 'package:drift/drift.dart';
 
 import '../app_database.dart';
+import '../../services/exchange_rate_service.dart';
 
 class BudgetRepository {
   final AppDatabase _db;
-  BudgetRepository(this._db);
+  final ExchangeRateService _exchangeRates;
+  BudgetRepository(this._db, this._exchangeRates);
 
   Stream<List<Budget>> watchAll() =>
       (_db.budgets.select()..where((b) => b.archived.equals(false))).watch();
@@ -161,53 +163,36 @@ class BudgetRepository {
       q.where((t) => t.specialType.equals('none') | t.specialType.isNull());
     }
 
-    if (budget.specificMode) {
-      final typeClause = budget.includeIncome
-          ? "(t.type = 'expense' OR t.type = 'income')"
-          : "t.type = 'expense'";
-      final specialClause = budget.includeDebtCredit
-          ? '1 = 1'
-          : "(t.special_type = 'none' OR t.special_type IS NULL)";
-      final walletClause = wallets.isEmpty
-          ? '1 = 1'
-          : 't.wallet_id IN (${List.filled(wallets.length, '?').join(', ')})';
-      final rows = await _db
-          .customSelect(
-            '''
-            SELECT t.category_id, SUM(t.amount_minor) AS total
-            FROM transactions t
-            INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
-            WHERE tb.budget_id = ?
-              AND t.category_id IS NOT NULL
-              AND t.date >= ?
-              AND t.date <= ?
-              AND $typeClause
-              AND $specialClause
-              AND $walletClause
-            GROUP BY t.category_id
-            ''',
-            readsFrom: {_db.transactions, _db.transactionBudgets},
-            variables: [
-              Variable.withInt(budget.id),
-              Variable.withDateTime(start),
-              Variable.withDateTime(end),
-              ...wallets.map((w) => Variable.withInt(w.walletId)),
-            ],
-          )
-          .get();
-      return {
-        for (final row in rows)
-          row.data['category_id'] as int: row.data['total'] as int,
-      };
+    if (!budget.includeBalanceCorrection) {
+      q.where((t) => t.specialType.equals('balance_correction').not());
     }
+
+    Set<int>? explicitTransactionIds;
+    if (budget.specificMode) {
+      final rows =
+          await (_db.transactionBudgets.select()
+                ..where((tb) => tb.budgetId.equals(budgetId)))
+              .get();
+      explicitTransactionIds = rows.map((row) => row.transactionId).toSet();
+      if (explicitTransactionIds.isEmpty) return {};
+      q.where((t) => t.id.isIn(explicitTransactionIds!));
+    }
+
     final rows = await q.get();
     final map = <int, int>{};
     for (final t in rows) {
       if (t.categoryId != null) {
+        final converted = await _exchangeRates.convert(
+          t.amountMinor,
+          t.currencyCode,
+          budget.currencyCode,
+          onDate: t.date,
+        );
+        final signedAmount = t.type == 'income' ? -converted : converted;
         map.update(
           t.categoryId!,
-          (v) => v + t.amountMinor,
-          ifAbsent: () => t.amountMinor,
+          (v) => v + signedAmount,
+          ifAbsent: () => signedAmount,
         );
       }
     }

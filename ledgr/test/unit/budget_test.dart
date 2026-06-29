@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:budgetly/core/database/app_database.dart';
 import 'package:budgetly/core/database/repositories/budget_repository.dart';
+import 'package:budgetly/core/database/repositories/settings_repository.dart';
+import 'package:budgetly/core/services/exchange_rate_service.dart';
 
 /// Tests for budget calculation logic
 /// Note: These test the calculation math, not the database layer.
@@ -63,7 +65,10 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
 
-      final repo = BudgetRepository(db);
+      final repo = BudgetRepository(
+        db,
+        ExchangeRateService(SettingsRepository(db)),
+      );
       final budgetId = await db
           .into(db.budgets)
           .insert(
@@ -125,7 +130,10 @@ void main() {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
 
-        final repo = BudgetRepository(db);
+        final repo = BudgetRepository(
+          db,
+          ExchangeRateService(SettingsRepository(db)),
+        );
         final categoryId = await db
             .into(db.categories)
             .insert(CategoriesCompanion.insert(name: 'Food', kind: 'expense'));
@@ -193,7 +201,7 @@ void main() {
           categoryId: 1000,
         });
         expect(await repo.spentForBudget(includedIncomeBudget, start, end), {
-          categoryId: 1500,
+          categoryId: 500,
         });
       },
     );

@@ -59,7 +59,10 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
 });
 
 final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
-  return BudgetRepository(ref.watch(appDatabaseProvider));
+  return BudgetRepository(
+    ref.watch(appDatabaseProvider),
+    ref.watch(exchangeRateServiceProvider),
+  );
 });
 
 final recurringRepositoryProvider = Provider<RecurringRepository>((ref) {
@@ -105,7 +108,6 @@ final recurringServiceProvider = Provider<RecurringService>((ref) {
   return RecurringService(
     ref.watch(recurringRepositoryProvider),
     ref.watch(transactionRepositoryProvider),
-    ref.watch(walletRepositoryProvider),
   );
 });
 

@@ -5115,6 +5115,18 @@ class $RecurringTransactionsTable extends RecurringTransactions
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  @override
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('USD'),
+  );
   static const VerificationMeta _walletIdMeta = const VerificationMeta(
     'walletId',
   );
@@ -5250,6 +5262,7 @@ class $RecurringTransactionsTable extends RecurringTransactions
     transactionType,
     specialType,
     amountMinor,
+    currencyCode,
     walletId,
     transferWalletId,
     categoryId,
@@ -5307,6 +5320,15 @@ class $RecurringTransactionsTable extends RecurringTransactions
       );
     } else if (isInserting) {
       context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
     }
     if (data.containsKey('wallet_id')) {
       context.handle(
@@ -5414,6 +5436,10 @@ class $RecurringTransactionsTable extends RecurringTransactions
         DriftSqlType.int,
         data['${effectivePrefix}amount_minor'],
       )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
       walletId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}wallet_id'],
@@ -5473,6 +5499,7 @@ class RecurringTransaction extends DataClass
   final String transactionType;
   final String specialType;
   final int amountMinor;
+  final String currencyCode;
   final int walletId;
   final int? transferWalletId;
   final int? categoryId;
@@ -5489,6 +5516,7 @@ class RecurringTransaction extends DataClass
     required this.transactionType,
     required this.specialType,
     required this.amountMinor,
+    required this.currencyCode,
     required this.walletId,
     this.transferWalletId,
     this.categoryId,
@@ -5508,6 +5536,7 @@ class RecurringTransaction extends DataClass
     map['transaction_type'] = Variable<String>(transactionType);
     map['special_type'] = Variable<String>(specialType);
     map['amount_minor'] = Variable<int>(amountMinor);
+    map['currency_code'] = Variable<String>(currencyCode);
     map['wallet_id'] = Variable<int>(walletId);
     if (!nullToAbsent || transferWalletId != null) {
       map['transfer_wallet_id'] = Variable<int>(transferWalletId);
@@ -5540,6 +5569,7 @@ class RecurringTransaction extends DataClass
       transactionType: Value(transactionType),
       specialType: Value(specialType),
       amountMinor: Value(amountMinor),
+      currencyCode: Value(currencyCode),
       walletId: Value(walletId),
       transferWalletId: transferWalletId == null && nullToAbsent
           ? const Value.absent()
@@ -5574,6 +5604,7 @@ class RecurringTransaction extends DataClass
       transactionType: serializer.fromJson<String>(json['transactionType']),
       specialType: serializer.fromJson<String>(json['specialType']),
       amountMinor: serializer.fromJson<int>(json['amountMinor']),
+      currencyCode: serializer.fromJson<String>(json['currencyCode']),
       walletId: serializer.fromJson<int>(json['walletId']),
       transferWalletId: serializer.fromJson<int?>(json['transferWalletId']),
       categoryId: serializer.fromJson<int?>(json['categoryId']),
@@ -5595,6 +5626,7 @@ class RecurringTransaction extends DataClass
       'transactionType': serializer.toJson<String>(transactionType),
       'specialType': serializer.toJson<String>(specialType),
       'amountMinor': serializer.toJson<int>(amountMinor),
+      'currencyCode': serializer.toJson<String>(currencyCode),
       'walletId': serializer.toJson<int>(walletId),
       'transferWalletId': serializer.toJson<int?>(transferWalletId),
       'categoryId': serializer.toJson<int?>(categoryId),
@@ -5614,6 +5646,7 @@ class RecurringTransaction extends DataClass
     String? transactionType,
     String? specialType,
     int? amountMinor,
+    String? currencyCode,
     int? walletId,
     Value<int?> transferWalletId = const Value.absent(),
     Value<int?> categoryId = const Value.absent(),
@@ -5630,6 +5663,7 @@ class RecurringTransaction extends DataClass
     transactionType: transactionType ?? this.transactionType,
     specialType: specialType ?? this.specialType,
     amountMinor: amountMinor ?? this.amountMinor,
+    currencyCode: currencyCode ?? this.currencyCode,
     walletId: walletId ?? this.walletId,
     transferWalletId: transferWalletId.present
         ? transferWalletId.value
@@ -5656,6 +5690,9 @@ class RecurringTransaction extends DataClass
       amountMinor: data.amountMinor.present
           ? data.amountMinor.value
           : this.amountMinor,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
       walletId: data.walletId.present ? data.walletId.value : this.walletId,
       transferWalletId: data.transferWalletId.present
           ? data.transferWalletId.value
@@ -5685,6 +5722,7 @@ class RecurringTransaction extends DataClass
           ..write('transactionType: $transactionType, ')
           ..write('specialType: $specialType, ')
           ..write('amountMinor: $amountMinor, ')
+          ..write('currencyCode: $currencyCode, ')
           ..write('walletId: $walletId, ')
           ..write('transferWalletId: $transferWalletId, ')
           ..write('categoryId: $categoryId, ')
@@ -5706,6 +5744,7 @@ class RecurringTransaction extends DataClass
     transactionType,
     specialType,
     amountMinor,
+    currencyCode,
     walletId,
     transferWalletId,
     categoryId,
@@ -5726,6 +5765,7 @@ class RecurringTransaction extends DataClass
           other.transactionType == this.transactionType &&
           other.specialType == this.specialType &&
           other.amountMinor == this.amountMinor &&
+          other.currencyCode == this.currencyCode &&
           other.walletId == this.walletId &&
           other.transferWalletId == this.transferWalletId &&
           other.categoryId == this.categoryId &&
@@ -5745,6 +5785,7 @@ class RecurringTransactionsCompanion
   final Value<String> transactionType;
   final Value<String> specialType;
   final Value<int> amountMinor;
+  final Value<String> currencyCode;
   final Value<int> walletId;
   final Value<int?> transferWalletId;
   final Value<int?> categoryId;
@@ -5761,6 +5802,7 @@ class RecurringTransactionsCompanion
     this.transactionType = const Value.absent(),
     this.specialType = const Value.absent(),
     this.amountMinor = const Value.absent(),
+    this.currencyCode = const Value.absent(),
     this.walletId = const Value.absent(),
     this.transferWalletId = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -5778,6 +5820,7 @@ class RecurringTransactionsCompanion
     required String transactionType,
     this.specialType = const Value.absent(),
     required int amountMinor,
+    this.currencyCode = const Value.absent(),
     required int walletId,
     this.transferWalletId = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -5799,6 +5842,7 @@ class RecurringTransactionsCompanion
     Expression<String>? transactionType,
     Expression<String>? specialType,
     Expression<int>? amountMinor,
+    Expression<String>? currencyCode,
     Expression<int>? walletId,
     Expression<int>? transferWalletId,
     Expression<int>? categoryId,
@@ -5816,6 +5860,7 @@ class RecurringTransactionsCompanion
       if (transactionType != null) 'transaction_type': transactionType,
       if (specialType != null) 'special_type': specialType,
       if (amountMinor != null) 'amount_minor': amountMinor,
+      if (currencyCode != null) 'currency_code': currencyCode,
       if (walletId != null) 'wallet_id': walletId,
       if (transferWalletId != null) 'transfer_wallet_id': transferWalletId,
       if (categoryId != null) 'category_id': categoryId,
@@ -5835,6 +5880,7 @@ class RecurringTransactionsCompanion
     Value<String>? transactionType,
     Value<String>? specialType,
     Value<int>? amountMinor,
+    Value<String>? currencyCode,
     Value<int>? walletId,
     Value<int?>? transferWalletId,
     Value<int?>? categoryId,
@@ -5852,6 +5898,7 @@ class RecurringTransactionsCompanion
       transactionType: transactionType ?? this.transactionType,
       specialType: specialType ?? this.specialType,
       amountMinor: amountMinor ?? this.amountMinor,
+      currencyCode: currencyCode ?? this.currencyCode,
       walletId: walletId ?? this.walletId,
       transferWalletId: transferWalletId ?? this.transferWalletId,
       categoryId: categoryId ?? this.categoryId,
@@ -5880,6 +5927,9 @@ class RecurringTransactionsCompanion
     }
     if (amountMinor.present) {
       map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
     }
     if (walletId.present) {
       map['wallet_id'] = Variable<int>(walletId.value);
@@ -5924,6 +5974,7 @@ class RecurringTransactionsCompanion
           ..write('transactionType: $transactionType, ')
           ..write('specialType: $specialType, ')
           ..write('amountMinor: $amountMinor, ')
+          ..write('currencyCode: $currencyCode, ')
           ..write('walletId: $walletId, ')
           ..write('transferWalletId: $transferWalletId, ')
           ..write('categoryId: $categoryId, ')
@@ -12301,6 +12352,7 @@ typedef $$RecurringTransactionsTableCreateCompanionBuilder =
       required String transactionType,
       Value<String> specialType,
       required int amountMinor,
+      Value<String> currencyCode,
       required int walletId,
       Value<int?> transferWalletId,
       Value<int?> categoryId,
@@ -12319,6 +12371,7 @@ typedef $$RecurringTransactionsTableUpdateCompanionBuilder =
       Value<String> transactionType,
       Value<String> specialType,
       Value<int> amountMinor,
+      Value<String> currencyCode,
       Value<int> walletId,
       Value<int?> transferWalletId,
       Value<int?> categoryId,
@@ -12435,6 +12488,11 @@ class $$RecurringTransactionsTableFilterComposer
 
   ColumnFilters<int> get amountMinor => $composableBuilder(
     column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12577,6 +12635,11 @@ class $$RecurringTransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get title => $composableBuilder(
     column: $table.title,
     builder: (column) => ColumnOrderings(column),
@@ -12711,6 +12774,11 @@ class $$RecurringTransactionsTableAnnotationComposer
 
   GeneratedColumn<int> get amountMinor => $composableBuilder(
     column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
     builder: (column) => column,
   );
 
@@ -12859,6 +12927,7 @@ class $$RecurringTransactionsTableTableManager
                 Value<String> transactionType = const Value.absent(),
                 Value<String> specialType = const Value.absent(),
                 Value<int> amountMinor = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
                 Value<int> walletId = const Value.absent(),
                 Value<int?> transferWalletId = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
@@ -12875,6 +12944,7 @@ class $$RecurringTransactionsTableTableManager
                 transactionType: transactionType,
                 specialType: specialType,
                 amountMinor: amountMinor,
+                currencyCode: currencyCode,
                 walletId: walletId,
                 transferWalletId: transferWalletId,
                 categoryId: categoryId,
@@ -12893,6 +12963,7 @@ class $$RecurringTransactionsTableTableManager
                 required String transactionType,
                 Value<String> specialType = const Value.absent(),
                 required int amountMinor,
+                Value<String> currencyCode = const Value.absent(),
                 required int walletId,
                 Value<int?> transferWalletId = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
@@ -12909,6 +12980,7 @@ class $$RecurringTransactionsTableTableManager
                 transactionType: transactionType,
                 specialType: specialType,
                 amountMinor: amountMinor,
+                currencyCode: currencyCode,
                 walletId: walletId,
                 transferWalletId: transferWalletId,
                 categoryId: categoryId,

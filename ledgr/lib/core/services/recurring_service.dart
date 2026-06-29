@@ -3,20 +3,13 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../database/repositories/recurring_repository.dart';
 import '../database/repositories/transaction_repository.dart';
-import '../database/repositories/wallet_repository.dart';
-import '../utils/money_utils.dart';
 import '../utils/recurring_utils.dart';
 
 class RecurringService {
   final RecurringRepository _recurringRepo;
   final TransactionRepository _transactionRepo;
-  final WalletRepository _walletRepo;
 
-  RecurringService(
-    this._recurringRepo,
-    this._transactionRepo,
-    this._walletRepo,
-  );
+  RecurringService(this._recurringRepo, this._transactionRepo);
 
   Future<int> processDueRecurrings() async {
     final now = DateTime.now();
@@ -29,16 +22,12 @@ class RecurringService {
 
     var count = 0;
     for (final r in due) {
-      final wallet = await _walletRepo.getById(r.walletId);
-
       await _transactionRepo.insert(
         TransactionsCompanion(
           type: Value(r.transactionType),
           specialType: Value(r.specialType),
           amountMinor: Value(r.amountMinor),
-          currencyCode: Value(
-            wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode,
-          ),
+          currencyCode: Value(r.currencyCode),
           date: Value(r.nextDueDate!),
           walletId: Value(r.walletId),
           transferWalletId: Value(r.transferWalletId),
