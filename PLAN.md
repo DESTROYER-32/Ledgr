@@ -6,14 +6,7 @@ No known critical issues remain after the latest fix pass.
 
 ## 🟠 HIGH (incorrect behavior / runtime crashes)
 
-| Issue | File | Lines | Details |
-|-------|------|-------|---------|
-| All rows fetched to sum in Dart | `transaction_repository.dart` | 147-229 | Should use SQL `SUM()`, `GROUP BY` instead |
-| N+1 queries in wallet balance | `wallet_repository.dart` | 41-49 | 1+N queries instead of single query |
-| `refresh()` re-locks app on every call | `app_lock_controller.dart` | 64-79 | No way to refresh without re-locking |
-| `hasData` hides Insights card when all zero | `dashboard_screen.dart` | 880,1400-1404 | Brand-new user sees no Insights card |
-| Wallet analytics chart capped at 6 months | `wallet_analytics_screen.dart` | 141-145 | Summary shows all-time but chart only plots 6mo |
-| Fire-and-forget async void callbacks | `backup_screen.dart` | 137-146,161-169 | Unhandled future rejections on save failures |
+No known high-priority issues remain after the latest fix pass.
 
 ## 🟡 MEDIUM
 

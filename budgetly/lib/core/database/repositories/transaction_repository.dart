@@ -155,87 +155,23 @@ class TransactionRepository {
   }
 
   Future<Map<int, int>> spentByCategory(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()
-              ..where(
-                (t) =>
-                    t.type.equals('expense') &
-                    t.specialType.equals('none') &
-                    t.date.isBiggerOrEqualValue(start) &
-                    t.date.isSmallerOrEqualValue(end),
-              )
-              ..orderBy([]))
-            .get();
-
-    final map = <int, int>{};
-    for (final t in rows) {
-      if (t.categoryId != null) {
-        map.update(
-          t.categoryId!,
-          (v) => v + t.amountMinor,
-          ifAbsent: () => t.amountMinor,
-        );
-      }
-    }
-    return map;
+    return _sumByCategory(
+      start,
+      end,
+      "type = 'expense' AND special_type = 'none'",
+    );
   }
 
   Future<Map<int, int>> incomeByCategory(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()
-              ..where(
-                (t) =>
-                    t.type.equals('income') &
-                    t.date.isBiggerOrEqualValue(start) &
-                    t.date.isSmallerOrEqualValue(end),
-              )
-              ..orderBy([]))
-            .get();
-
-    final map = <int, int>{};
-    for (final t in rows) {
-      if (t.categoryId != null) {
-        map.update(
-          t.categoryId!,
-          (v) => v + t.amountMinor,
-          ifAbsent: () => t.amountMinor,
-        );
-      }
-    }
-    return map;
+    return _sumByCategory(start, end, "type = 'income'");
   }
 
   Future<int> totalIncome(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()..where(
-              (t) =>
-                  t.type.equals('income') &
-                  t.date.isBiggerOrEqualValue(start) &
-                  t.date.isSmallerOrEqualValue(end),
-            ))
-            .get();
-    var total = 0;
-    for (final t in rows) {
-      total += t.amountMinor;
-    }
-    return total;
+    return _sumTotal(start, end, "type = 'income'");
   }
 
   Future<int> totalExpenses(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()..where(
-              (t) =>
-                  t.type.equals('expense') &
-                  t.specialType.equals('none') &
-                  t.date.isBiggerOrEqualValue(start) &
-                  t.date.isSmallerOrEqualValue(end),
-            ))
-            .get();
-    var total = 0;
-    for (final t in rows) {
-      total += t.amountMinor;
-    }
-    return total;
+    return _sumTotal(start, end, "type = 'expense' AND special_type = 'none'");
   }
 
   Future<List<Transaction>> getByObjective(int objectiveId) =>
@@ -248,4 +184,49 @@ class TransactionRepository {
 
   String _containsLikePattern(String value) =>
       '%${value.replaceAll('\\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+
+  Future<Map<int, int>> _sumByCategory(
+    DateTime start,
+    DateTime end,
+    String whereClause,
+  ) async {
+    final rows = await _db
+        .customSelect(
+          '''
+          SELECT category_id, SUM(amount_minor) AS total
+          FROM transactions
+          WHERE category_id IS NOT NULL
+            AND date >= ?
+            AND date <= ?
+            AND $whereClause
+          GROUP BY category_id
+          ''',
+          variables: [Variable.withDateTime(start), Variable.withDateTime(end)],
+        )
+        .get();
+    return {
+      for (final row in rows)
+        row.data['category_id'] as int: row.data['total'] as int,
+    };
+  }
+
+  Future<int> _sumTotal(
+    DateTime start,
+    DateTime end,
+    String whereClause,
+  ) async {
+    final row = await _db
+        .customSelect(
+          '''
+          SELECT COALESCE(SUM(amount_minor), 0) AS total
+          FROM transactions
+          WHERE date >= ?
+            AND date <= ?
+            AND $whereClause
+          ''',
+          variables: [Variable.withDateTime(start), Variable.withDateTime(end)],
+        )
+        .getSingle();
+    return row.data['total'] as int;
+  }
 }

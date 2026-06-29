@@ -63,7 +63,7 @@ class AppLockController extends ChangeNotifier {
 
   AppLockState get state => _state;
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool preserveLockState = false}) async {
     final pinHash = await _settings.get(_pinHashKey);
     final biometricsEnabled = await _settings.get(_biometricKey) == 'true';
     final timeoutSeconds =
@@ -71,7 +71,7 @@ class AppLockController extends ChangeNotifier {
     final biometricsAvailable = await _canUseBiometrics();
     _state = AppLockState(
       isEnabled: pinHash != null,
-      isLocked: pinHash != null,
+      isLocked: preserveLockState ? _state.isLocked : pinHash != null,
       biometricsEnabled: biometricsEnabled && biometricsAvailable,
       biometricsAvailable: biometricsAvailable,
       lockTimeoutSeconds: timeoutSeconds,

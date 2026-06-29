@@ -878,7 +878,6 @@ class DashboardScreen extends ConsumerWidget {
       builder: (context, snapshot) {
         final insights = snapshot.data;
         if (insights == null) return _loadingCard;
-        if (!insights.hasData) return const SizedBox.shrink();
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -898,6 +897,12 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
+                if (!insights.hasData)
+                  const _InsightRow(
+                    icon: Icons.emoji_objects_outlined,
+                    text:
+                        'No spending insights yet. Add transactions and budgets to see trends here.',
+                  ),
                 if (insights.previousExpenses > 0)
                   _InsightRow(
                     icon: insights.expenseDelta >= 0

@@ -283,12 +283,7 @@ Future<Map<int, int>> walletBalancesByWalletCurrency(
   WalletRepository repo,
 ) async {
   final wallets = await repo.getAll();
-  final map = <int, int>{};
-  for (final w in wallets) {
-    final balance = await repo.balanceForWallet(w.id);
-    map[w.id] = balance;
-  }
-  return map;
+  return repo.balancesForWallets(wallets);
 }
 
 final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {

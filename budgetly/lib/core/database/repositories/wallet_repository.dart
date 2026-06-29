@@ -40,12 +40,73 @@ class WalletRepository {
 
   Future<int> totalBalance() async {
     final wallets = await _db.wallets.select().get();
-    var total = 0;
-    for (final w in wallets) {
-      if (w.archived) continue;
-      total += await balanceForWallet(w.id);
+    final balances = await balancesForWallets(
+      wallets.where((w) => !w.archived),
+    );
+    return balances.values.fold<int>(0, (sum, balance) => sum + balance);
+  }
+
+  Future<Map<int, int>> balancesForWallets(Iterable<Wallet> wallets) async {
+    final walletList = wallets.toList();
+    if (walletList.isEmpty) return {};
+    final walletById = {for (final wallet in walletList) wallet.id: wallet};
+    final ids = walletById.keys.toList();
+    final now = DateTime.now();
+    final txns =
+        await (_db.transactions.select()..where(
+              (t) =>
+                  (t.walletId.isIn(ids) | t.transferWalletId.isIn(ids)) &
+                  t.date.isSmallerOrEqualValue(now),
+            ))
+            .get();
+
+    final balances = {
+      for (final wallet in walletList) wallet.id: wallet.initialBalanceMinor,
+    };
+
+    for (final t in txns) {
+      final amount = t.amountMinor;
+      final sourceWallet = walletById[t.walletId];
+      if ((t.type == 'expense' || t.type == 'transfer') &&
+          sourceWallet != null) {
+        balances[t.walletId] =
+            balances[t.walletId]! -
+            await _exchangeRates.convert(
+              amount,
+              t.currencyCode,
+              sourceWallet.currencyCode,
+              onDate: t.date,
+            );
+      } else if (t.type == 'income' && sourceWallet != null) {
+        balances[t.walletId] =
+            balances[t.walletId]! +
+            await _exchangeRates.convert(
+              amount,
+              t.currencyCode,
+              sourceWallet.currencyCode,
+              onDate: t.date,
+            );
+      }
+
+      final destinationWalletId = t.transferWalletId;
+      final destinationWallet = destinationWalletId == null
+          ? null
+          : walletById[destinationWalletId];
+      if (t.type == 'transfer' &&
+          destinationWalletId != null &&
+          destinationWallet != null) {
+        balances[destinationWalletId] =
+            balances[destinationWalletId]! +
+            await _exchangeRates.convert(
+              amount,
+              t.currencyCode,
+              destinationWallet.currencyCode,
+              onDate: t.date,
+            );
+      }
     }
-    return total;
+
+    return balances;
   }
 
   Future<int> balanceForWallet(int walletId) async {
