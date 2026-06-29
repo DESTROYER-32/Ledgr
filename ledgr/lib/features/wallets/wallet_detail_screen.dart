@@ -1064,12 +1064,15 @@ class _ActivityTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = transaction.type == 'expense';
     final isIncome = transaction.type == 'income';
-    final color =
-        (category?.color == null ? null : Color(category!.color!)) ??
+    final fallbackColor =
         overrideColor ??
         (isExpense
             ? AppColors.expense
             : (isIncome ? AppColors.income : AppColors.transfer));
+    final itemCategory = category;
+    final color = itemCategory == null
+        ? fallbackColor
+        : AppColors.fromStored(itemCategory.color, fallbackColor);
     final amountColor =
         overrideColor ??
         (isExpense

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/category_icon_utils.dart';
 import '../../core/widgets/empty_state.dart';
 
@@ -81,9 +82,10 @@ class CategoriesScreen extends ConsumerWidget {
     ThemeData theme, {
     bool isSub = false,
   }) {
-    final color = category.color != null
-        ? Color(category.color!)
-        : theme.colorScheme.primary;
+    final color = AppColors.fromStored(
+      category.color,
+      theme.colorScheme.primary,
+    );
     return Card(
       margin: const EdgeInsets.only(bottom: 4),
       child: ListTile(

@@ -263,20 +263,8 @@ final totalBalanceProvider = FutureProvider<int>((ref) async {
   ref.watch(allTransactionsProvider);
   ref.watch(exchangeRatesProvider);
   final repo = ref.watch(walletRepositoryProvider);
-  final wallets = await repo.getAll();
-  final rateService = ref.watch(exchangeRateServiceProvider);
   final displayCurrency = await ref.watch(displayCurrencyProvider.future);
-  var total = 0;
-  for (final w in wallets) {
-    if (w.archived) continue;
-    final balance = await repo.balanceForWallet(w.id);
-    total += await rateService.convert(
-      balance,
-      w.currencyCode,
-      displayCurrency,
-    );
-  }
-  return total;
+  return repo.totalBalance(currencyCode: displayCurrency);
 });
 
 Future<Map<int, int>> walletBalancesByWalletCurrency(

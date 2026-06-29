@@ -400,7 +400,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                               width: 10,
                               height: 10,
                               decoration: BoxDecoration(
-                                color: Color(c.color!),
+                                color: AppColors.fromStored(
+                                  c.color,
+                                  theme.colorScheme.primary,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                             )
