@@ -8,7 +8,6 @@ The remaining work is low-severity code quality, maintainability, accessibility,
 
 | Issue | File | Lines | Details |
 |-------|------|-------|---------|
-| AMOLED theme wasteful `ColorScheme` computation | `budgetly/lib/core/theme/app_theme.dart` | 27-51 | Calls `ColorScheme.fromSeed()` to generate the full dark scheme, then immediately overrides 11 colors. This is harmless but wasteful and less explicit than a purpose-built AMOLED scheme helper. |
 | No localization / i18n | multiple files | various | UI strings are hardcoded English, so the app cannot be translated without a larger extraction pass. |
 | No structured error logging | multiple files | various | Many `catch` blocks intentionally keep the UI alive but discard error details, making production debugging harder. |
 | Hardcoded font sizes | `transaction_tile.dart`, `stat_tile.dart`, others | various | Some widgets use fixed sizes instead of theme text styles, which can reduce accessibility with larger system fonts. |
@@ -29,4 +28,4 @@ The remaining work is low-severity code quality, maintainability, accessibility,
 
 - These are not release blockers.
 - Prioritize items only when touching nearby code, except localization and logging, which need coordinated project-wide decisions.
-- The AMOLED item is the only remaining clearly technical inefficiency from the latest audit pass.
+- Remaining items are low-severity maintainability, accessibility, and polish tasks.

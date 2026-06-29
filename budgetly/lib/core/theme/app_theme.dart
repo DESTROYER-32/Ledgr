@@ -26,13 +26,27 @@ class AppTheme {
 
   static ThemeData amoled({Color? seedOverride}) {
     final seed = seedOverride ?? _defaultSeed;
-    final base = ColorScheme.fromSeed(
-      seedColor: seed,
-      brightness: Brightness.dark,
-    );
-    final colorScheme = base.copyWith(
+    final colorScheme = ColorScheme.dark(
+      primary: seed,
+      onPrimary: Colors.white,
+      primaryContainer: _darken(seed, .35),
+      onPrimaryContainer: Colors.white,
+      secondary: _soften(seed),
+      onSecondary: Colors.white,
+      secondaryContainer: _darken(seed, .45),
+      onSecondaryContainer: Colors.white,
+      tertiary: _rotateHue(seed, 45),
+      onTertiary: Colors.white,
+      tertiaryContainer: _darken(_rotateHue(seed, 45), .45),
+      onTertiaryContainer: Colors.white,
+      error: const Color(0xFFFFB4AB),
+      onError: const Color(0xFF690005),
+      errorContainer: const Color(0xFF93000A),
+      onErrorContainer: const Color(0xFFFFDAD6),
       surface: Colors.black,
       onSurface: Colors.white,
+      onSurfaceVariant: const Color(0xFFE0E0E0),
+      outline: const Color(0xFF8A8A8A),
       surfaceDim: Colors.black,
       surfaceBright: const Color(0xFF121212),
       surfaceContainerLowest: Colors.black,
@@ -48,6 +62,23 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.black,
       canvasColor: Colors.black,
     );
+  }
+
+  static Color _darken(Color color, double amount) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withLightness((hsl.lightness * (1 - amount)).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  static Color _soften(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withSaturation((hsl.saturation * .72).clamp(0.0, 1.0)).toColor();
+  }
+
+  static Color _rotateHue(Color color, double degrees) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withHue((hsl.hue + degrees) % 360).toColor();
   }
 
   static ThemeData _buildTheme(ColorScheme colorScheme) {
