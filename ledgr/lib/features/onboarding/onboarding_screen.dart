@@ -147,6 +147,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _completeOnboarding() async {
     if (_busy) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _busy = true);
     try {
       final settings = ref.read(settingsRepositoryProvider);
@@ -192,6 +193,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _next() {
+    FocusManager.instance.primaryFocus?.unfocus();
     _pageController.nextPage(
       duration: const Duration(milliseconds: 320),
       curve: Curves.easeOutCubic,
@@ -199,6 +201,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _skipCurrentStep() {
+    FocusManager.instance.primaryFocus?.unfocus();
     final step = _steps[_currentPage];
     switch (step.custom) {
       case _StepCustom.name:
