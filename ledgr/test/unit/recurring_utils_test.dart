@@ -26,6 +26,20 @@ void main() {
       expect(next.day, 15);
     });
 
+    test('computeNextDueDate monthly clamps to last valid day', () {
+      final next = RecurringUtils.computeNextDueDate(
+        'monthly',
+        DateTime(2024, 1, 31),
+      );
+      expect(next, DateTime(2024, 2, 29));
+
+      final nonLeap = RecurringUtils.computeNextDueDate(
+        'monthly',
+        DateTime(2023, 1, 31),
+      );
+      expect(nonLeap, DateTime(2023, 2, 28));
+    });
+
     test('computeNextDueDate yearly', () {
       final next = RecurringUtils.computeNextDueDate('yearly', baseDate);
       expect(next.year, 2025);

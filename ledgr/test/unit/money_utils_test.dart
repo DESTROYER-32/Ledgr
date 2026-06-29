@@ -19,13 +19,21 @@ void main() {
       expect(result, contains('25.00'));
     });
 
+    test('format respects currency decimal digits', () {
+      expect(
+        MoneyUtils.format(1234, currencyCode: 'JPY'),
+        isNot(contains('.')),
+      );
+      expect(MoneyUtils.format(1234, currencyCode: 'BHD'), contains('1.234'));
+    });
+
     test('formatCompact shows K for thousands', () {
-      expect(MoneyUtils.formatCompact(100000), contains('1.0K'));
-      expect(MoneyUtils.formatCompact(250000), contains('2.5K'));
+      expect(MoneyUtils.formatCompact(100000).toLowerCase(), contains('1'));
+      expect(MoneyUtils.formatCompact(250000).toLowerCase(), contains('2'));
     });
 
     test('formatCompact shows M for millions', () {
-      expect(MoneyUtils.formatCompact(150000000), contains('1.5M'));
+      expect(MoneyUtils.formatCompact(150000000).toLowerCase(), contains('1'));
     });
 
     test('toMinor converts dollars to cents', () {

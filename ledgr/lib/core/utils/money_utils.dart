@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:intl/intl.dart';
 
 class MoneyUtils {
@@ -5,38 +7,34 @@ class MoneyUtils {
 
   static const String defaultCurrencyCode = 'USD';
 
-  static String _symbol(String code) {
-    try {
-      return NumberFormat.simpleCurrency(
-        name: code,
-        decimalDigits: 2,
-      ).currencySymbol;
-    } catch (_) {
-      return code;
-    }
-  }
-
   static String format(int amountMinor, {String? currencyCode}) {
-    final amount = amountMinor / 100;
     final code = currencyCode ?? defaultCurrencyCode;
+    final digits = decimalDigitsFor(code);
+    final amount = amountMinor / math.pow(10, digits);
     try {
-      final format = NumberFormat.simpleCurrency(name: code, decimalDigits: 2);
+      final format = NumberFormat.simpleCurrency(
+        name: code,
+        decimalDigits: digits,
+      );
       return format.format(amount);
     } catch (_) {
-      return '$code ${amount.toStringAsFixed(2)}';
+      return '$code ${amount.toStringAsFixed(digits)}';
     }
   }
 
   static String formatCompact(int amountMinor, {String? currencyCode}) {
-    final amount = amountMinor / 100;
-    final sym = _symbol(currencyCode ?? defaultCurrencyCode);
-    if (amount.abs() >= 1000000) {
-      return '$sym${(amount / 1000000).toStringAsFixed(1)}M';
+    final code = currencyCode ?? defaultCurrencyCode;
+    final digits = decimalDigitsFor(code);
+    final amount = amountMinor / math.pow(10, digits);
+    return NumberFormat.compactSimpleCurrency(name: code).format(amount);
+  }
+
+  static int decimalDigitsFor(String code) {
+    try {
+      return NumberFormat.simpleCurrency(name: code).decimalDigits ?? 2;
+    } catch (_) {
+      return 2;
     }
-    if (amount.abs() >= 1000) {
-      return '$sym${(amount / 1000).toStringAsFixed(1)}K';
-    }
-    return format(amountMinor, currencyCode: currencyCode);
   }
 
   static int convertMinor(

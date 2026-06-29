@@ -137,8 +137,12 @@ class BudgetRepository {
             .get();
 
     final q = _db.transactions.select();
-    q.where((t) => t.type.equals('expense'));
-    q.where((t) => t.specialType.equals('none'));
+    q.where((t) {
+      final expenses = t.type.equals('expense');
+      return budget.includeIncome
+          ? expenses | t.type.equals('income')
+          : expenses;
+    });
     q.where((t) => t.date.isBiggerOrEqualValue(start));
     q.where((t) => t.date.isSmallerOrEqualValue(end));
 

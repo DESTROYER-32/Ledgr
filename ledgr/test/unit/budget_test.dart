@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:budgetly/core/database/app_database.dart';
@@ -117,5 +118,84 @@ void main() {
         {wallet1: 10000, wallet2: 25000},
       );
     });
+
+    test(
+      'spentForBudget includes income only when includeIncome is enabled',
+      () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+
+        final repo = BudgetRepository(db);
+        final categoryId = await db
+            .into(db.categories)
+            .insert(CategoriesCompanion.insert(name: 'Food', kind: 'expense'));
+        final walletId = await db
+            .into(db.wallets)
+            .insert(
+              WalletsCompanion.insert(
+                name: 'Checking',
+                type: 'checking',
+                currencyCode: 'USD',
+                initialBalanceMinor: 0,
+              ),
+            );
+        final start = DateTime(2024, 1);
+        final end = DateTime(2024, 1, 31);
+        final excludedIncomeBudget = await db
+            .into(db.budgets)
+            .insert(
+              BudgetsCompanion.insert(
+                name: 'Expenses only',
+                periodStart: start,
+                periodEnd: end,
+                currencyCode: 'USD',
+                includeIncome: const Value(false),
+              ),
+            );
+        final includedIncomeBudget = await db
+            .into(db.budgets)
+            .insert(
+              BudgetsCompanion.insert(
+                name: 'Net budget',
+                periodStart: start,
+                periodEnd: end,
+                currencyCode: 'USD',
+                includeIncome: const Value(true),
+              ),
+            );
+
+        await db
+            .into(db.transactions)
+            .insert(
+              TransactionsCompanion.insert(
+                type: 'expense',
+                amountMinor: 1000,
+                currencyCode: 'USD',
+                date: DateTime(2024, 1, 10),
+                walletId: walletId,
+                categoryId: Value(categoryId),
+              ),
+            );
+        await db
+            .into(db.transactions)
+            .insert(
+              TransactionsCompanion.insert(
+                type: 'income',
+                amountMinor: 500,
+                currencyCode: 'USD',
+                date: DateTime(2024, 1, 11),
+                walletId: walletId,
+                categoryId: Value(categoryId),
+              ),
+            );
+
+        expect(await repo.spentForBudget(excludedIncomeBudget, start, end), {
+          categoryId: 1000,
+        });
+        expect(await repo.spentForBudget(includedIncomeBudget, start, end), {
+          categoryId: 1500,
+        });
+      },
+    );
   });
 }
