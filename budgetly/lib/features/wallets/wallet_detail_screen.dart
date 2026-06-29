@@ -107,6 +107,8 @@ class WalletDetailScreen extends ConsumerWidget {
               final displayCurrency =
                   ref.watch(displayCurrencyProvider).valueOrNull ??
                   MoneyUtils.defaultCurrencyCode;
+              final showDefaultCurrency =
+                  ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;
               final exchangeRates =
                   ref.watch(exchangeRatesProvider).valueOrNull ?? {};
               final categoriesById = {for (final c in categories) c.id: c};
@@ -177,6 +179,7 @@ class WalletDetailScreen extends ConsumerWidget {
                       analytics: analytics,
                       categoriesById: categoriesById,
                       displayCurrency: displayCurrency,
+                      showDefaultCurrency: showDefaultCurrency,
                       exchangeRates: exchangeRates,
                       filter: filter,
                       onChanged: (next) =>
@@ -801,6 +804,7 @@ class _TransactionFlowList extends StatelessWidget {
   final _AccountAnalytics analytics;
   final Map<int, Category> categoriesById;
   final String displayCurrency;
+  final bool showDefaultCurrency;
   final Map<String, double> exchangeRates;
   final _AccountFilter filter;
   final ValueChanged<_AccountFilter> onChanged;
@@ -809,6 +813,7 @@ class _TransactionFlowList extends StatelessWidget {
     required this.analytics,
     required this.categoriesById,
     required this.displayCurrency,
+    required this.showDefaultCurrency,
     required this.exchangeRates,
     required this.filter,
     required this.onChanged,
@@ -860,6 +865,7 @@ class _TransactionFlowList extends StatelessWidget {
                       : categoriesById[t.categoryId],
                   overrideColor: color,
                   displayCurrency: displayCurrency,
+                  showDefaultCurrency: showDefaultCurrency,
                   exchangeRates: exchangeRates,
                 ),
                 if (t != transactions.last) const Divider(height: 8),
@@ -1040,12 +1046,14 @@ class _ActivityTile extends StatelessWidget {
   final Category? category;
   final Color? overrideColor;
   final String displayCurrency;
+  final bool showDefaultCurrency;
   final Map<String, double> exchangeRates;
   const _ActivityTile({
     required this.transaction,
     this.category,
     this.overrideColor,
     required this.displayCurrency,
+    required this.showDefaultCurrency,
     required this.exchangeRates,
   });
 
@@ -1072,7 +1080,8 @@ class _ActivityTile extends StatelessWidget {
       toCurrency: displayCurrency,
       rates: exchangeRates,
     );
-    final showOriginal =
+    final showConverted =
+        showDefaultCurrency &&
         originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -1099,13 +1108,13 @@ class _ActivityTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
+            '$sign${MoneyUtils.format(transaction.amountMinor, currencyCode: originalCurrency)}',
             style: TextStyle(fontWeight: FontWeight.bold, color: amountColor),
           ),
-          if (showOriginal) ...[
+          if (showConverted) ...[
             const SizedBox(height: 2),
             Text(
-              '$sign${MoneyUtils.format(transaction.amountMinor, currencyCode: originalCurrency)}',
+              '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
