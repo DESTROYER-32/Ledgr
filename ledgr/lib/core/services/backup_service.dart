@@ -262,28 +262,31 @@ class BackupService {
     final tableData = decoded['tables'] as Map<String, dynamic>;
     await _db.transaction(() async {
       await _db.customStatement('PRAGMA foreign_keys = OFF');
-      for (final table in tables.reversed) {
-        await _db.customStatement('DELETE FROM $table');
-      }
-      for (final table in tables) {
-        final rows = tableData[table];
-        if (rows is! List) continue;
-        for (final row in rows) {
-          if (row is Map<String, dynamic>) {
-            await _db.customStatement(
-              _insertSql(table, _normalizeRow(table, row)),
-            );
-          } else if (row is Map) {
-            await _db.customStatement(
-              _insertSql(
-                table,
-                _normalizeRow(table, Map<String, dynamic>.from(row)),
-              ),
-            );
+      try {
+        for (final table in tables.reversed) {
+          await _db.customStatement('DELETE FROM $table');
+        }
+        for (final table in tables) {
+          final rows = tableData[table];
+          if (rows is! List) continue;
+          for (final row in rows) {
+            if (row is Map<String, dynamic>) {
+              await _db.customStatement(
+                _insertSql(table, _normalizeRow(table, row)),
+              );
+            } else if (row is Map) {
+              await _db.customStatement(
+                _insertSql(
+                  table,
+                  _normalizeRow(table, Map<String, dynamic>.from(row)),
+                ),
+              );
+            }
           }
         }
+      } finally {
+        await _db.customStatement('PRAGMA foreign_keys = ON');
       }
-      await _db.customStatement('PRAGMA foreign_keys = ON');
     });
   }
 

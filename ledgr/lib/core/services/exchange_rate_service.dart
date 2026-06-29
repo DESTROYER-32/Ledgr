@@ -25,6 +25,8 @@ class ExchangeRateService {
   }) : _client = client ?? http.Client(),
        _apiUrls = apiUrls ?? _defaultApiUrls;
 
+  void close() => _client.close();
+
   static const _cacheKey = 'cached_currency_exchange';
   static const _cacheDatePrefix = 'cached_currency_exchange_date_';
   static const _customKey = 'custom_currency_amounts';

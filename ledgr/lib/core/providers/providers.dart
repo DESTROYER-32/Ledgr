@@ -110,7 +110,9 @@ final recurringServiceProvider = Provider<RecurringService>((ref) {
 });
 
 final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
-  return ExchangeRateService(ref.watch(settingsRepositoryProvider));
+  final service = ExchangeRateService(ref.watch(settingsRepositoryProvider));
+  ref.onDispose(service.close);
+  return service;
 });
 
 final exchangeRatesRefreshProvider = StateProvider<int>((ref) => 0);

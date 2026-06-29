@@ -60,9 +60,7 @@ class DeleteLogRepository {
         .go();
   }
 
-  Future<void> clearAll() => _db.deleteLogs.select().get().then((logs) {
-    for (final l in logs) {
-      _db.deleteLogs.deleteOne(l);
-    }
-  });
+  Future<void> clearAll() async {
+    await _db.deleteLogs.delete().go();
+  }
 }
