@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/empty_state.dart';
 
@@ -104,9 +105,10 @@ class ObjectivesListScreen extends ConsumerWidget {
     ThemeData theme,
     int total,
   ) {
-    final color = objective.color != null
-        ? Color(objective.color!)
-        : theme.colorScheme.primary;
+    final color = AppColors.fromStored(
+      objective.color,
+      theme.colorScheme.primary,
+    );
     final isGoal = objective.type == 'goal';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

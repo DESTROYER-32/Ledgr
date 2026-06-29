@@ -91,9 +91,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (t != null && mounted) {
       setState(() {
         _type = t.type;
-        _specialType = t.specialType == 'repetitive'
-            ? 'scheduled'
-            : t.specialType;
+        _specialType = t.specialType;
         _recurrenceRule = t.recurrenceRule;
         _hydrateRepeatControls(t.recurrenceRule);
         _walletId = t.walletId;
@@ -340,6 +338,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   _specialChip('upcoming', 'Upcoming'),
                   _specialChip('subscription', 'Subscription'),
                   _specialChip('scheduled', 'Scheduled'),
+                  if (_specialType == 'repetitive')
+                    _specialChip('repetitive', 'Repeating'),
                   if (_type == 'expense') _specialChip('debt', 'Debt'),
                   if (_type == 'income') _specialChip('credit', 'Credit'),
                 ],
@@ -731,7 +731,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   bool get _isRecurringSpecial =>
-      _specialType == 'subscription' || _specialType == 'scheduled';
+      _specialType == 'subscription' ||
+      _specialType == 'scheduled' ||
+      _specialType == 'repetitive';
 
   Widget _specialChip(String value, String label) {
     final selected = _specialType == value;

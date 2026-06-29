@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/empty_state.dart';
 
 class AssociatedTitlesScreen extends ConsumerWidget {
@@ -60,9 +61,12 @@ class AssociatedTitlesScreen extends ConsumerWidget {
                       child: ListTile(
                         leading: Icon(
                           title.exactMatch ? Icons.text_fields : Icons.search,
-                          color: category?.color != null
-                              ? Color(category!.color!)
-                              : null,
+                          color: category == null
+                              ? null
+                              : AppColors.fromStored(
+                                  category.color,
+                                  Theme.of(context).colorScheme.primary,
+                                ),
                         ),
                         title: Text('"${title.title}"'),
                         subtitle: Text(

@@ -887,9 +887,12 @@ class _MonthTransactionsPage extends StatelessWidget {
               title: entry.title,
               date: entry.date,
               categoryName: category?.name,
-              categoryColor: category?.color == null
+              categoryColor: category == null
                   ? null
-                  : Color(category!.color!),
+                  : AppColors.fromStored(
+                      category.color,
+                      Theme.of(context).colorScheme.primary,
+                    ),
               categoryIcon: category?.icon,
               currencyCode: entry.currencyCode,
               displayAmountMinor: convertedAmount,
@@ -901,9 +904,12 @@ class _MonthTransactionsPage extends StatelessWidget {
           return _PlannedTransactionTile(
             entry: entry,
             categoryName: category?.name,
-            categoryColor: category?.color == null
+            categoryColor: category == null
                 ? null
-                : Color(category!.color!),
+                : AppColors.fromStored(
+                    category.color,
+                    Theme.of(context).colorScheme.primary,
+                  ),
             categoryIcon: category?.icon,
             onTap: entry.recurring == null
                 ? null

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/database/repositories/transaction_repository.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 
 class BudgetsScreen extends ConsumerStatefulWidget {
@@ -151,7 +152,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     Budget budget,
     bool isGoal,
   ) {
-    final color = budget.color != null ? Color(budget.color!) : cs.primary;
+    final color = AppColors.fromStored(budget.color, cs.primary);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

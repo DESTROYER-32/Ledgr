@@ -226,9 +226,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     }
 
     final budget = _budget!;
-    final color = budget.color != null ? Color(budget.color!) : cs.primary;
+    final color = AppColors.fromStored(budget.color, cs.primary);
     final pct = _totalPlanned > 0
-        ? (_totalSpent / _totalPlanned).clamp(0.0, 2.0)
+        ? (_totalSpent / _totalPlanned).clamp(0.0, 1.0)
         : 0.0;
     final remaining = _totalPlanned - _totalSpent;
     final isOver = _totalSpent > _totalPlanned;
@@ -639,9 +639,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       PieChartData(
                         sections: sorted.map((e) {
                           final cat = catMap[e.key];
-                          final c = cat?.color != null
-                              ? Color(cat!.color!)
-                              : cs.primary;
+                          final c = cat == null
+                              ? cs.primary
+                              : AppColors.fromStored(cat.color, cs.primary);
                           final pct = e.value / total;
                           return PieChartSectionData(
                             value: pct * 100,
@@ -667,9 +667,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: sorted.take(5).map((e) {
                         final cat = catMap[e.key];
-                        final c = cat?.color != null
-                            ? Color(cat!.color!)
-                            : cs.primary;
+                        final c = cat == null
+                            ? cs.primary
+                            : AppColors.fromStored(cat.color, cs.primary);
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Row(
@@ -762,9 +762,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                     title: t.title,
                     date: t.date,
                     categoryName: category?.name,
-                    categoryColor: category?.color == null
+                    categoryColor: category == null
                         ? null
-                        : Color(category!.color!),
+                        : AppColors.fromStored(category.color, cs.primary),
                     categoryIcon: category?.icon,
                     currencyCode: t.currencyCode,
                     onTap: () => context.push('/transactions/${t.id}'),

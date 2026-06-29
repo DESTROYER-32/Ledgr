@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
@@ -69,9 +70,10 @@ class ObjectiveDetailScreen extends ConsumerWidget {
                             ? Icons.swap_horiz
                             : Icons.flag,
                         size: 48,
-                        color: objective.color != null
-                            ? Color(objective.color!)
-                            : theme.colorScheme.primary,
+                        color: AppColors.fromStored(
+                          objective.color,
+                          theme.colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(

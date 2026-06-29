@@ -38,12 +38,20 @@ class WalletRepository {
   Future<void> delete(int id) =>
       (_db.wallets.delete()..where((w) => w.id.equals(id))).go();
 
-  Future<int> totalBalance() async {
-    final wallets = await _db.wallets.select().get();
-    final balances = await balancesForWallets(
-      wallets.where((w) => !w.archived),
-    );
-    return balances.values.fold<int>(0, (sum, balance) => sum + balance);
+  Future<int> totalBalance({required String currencyCode}) async {
+    final wallets = (await _db.wallets.select().get())
+        .where((w) => !w.archived)
+        .toList();
+    final balances = await balancesForWallets(wallets);
+    var total = 0;
+    for (final wallet in wallets) {
+      total += await _exchangeRates.convert(
+        balances[wallet.id] ?? wallet.initialBalanceMinor,
+        wallet.currencyCode,
+        currencyCode,
+      );
+    }
+    return total;
   }
 
   Future<Map<int, int>> balancesForWallets(Iterable<Wallet> wallets) async {

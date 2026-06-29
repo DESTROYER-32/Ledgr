@@ -15,19 +15,11 @@ No known high-priority issues remain after the latest fix pass.
 | Non-normalized `budgetFks` stored as JSON/text | `tables.dart` | 52-53 | Violates 1NF; should be join table |
 | Wallet-specific decimals should be currency-derived | `tables.dart` | 14 | `decimals` per-wallet allows inconsistencies |
 | AMOLED theme wasteful ColorScheme computation | `app_theme.dart` | 27-51 | Computes 30+ colors then overrides 11 |
-| Category colors exhaust at 12 | `app_theme.dart` | 189-202 | Categories 1 and 13 share the same color |
-| `FutureBuilder` nested in Riverpod `Consumer` | `dashboard_screen.dart` | 438-500,604-648,876-926 | New Future on every rebuild |
 | `monthEnd` uses day-0 hack | `money_utils.dart` | 88-89 | `DateTime(year, month+1, 0)` is non-obvious |
 | `watchActive().first` wasteful Stream subscriptions | `budget_detail_screen.dart` | 47,150,176-177 | Should use Future-based getters instead |
-| Budget `spent/planned` clamp inconsistent | `budget_detail_screen.dart` | 231,519 | 2.0 (text) vs 1.0 (progress bar) |
 | Sequential DB updates in reorder loop | `wallets_screen.dart` | 79-84 | N updates for N wallets |
-| `_specialType` silently transforms data | `transaction_form_screen.dart` | 91-92 | `repetitive` → `scheduled` silently |
-| `AppColors.soft` variants light-mode only | `app_theme.dart` | 182-184 | Invisible on dark backgrounds |
-| `Wallet` color `Color(0)` creates transparent widget | multiple files | various | ARGB = 0x00000000 is invisible |
 | No loading indicator during mutations | multiple files | various | User can tap save multiple times |
 | `_topEntries` duplicated in two files | `wallet_detail_screen.dart`, `wallet_analytics_screen.dart` | 1326,488 | DRY violation |
-| `multiWalletBalance` sums different currencies | `wallet_repository.dart` | 46 | 100 USD + 100 EUR = 200 (meaningless) |
-| `repetitive` → `scheduled` in form silently loses data | `transaction_form_screen.dart` | 91-92 | Data-altering behavior with no user awareness |
 | Exchange rate `ratio()` fetches sequentially | `exchange_rate_service.dart` | 197-198 | Could be parallelized with `Future.wait` |
 
 ## 🔵 LOW (code smells / style)

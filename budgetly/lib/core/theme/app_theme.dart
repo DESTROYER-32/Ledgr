@@ -179,12 +179,18 @@ class AppColors {
   static const income = Color(0xFF43A047);
   static const transfer = Color(0xFF1E88E5);
 
-  static const expenseSoft = Color(0xFFFFF0F0);
-  static const incomeSoft = Color(0xFFF0FFF0);
-  static const transferSoft = Color(0xFFF0F5FF);
+  static Color expenseSoft(ColorScheme cs) => cs.errorContainer;
+  static Color incomeSoft(ColorScheme cs) => cs.primaryContainer;
+  static Color transferSoft(ColorScheme cs) => cs.secondaryContainer;
 
   static Color expenseContainer(ColorScheme cs) => cs.errorContainer;
   static Color incomeContainer(ColorScheme cs) => cs.primaryContainer;
+
+  static Color fromStored(int? value, Color fallback) {
+    if (value == null) return fallback;
+    final color = Color(value);
+    return color.a == 0 ? fallback : color;
+  }
 
   static const categoryColors = [
     Color(0xFFE53935),
@@ -199,5 +205,17 @@ class AppColors {
     Color(0xFF546E7A),
     Color(0xFFFF7043),
     Color(0xFF8BC34A),
+    Color(0xFF00897B),
+    Color(0xFFC0CA33),
+    Color(0xFF3949AB),
+    Color(0xFFAD1457),
+    Color(0xFF7CB342),
+    Color(0xFF039BE5),
+    Color(0xFF8D6E63),
+    Color(0xFF6A1B9A),
+    Color(0xFFFFB300),
+    Color(0xFF00838F),
+    Color(0xFFE64A19),
+    Color(0xFF455A64),
   ];
 }

@@ -31,7 +31,7 @@ class FakeWalletRepository implements WalletRepository {
   Future<Wallet?> getById(int id) async => id == wallet.id ? wallet : null;
 
   @override
-  Future<int> totalBalance() async => balance;
+  Future<int> totalBalance({required String currencyCode}) async => balance;
 
   @override
   Future<int> insert(WalletsCompanion entry) => throw UnimplementedError();
