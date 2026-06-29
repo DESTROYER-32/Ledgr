@@ -16,31 +16,19 @@ No known high-priority issues remain after the latest fix pass.
 | Wallet-specific decimals should be currency-derived | `tables.dart` | 14 | `decimals` per-wallet allows inconsistencies |
 | AMOLED theme wasteful ColorScheme computation | `app_theme.dart` | 27-51 | Computes 30+ colors then overrides 11 |
 | Category colors exhaust at 12 | `app_theme.dart` | 189-202 | Categories 1 and 13 share the same color |
-| Hardcoded `DateTime(2030)` in DatePickers | `transaction_form_screen.dart`, `transfer_form_screen.dart` | 469,147 | Y2K-style bug — expires in 2030 |
 | `FutureBuilder` nested in Riverpod `Consumer` | `dashboard_screen.dart` | 438-500,604-648,876-926 | New Future on every rebuild |
 | `monthEnd` uses day-0 hack | `money_utils.dart` | 88-89 | `DateTime(year, month+1, 0)` is non-obvious |
-| TOCTOU race in settings upsert | `settings_repository.dart` | 17-27 | Race between select and insert |
 | `watchActive().first` wasteful Stream subscriptions | `budget_detail_screen.dart` | 47,150,176-177 | Should use Future-based getters instead |
 | Budget `spent/planned` clamp inconsistent | `budget_detail_screen.dart` | 231,519 | 2.0 (text) vs 1.0 (progress bar) |
-| Division by zero in percentage display | `objective_detail_screen.dart` | 114 | If `amountMinor == 0`, shows `NaN%` |
-| False empty state during loading | `objective_detail_screen.dart` | 30-34 | Shows "No transactions" while still loading |
-| N+1 queries for objective progress | `objectives_list_screen.dart` | 174-209 | Separate `FutureBuilder` per objective |
-| `double.parse` can throw FormatException | `objective_form_screen.dart` | 207-209 | Unhandled exception on invalid input |
 | Sequential DB updates in reorder loop | `wallets_screen.dart` | 79-84 | N updates for N wallets |
-| No form validation in transfer form | `transfer_form_screen.dart` | 41-54 | Inline imperative checks instead of `Form` widget |
-| `firstWhere` throws StateError | `transfer_form_screen.dart` | 57 | Should use `firstWhereOrNull` |
 | `_specialType` silently transforms data | `transaction_form_screen.dart` | 91-92 | `repetitive` → `scheduled` silently |
 | `AppColors.soft` variants light-mode only | `app_theme.dart` | 182-184 | Invisible on dark backgrounds |
 | `Wallet` color `Color(0)` creates transparent widget | multiple files | various | ARGB = 0x00000000 is invisible |
 | No loading indicator during mutations | multiple files | various | User can tap save multiple times |
-| Unsafe `snapshot.data!` in FutureBuilders | `objectives_list_screen.dart` | 180 | Crashes if data is null |
-| `associated_titles_screen.dart` uses `dynamic` throughout | `associated_titles_screen.dart` | 32-33,51-67 | Zero compile-time type safety |
 | `_topEntries` duplicated in two files | `wallet_detail_screen.dart`, `wallet_analytics_screen.dart` | 1326,488 | DRY violation |
 | `multiWalletBalance` sums different currencies | `wallet_repository.dart` | 46 | 100 USD + 100 EUR = 200 (meaningless) |
-| Synchronous call `NotificationService.init()` no catch | `main.dart` | 15 | Crash on notification init failure |
 | `repetitive` → `scheduled` in form silently loses data | `transaction_form_screen.dart` | 91-92 | Data-altering behavior with no user awareness |
 | Exchange rate `ratio()` fetches sequentially | `exchange_rate_service.dart` | 197-198 | Could be parallelized with `Future.wait` |
-| No `mounted` check after async in `Switch.onChanged` | `recurring_screen.dart` | 93-101 | No rollback if DB update fails |
 
 ## 🔵 LOW (code smells / style)
 

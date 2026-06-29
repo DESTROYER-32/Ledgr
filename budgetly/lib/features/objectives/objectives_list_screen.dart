@@ -37,37 +37,59 @@ class ObjectivesListScreen extends ConsumerWidget {
               onAction: () => context.push('/objectives/new'),
             );
           }
-          final goals = objectives.where((o) => o.type == 'goal').toList();
-          final loans = objectives.where((o) => o.type == 'loan').toList();
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (goals.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Savings Goals',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.primary,
+          return FutureBuilder<Map<int, int>>(
+            future: ref
+                .read(transactionRepositoryProvider)
+                .totalsByObjectives(objectives.map((o) => o.id)),
+            builder: (context, snapshot) {
+              final totalsByObjective = snapshot.data ?? const <int, int>{};
+              final goals = objectives.where((o) => o.type == 'goal').toList();
+              final loans = objectives.where((o) => o.type == 'loan').toList();
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (goals.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Savings Goals',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                ...goals.map((o) => _buildTile(context, ref, o, theme)),
-                const SizedBox(height: 16),
-              ],
-              if (loans.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Loans & Debts',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.primary,
+                    ...goals.map(
+                      (o) => _buildTile(
+                        context,
+                        o,
+                        theme,
+                        totalsByObjective[o.id] ?? 0,
+                      ),
                     ),
-                  ),
-                ),
-                ...loans.map((o) => _buildTile(context, ref, o, theme)),
-              ],
-            ],
+                    const SizedBox(height: 16),
+                  ],
+                  if (loans.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Loans & Debts',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    ...loans.map(
+                      (o) => _buildTile(
+                        context,
+                        o,
+                        theme,
+                        totalsByObjective[o.id] ?? 0,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
           );
         },
         error: (e, _) => Center(child: Text('$e')),
@@ -78,9 +100,9 @@ class ObjectivesListScreen extends ConsumerWidget {
 
   Widget _buildTile(
     BuildContext context,
-    WidgetRef ref,
     Objective objective,
     ThemeData theme,
+    int total,
   ) {
     final color = objective.color != null
         ? Color(objective.color!)
@@ -119,7 +141,7 @@ class ObjectivesListScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          '${isGoal ? 'Goal' : 'Loan'} \u2022 ${objective.currencyCode}',
+                          '${isGoal ? 'Goal' : 'Loan'} • ${objective.currencyCode}',
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onSurfaceVariant,
@@ -130,7 +152,9 @@ class ObjectivesListScreen extends ConsumerWidget {
                   ),
                   PopupMenuButton<String>(
                     onSelected: (v) async {
-                      final repo = ref.read(objectiveRepositoryProvider);
+                      final repo = ProviderScope.containerOf(
+                        context,
+                      ).read(objectiveRepositoryProvider);
                       if (v == 'archive') {
                         await repo.archive(objective.id);
                       } else if (v == 'edit') {
@@ -157,7 +181,7 @@ class ObjectivesListScreen extends ConsumerWidget {
               ),
               if (isGoal) ...[
                 const SizedBox(height: 12),
-                _buildObjectiveProgress(ref, objective, theme),
+                _buildObjectiveProgress(objective, theme, total),
               ],
             ],
           ),
@@ -167,45 +191,33 @@ class ObjectivesListScreen extends ConsumerWidget {
   }
 
   Widget _buildObjectiveProgress(
-    WidgetRef ref,
     Objective objective,
     ThemeData theme,
+    int total,
   ) {
-    return FutureBuilder<List<Transaction>>(
-      future: ref
-          .read(transactionRepositoryProvider)
-          .getByObjective(objective.id),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox(height: 4);
-        final total = snapshot.data!.fold<int>(
-          0,
-          (sum, t) => sum + t.amountMinor,
-        );
-        final progress = objective.amountMinor > 0
-            ? total / objective.amountMinor
-            : 0.0;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
-                minHeight: 6,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${MoneyUtils.formatCompact(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.formatCompact(objective.amountMinor, currencyCode: objective.currencyCode)}',
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        );
-      },
+    final progress = objective.amountMinor > 0
+        ? total / objective.amountMinor
+        : 0.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            minHeight: 6,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${MoneyUtils.formatCompact(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.formatCompact(objective.amountMinor, currencyCode: objective.currencyCode)}',
+          style: TextStyle(
+            fontSize: 11,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

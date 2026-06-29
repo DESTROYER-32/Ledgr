@@ -182,6 +182,36 @@ class TransactionRepository {
             ]))
           .get();
 
+  Future<int> totalByObjective(int objectiveId) async {
+    final row = await _db
+        .customSelect(
+          '''
+          SELECT COALESCE(SUM(amount_minor), 0) AS total
+          FROM transactions
+          WHERE objective_fk = ?
+          ''',
+          variables: [Variable.withInt(objectiveId)],
+        )
+        .getSingle();
+    return row.data['total'] as int;
+  }
+
+  Future<Map<int, int>> totalsByObjectives(Iterable<int> objectiveIds) async {
+    final ids = objectiveIds.toSet().toList();
+    if (ids.isEmpty) return {};
+    final placeholders = List.filled(ids.length, '?').join(', ');
+    final rows = await _db.customSelect('''
+          SELECT objective_fk, SUM(amount_minor) AS total
+          FROM transactions
+          WHERE objective_fk IN ($placeholders)
+          GROUP BY objective_fk
+          ''', variables: ids.map(Variable.withInt).toList()).get();
+    return {
+      for (final row in rows)
+        row.data['objective_fk'] as int: row.data['total'] as int,
+    };
+  }
+
   String _containsLikePattern(String value) =>
       '%${value.replaceAll('\\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
 

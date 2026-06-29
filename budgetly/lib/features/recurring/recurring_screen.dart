@@ -91,14 +91,25 @@ class RecurringScreen extends ConsumerWidget {
                       Switch(
                         value: r.active,
                         onChanged: (v) async {
-                          await ref
-                              .read(recurringRepositoryProvider)
-                              .update(
-                                r.id,
-                                RecurringTransactionsCompanion(
-                                  active: Value(v),
+                          try {
+                            await ref
+                                .read(recurringRepositoryProvider)
+                                .update(
+                                  r.id,
+                                  RecurringTransactionsCompanion(
+                                    active: Value(v),
+                                  ),
+                                );
+                          } catch (_) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Could not update recurring item.',
                                 ),
-                              );
+                              ),
+                            );
+                          }
                         },
                       ),
                     ],
