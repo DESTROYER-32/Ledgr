@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 import '../app_database.dart';
 
 class TransactionRepository {
+  static const uncategorizedCategoryId = -1;
+
   final AppDatabase _db;
   TransactionRepository(this._db);
 
@@ -65,7 +67,9 @@ class TransactionRepository {
   }
 
   Future<void> update(int id, TransactionsCompanion entry) =>
-      (_db.transactions.update()..where((t) => t.id.equals(id))).write(entry);
+      (_db.transactions.update()..where((t) => t.id.equals(id))).write(
+        entry.copyWith(updatedAt: Value(DateTime.now())),
+      );
 
   Future<void> updateWithBudgets(
     int id,
@@ -340,8 +344,7 @@ class TransactionRepository {
     final rows = await _db.customSelect('''
           SELECT category_id, SUM(amount_minor) AS total
           FROM transactions
-          WHERE category_id IS NOT NULL
-            AND date >= ?
+          WHERE date >= ?
             AND date <= ?
             AND type = ?
             $specialTypeFilter
@@ -349,7 +352,8 @@ class TransactionRepository {
           ''', variables: variables).get();
     return {
       for (final row in rows)
-        row.data['category_id'] as int: row.data['total'] as int,
+        (row.data['category_id'] as int?) ?? uncategorizedCategoryId:
+            row.data['total'] as int,
     };
   }
 

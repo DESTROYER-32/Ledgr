@@ -1084,7 +1084,7 @@ class _ActivityTile extends StatelessWidget {
         ? '-'
         : '+';
     final originalCurrency = transaction.currencyCode;
-    final convertedAmount = MoneyUtils.convertMinor(
+    final convertedAmount = MoneyUtils.tryConvertMinor(
       transaction.amountMinor,
       fromCurrency: originalCurrency,
       toCurrency: displayCurrency,
@@ -1092,6 +1092,7 @@ class _ActivityTile extends StatelessWidget {
     );
     final showConverted =
         showDefaultCurrency &&
+        convertedAmount != null &&
         originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
     return ListTile(
       contentPadding: EdgeInsets.zero,

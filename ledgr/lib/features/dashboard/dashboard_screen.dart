@@ -31,6 +31,7 @@ final _dashboardBudgetPreviewProvider = FutureProvider.autoDispose
 
 final _dashboardInsightsProvider =
     FutureProvider.autoDispose<_DashboardInsights>((ref) async {
+      ref.watch(allTransactionsProvider);
       final budgets = await ref.watch(allBudgetsProvider.future);
       final now = DateTime.now();
       final activeBudgets = budgets
@@ -88,7 +89,13 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(allTransactionsProvider);
           ref.invalidate(allBudgetsProvider);
           ref.invalidate(activeWalletsProvider);
+          ref.invalidate(walletBalancesProvider);
           ref.invalidate(activeRecurringProvider);
+          ref.invalidate(spentByCategoryProvider);
+          ref.invalidate(monthlyIncomeProvider);
+          ref.invalidate(monthlyExpensesProvider);
+          ref.invalidate(exchangeRatesProvider);
+          ref.invalidate(_dashboardInsightsProvider);
           await Future<void>.delayed(const Duration(milliseconds: 100));
         },
         child: ListView(
@@ -717,12 +724,13 @@ class DashboardScreen extends ConsumerWidget {
         for (final t in transactions) {
           if (t.date.isBefore(start) || t.date.isAfter(end)) continue;
           if (t.date.isAfter(todayEnd)) continue;
-          final converted = MoneyUtils.convertMinor(
+          final converted = MoneyUtils.tryConvertMinor(
             t.amountMinor,
             fromCurrency: t.currencyCode,
             toCurrency: currencyCode,
             rates: exchangeRates,
           );
+          if (converted == null) continue;
           if (t.type == 'income') income += converted;
           if (t.type == 'expense') expenses += converted;
         }
@@ -876,56 +884,77 @@ class DashboardScreen extends ConsumerWidget {
   ) {
     final currencyCode =
         displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
-    final insights = ref.watch(_dashboardInsightsProvider).valueOrNull;
-    if (insights == null) return _loadingCard;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.insights, color: cs.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Insights',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+    final insightsAsync = ref.watch(_dashboardInsightsProvider);
+    return insightsAsync.when(
+      loading: () => _loadingCard,
+      error: (error, _) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Icon(Icons.error_outline, color: cs.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Insights are temporarily unavailable. Pull to refresh and try again.',
+                  style: theme.textTheme.bodyMedium,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (!insights.hasData)
-              const _InsightRow(
-                icon: Icons.emoji_objects_outlined,
-                text:
-                    'No spending insights yet. Add transactions and budgets to see trends here.',
               ),
-            if (insights.previousExpenses > 0)
-              _InsightRow(
-                icon: insights.expenseDelta >= 0
-                    ? Icons.trending_up
-                    : Icons.trending_down,
-                text:
-                    'Expenses are ${insights.expenseDelta.abs().toStringAsFixed(0)}% ${insights.expenseDelta >= 0 ? 'higher' : 'lower'} than last month.',
-              ),
-            if (insights.largestExpense != null)
-              _InsightRow(
-                icon: Icons.receipt_long,
-                text:
-                    'Largest expense: ${insights.largestExpense!.title ?? 'Untitled'} at ${MoneyUtils.format(insights.largestExpense!.amountMinor, currencyCode: insights.largestExpense!.currencyCode)}.',
-              ),
-            if (insights.rolloverPreview != 0)
-              _InsightRow(
-                icon: Icons.sync_alt,
-                text:
-                    'Budget rollover preview: ${MoneyUtils.format(insights.rolloverPreview, currencyCode: currencyCode)} ${insights.rolloverPreview >= 0 ? 'available' : 'overspent'} across active budgets.',
-              ),
-          ],
+            ],
+          ),
         ),
       ),
+      data: (insights) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.insights, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Insights',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (!insights.hasData)
+                  const _InsightRow(
+                    icon: Icons.emoji_objects_outlined,
+                    text:
+                        'No spending insights yet. Add transactions and budgets to see trends here.',
+                  ),
+                if (insights.previousExpenses > 0)
+                  _InsightRow(
+                    icon: insights.expenseDelta >= 0
+                        ? Icons.trending_up
+                        : Icons.trending_down,
+                    text:
+                        'Expenses are ${insights.expenseDelta.abs().toStringAsFixed(0)}% ${insights.expenseDelta >= 0 ? 'higher' : 'lower'} than last month.',
+                  ),
+                if (insights.largestExpense != null)
+                  _InsightRow(
+                    icon: Icons.receipt_long,
+                    text:
+                        'Largest expense: ${insights.largestExpense!.title ?? 'Untitled'} at ${MoneyUtils.format(insights.largestExpense!.amountMinor, currencyCode: insights.largestExpense!.currencyCode)}.',
+                  ),
+                if (insights.rolloverPreview != 0)
+                  _InsightRow(
+                    icon: Icons.sync_alt,
+                    text:
+                        'Budget rollover preview: ${MoneyUtils.format(insights.rolloverPreview, currencyCode: currencyCode)} ${insights.rolloverPreview >= 0 ? 'available' : 'overspent'} across active budgets.',
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1102,7 +1131,11 @@ class DashboardScreen extends ConsumerWidget {
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          cat?.name ?? 'Cat ${e.key}',
+                                          e.key ==
+                                                  TransactionRepository
+                                                      .uncategorizedCategoryId
+                                              ? 'Uncategorized'
+                                              : cat?.name ?? 'Cat ${e.key}',
                                           style: const TextStyle(fontSize: 11),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1343,12 +1376,14 @@ class DashboardScreen extends ConsumerWidget {
                     final category = t.categoryId == null
                         ? null
                         : categoriesById[t.categoryId];
-                    final converted = MoneyUtils.convertMinor(
+                    final converted = MoneyUtils.tryConvertMinor(
                       t.amountMinor,
                       fromCurrency: t.currencyCode,
                       toCurrency: displayCurrency,
                       rates: exchangeRates,
                     );
+                    final showConverted =
+                        showDefaultCurrency && converted != null;
                     return TransactionTile(
                       id: t.id,
                       type: t.type,
@@ -1356,9 +1391,9 @@ class DashboardScreen extends ConsumerWidget {
                       title: t.title,
                       date: t.date,
                       currencyCode: t.currencyCode,
-                      displayAmountMinor: converted,
+                      displayAmountMinor: converted ?? t.amountMinor,
                       displayCurrencyCode: displayCurrency,
-                      showDisplayCurrency: showDefaultCurrency,
+                      showDisplayCurrency: showConverted,
                       categoryName: category?.name,
                       categoryColor: category == null
                           ? null

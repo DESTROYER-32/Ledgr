@@ -92,6 +92,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
         debugShowCheckedModeBanner: false,
         builder: (context, child) {
           final lockState = ref.watch(appLockStateProvider);
+          if (lockState.isLoading) {
+            return const Scaffold(body: SizedBox.shrink());
+          }
           if (lockState.isLocked) return const AppLockScreen();
           return child ?? const SizedBox.shrink();
         },

@@ -106,6 +106,7 @@ final deleteLogRepositoryProvider = Provider<DeleteLogRepository>((ref) {
 
 final recurringServiceProvider = Provider<RecurringService>((ref) {
   return RecurringService(
+    ref.watch(appDatabaseProvider),
     ref.watch(recurringRepositoryProvider),
     ref.watch(transactionRepositoryProvider),
   );

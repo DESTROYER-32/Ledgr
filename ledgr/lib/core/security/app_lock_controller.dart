@@ -53,6 +53,8 @@ class AppLockController extends ChangeNotifier {
   static const _pinSaltKey = 'app_lock_pin_salt';
   static const _biometricKey = 'app_lock_biometrics_enabled';
   static const _timeoutKey = 'app_lock_timeout_seconds';
+  static const _failedAttemptsKey = 'app_lock_failed_attempts';
+  static const _lockedUntilKey = 'app_lock_locked_until';
   static const _pbkdf2Iterations = 100000;
   static const _pbkdf2Prefix = 'pbkdf2-sha256';
 
@@ -60,10 +62,23 @@ class AppLockController extends ChangeNotifier {
   final LocalAuthentication _localAuth;
   AppLockState _state = const AppLockState();
   DateTime? _leftAppAt;
+  Future<void>? _refreshInFlight;
 
   AppLockState get state => _state;
 
   Future<void> refresh({bool preserveLockState = false}) async {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) return inFlight;
+    final future = _refresh(preserveLockState: preserveLockState);
+    _refreshInFlight = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_refreshInFlight, future)) _refreshInFlight = null;
+    }
+  }
+
+  Future<void> _refresh({required bool preserveLockState}) async {
     final pinHash = await _settings.get(_pinHashKey);
     final biometricsEnabled = await _settings.get(_biometricKey) == 'true';
     final timeoutSeconds =
@@ -78,6 +93,40 @@ class AppLockController extends ChangeNotifier {
       isLoading: false,
     );
     notifyListeners();
+  }
+
+  Future<({int failedAttempts, DateTime? lockedUntil})>
+  loadAttemptState() async {
+    final failedAttempts =
+        int.tryParse(await _settings.get(_failedAttemptsKey) ?? '') ?? 0;
+    final lockedUntilRaw = await _settings.get(_lockedUntilKey);
+    final lockedUntil = lockedUntilRaw == null
+        ? null
+        : DateTime.tryParse(lockedUntilRaw);
+    return (failedAttempts: failedAttempts, lockedUntil: lockedUntil);
+  }
+
+  Future<({int failedAttempts, DateTime? lockedUntil})>
+  recordFailedAttempt() async {
+    final current = await loadAttemptState();
+    final failedAttempts = current.failedAttempts + 1;
+    DateTime? lockedUntil;
+    if (failedAttempts >= 5) {
+      final delaySeconds = (failedAttempts - 4).clamp(1, 6) * 5;
+      lockedUntil = DateTime.now().add(Duration(seconds: delaySeconds));
+    }
+    await _settings.set(_failedAttemptsKey, failedAttempts.toString());
+    if (lockedUntil == null) {
+      await _settings.remove(_lockedUntilKey);
+    } else {
+      await _settings.set(_lockedUntilKey, lockedUntil.toIso8601String());
+    }
+    return (failedAttempts: failedAttempts, lockedUntil: lockedUntil);
+  }
+
+  Future<void> clearAttemptState() async {
+    await _settings.remove(_failedAttemptsKey);
+    await _settings.remove(_lockedUntilKey);
   }
 
   void lock() {
@@ -146,6 +195,7 @@ class AppLockController extends ChangeNotifier {
       if (!expected.startsWith('$_pbkdf2Prefix\$')) {
         await _settings.set(_pinHashKey, _hashPin(pin, salt));
       }
+      await clearAttemptState();
       _state = _state.copyWith(isLocked: false);
       notifyListeners();
     }
@@ -163,6 +213,7 @@ class AppLockController extends ChangeNotifier {
         ),
       );
       if (ok) {
+        await clearAttemptState();
         _state = _state.copyWith(isLocked: false);
         notifyListeners();
       }

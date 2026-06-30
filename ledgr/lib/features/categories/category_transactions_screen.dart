@@ -170,12 +170,14 @@ class _CategoryTransactionsScreenState
                             final category = t.categoryId == null
                                 ? null
                                 : _categoriesById[t.categoryId];
-                            final converted = MoneyUtils.convertMinor(
+                            final converted = MoneyUtils.tryConvertMinor(
                               t.amountMinor,
                               fromCurrency: t.currencyCode,
                               toCurrency: displayCurrency,
                               rates: exchangeRates,
                             );
+                            final showConverted =
+                                showDefaultCurrency && converted != null;
                             return TransactionTile(
                               id: t.id,
                               type: t.type,
@@ -183,9 +185,9 @@ class _CategoryTransactionsScreenState
                               title: t.title,
                               date: t.date,
                               currencyCode: t.currencyCode,
-                              displayAmountMinor: converted,
+                              displayAmountMinor: converted ?? t.amountMinor,
                               displayCurrencyCode: displayCurrency,
-                              showDisplayCurrency: showDefaultCurrency,
+                              showDisplayCurrency: showConverted,
                               categoryName: category?.name,
                               categoryColor: category == null
                                   ? null
