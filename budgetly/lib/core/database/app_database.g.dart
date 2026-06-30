@@ -1243,6 +1243,1103 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   }
 }
 
+class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BudgetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodStartMeta = const VerificationMeta(
+    'periodStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> periodStart = GeneratedColumn<DateTime>(
+    'period_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodEndMeta = const VerificationMeta(
+    'periodEnd',
+  );
+  @override
+  late final GeneratedColumn<DateTime> periodEnd = GeneratedColumn<DateTime>(
+    'period_end',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  @override
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isIncomeMeta = const VerificationMeta(
+    'isIncome',
+  );
+  @override
+  late final GeneratedColumn<bool> isIncome = GeneratedColumn<bool>(
+    'is_income',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_income" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _pinnedMeta = const VerificationMeta('pinned');
+  @override
+  late final GeneratedColumn<bool> pinned = GeneratedColumn<bool>(
+    'pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _archivedMeta = const VerificationMeta(
+    'archived',
+  );
+  @override
+  late final GeneratedColumn<bool> archived = GeneratedColumn<bool>(
+    'archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+    'color',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _plannedAmountMinorMeta =
+      const VerificationMeta('plannedAmountMinor');
+  @override
+  late final GeneratedColumn<int> plannedAmountMinor = GeneratedColumn<int>(
+    'planned_amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _specificModeMeta = const VerificationMeta(
+    'specificMode',
+  );
+  @override
+  late final GeneratedColumn<bool> specificMode = GeneratedColumn<bool>(
+    'specific_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("specific_mode" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _includeIncomeMeta = const VerificationMeta(
+    'includeIncome',
+  );
+  @override
+  late final GeneratedColumn<bool> includeIncome = GeneratedColumn<bool>(
+    'include_income',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("include_income" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _includeDebtCreditMeta = const VerificationMeta(
+    'includeDebtCredit',
+  );
+  @override
+  late final GeneratedColumn<bool> includeDebtCredit = GeneratedColumn<bool>(
+    'include_debt_credit',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("include_debt_credit" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _includeBalanceCorrectionMeta =
+      const VerificationMeta('includeBalanceCorrection');
+  @override
+  late final GeneratedColumn<bool> includeBalanceCorrection =
+      GeneratedColumn<bool>(
+        'include_balance_correction',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("include_balance_correction" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
+  static const VerificationMeta _includeInOtherBudgetsMeta =
+      const VerificationMeta('includeInOtherBudgets');
+  @override
+  late final GeneratedColumn<bool> includeInOtherBudgets =
+      GeneratedColumn<bool>(
+        'include_in_other_budgets',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("include_in_other_budgets" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
+  static const VerificationMeta _absoluteLimitMeta = const VerificationMeta(
+    'absoluteLimit',
+  );
+  @override
+  late final GeneratedColumn<bool> absoluteLimit = GeneratedColumn<bool>(
+    'absolute_limit',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("absolute_limit" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _recurrenceRuleMeta = const VerificationMeta(
+    'recurrenceRule',
+  );
+  @override
+  late final GeneratedColumn<String> recurrenceRule = GeneratedColumn<String>(
+    'recurrence_rule',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    periodStart,
+    periodEnd,
+    currencyCode,
+    isIncome,
+    pinned,
+    archived,
+    color,
+    plannedAmountMinor,
+    specificMode,
+    includeIncome,
+    includeDebtCredit,
+    includeBalanceCorrection,
+    includeInOtherBudgets,
+    absoluteLimit,
+    recurrenceRule,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'budgets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Budget> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('period_start')) {
+      context.handle(
+        _periodStartMeta,
+        periodStart.isAcceptableOrUnknown(
+          data['period_start']!,
+          _periodStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_periodStartMeta);
+    }
+    if (data.containsKey('period_end')) {
+      context.handle(
+        _periodEndMeta,
+        periodEnd.isAcceptableOrUnknown(data['period_end']!, _periodEndMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_periodEndMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyCodeMeta);
+    }
+    if (data.containsKey('is_income')) {
+      context.handle(
+        _isIncomeMeta,
+        isIncome.isAcceptableOrUnknown(data['is_income']!, _isIncomeMeta),
+      );
+    }
+    if (data.containsKey('pinned')) {
+      context.handle(
+        _pinnedMeta,
+        pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta),
+      );
+    }
+    if (data.containsKey('archived')) {
+      context.handle(
+        _archivedMeta,
+        archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
+      );
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
+    if (data.containsKey('planned_amount_minor')) {
+      context.handle(
+        _plannedAmountMinorMeta,
+        plannedAmountMinor.isAcceptableOrUnknown(
+          data['planned_amount_minor']!,
+          _plannedAmountMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('specific_mode')) {
+      context.handle(
+        _specificModeMeta,
+        specificMode.isAcceptableOrUnknown(
+          data['specific_mode']!,
+          _specificModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('include_income')) {
+      context.handle(
+        _includeIncomeMeta,
+        includeIncome.isAcceptableOrUnknown(
+          data['include_income']!,
+          _includeIncomeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('include_debt_credit')) {
+      context.handle(
+        _includeDebtCreditMeta,
+        includeDebtCredit.isAcceptableOrUnknown(
+          data['include_debt_credit']!,
+          _includeDebtCreditMeta,
+        ),
+      );
+    }
+    if (data.containsKey('include_balance_correction')) {
+      context.handle(
+        _includeBalanceCorrectionMeta,
+        includeBalanceCorrection.isAcceptableOrUnknown(
+          data['include_balance_correction']!,
+          _includeBalanceCorrectionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('include_in_other_budgets')) {
+      context.handle(
+        _includeInOtherBudgetsMeta,
+        includeInOtherBudgets.isAcceptableOrUnknown(
+          data['include_in_other_budgets']!,
+          _includeInOtherBudgetsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('absolute_limit')) {
+      context.handle(
+        _absoluteLimitMeta,
+        absoluteLimit.isAcceptableOrUnknown(
+          data['absolute_limit']!,
+          _absoluteLimitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('recurrence_rule')) {
+      context.handle(
+        _recurrenceRuleMeta,
+        recurrenceRule.isAcceptableOrUnknown(
+          data['recurrence_rule']!,
+          _recurrenceRuleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Budget map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Budget(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      periodStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}period_start'],
+      )!,
+      periodEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}period_end'],
+      )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
+      isIncome: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_income'],
+      )!,
+      pinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pinned'],
+      )!,
+      archived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archived'],
+      )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color'],
+      ),
+      plannedAmountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}planned_amount_minor'],
+      )!,
+      specificMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}specific_mode'],
+      )!,
+      includeIncome: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}include_income'],
+      )!,
+      includeDebtCredit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}include_debt_credit'],
+      )!,
+      includeBalanceCorrection: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}include_balance_correction'],
+      )!,
+      includeInOtherBudgets: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}include_in_other_budgets'],
+      )!,
+      absoluteLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}absolute_limit'],
+      )!,
+      recurrenceRule: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recurrence_rule'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BudgetsTable createAlias(String alias) {
+    return $BudgetsTable(attachedDatabase, alias);
+  }
+}
+
+class Budget extends DataClass implements Insertable<Budget> {
+  final int id;
+  final String name;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final String currencyCode;
+  final bool isIncome;
+  final bool pinned;
+  final bool archived;
+  final int? color;
+  final int plannedAmountMinor;
+  final bool specificMode;
+  final bool includeIncome;
+  final bool includeDebtCredit;
+  final bool includeBalanceCorrection;
+  final bool includeInOtherBudgets;
+  final bool absoluteLimit;
+  final String? recurrenceRule;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Budget({
+    required this.id,
+    required this.name,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.currencyCode,
+    required this.isIncome,
+    required this.pinned,
+    required this.archived,
+    this.color,
+    required this.plannedAmountMinor,
+    required this.specificMode,
+    required this.includeIncome,
+    required this.includeDebtCredit,
+    required this.includeBalanceCorrection,
+    required this.includeInOtherBudgets,
+    required this.absoluteLimit,
+    this.recurrenceRule,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['period_start'] = Variable<DateTime>(periodStart);
+    map['period_end'] = Variable<DateTime>(periodEnd);
+    map['currency_code'] = Variable<String>(currencyCode);
+    map['is_income'] = Variable<bool>(isIncome);
+    map['pinned'] = Variable<bool>(pinned);
+    map['archived'] = Variable<bool>(archived);
+    if (!nullToAbsent || color != null) {
+      map['color'] = Variable<int>(color);
+    }
+    map['planned_amount_minor'] = Variable<int>(plannedAmountMinor);
+    map['specific_mode'] = Variable<bool>(specificMode);
+    map['include_income'] = Variable<bool>(includeIncome);
+    map['include_debt_credit'] = Variable<bool>(includeDebtCredit);
+    map['include_balance_correction'] = Variable<bool>(
+      includeBalanceCorrection,
+    );
+    map['include_in_other_budgets'] = Variable<bool>(includeInOtherBudgets);
+    map['absolute_limit'] = Variable<bool>(absoluteLimit);
+    if (!nullToAbsent || recurrenceRule != null) {
+      map['recurrence_rule'] = Variable<String>(recurrenceRule);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  BudgetsCompanion toCompanion(bool nullToAbsent) {
+    return BudgetsCompanion(
+      id: Value(id),
+      name: Value(name),
+      periodStart: Value(periodStart),
+      periodEnd: Value(periodEnd),
+      currencyCode: Value(currencyCode),
+      isIncome: Value(isIncome),
+      pinned: Value(pinned),
+      archived: Value(archived),
+      color: color == null && nullToAbsent
+          ? const Value.absent()
+          : Value(color),
+      plannedAmountMinor: Value(plannedAmountMinor),
+      specificMode: Value(specificMode),
+      includeIncome: Value(includeIncome),
+      includeDebtCredit: Value(includeDebtCredit),
+      includeBalanceCorrection: Value(includeBalanceCorrection),
+      includeInOtherBudgets: Value(includeInOtherBudgets),
+      absoluteLimit: Value(absoluteLimit),
+      recurrenceRule: recurrenceRule == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recurrenceRule),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Budget.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Budget(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      periodStart: serializer.fromJson<DateTime>(json['periodStart']),
+      periodEnd: serializer.fromJson<DateTime>(json['periodEnd']),
+      currencyCode: serializer.fromJson<String>(json['currencyCode']),
+      isIncome: serializer.fromJson<bool>(json['isIncome']),
+      pinned: serializer.fromJson<bool>(json['pinned']),
+      archived: serializer.fromJson<bool>(json['archived']),
+      color: serializer.fromJson<int?>(json['color']),
+      plannedAmountMinor: serializer.fromJson<int>(json['plannedAmountMinor']),
+      specificMode: serializer.fromJson<bool>(json['specificMode']),
+      includeIncome: serializer.fromJson<bool>(json['includeIncome']),
+      includeDebtCredit: serializer.fromJson<bool>(json['includeDebtCredit']),
+      includeBalanceCorrection: serializer.fromJson<bool>(
+        json['includeBalanceCorrection'],
+      ),
+      includeInOtherBudgets: serializer.fromJson<bool>(
+        json['includeInOtherBudgets'],
+      ),
+      absoluteLimit: serializer.fromJson<bool>(json['absoluteLimit']),
+      recurrenceRule: serializer.fromJson<String?>(json['recurrenceRule']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'periodStart': serializer.toJson<DateTime>(periodStart),
+      'periodEnd': serializer.toJson<DateTime>(periodEnd),
+      'currencyCode': serializer.toJson<String>(currencyCode),
+      'isIncome': serializer.toJson<bool>(isIncome),
+      'pinned': serializer.toJson<bool>(pinned),
+      'archived': serializer.toJson<bool>(archived),
+      'color': serializer.toJson<int?>(color),
+      'plannedAmountMinor': serializer.toJson<int>(plannedAmountMinor),
+      'specificMode': serializer.toJson<bool>(specificMode),
+      'includeIncome': serializer.toJson<bool>(includeIncome),
+      'includeDebtCredit': serializer.toJson<bool>(includeDebtCredit),
+      'includeBalanceCorrection': serializer.toJson<bool>(
+        includeBalanceCorrection,
+      ),
+      'includeInOtherBudgets': serializer.toJson<bool>(includeInOtherBudgets),
+      'absoluteLimit': serializer.toJson<bool>(absoluteLimit),
+      'recurrenceRule': serializer.toJson<String?>(recurrenceRule),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Budget copyWith({
+    int? id,
+    String? name,
+    DateTime? periodStart,
+    DateTime? periodEnd,
+    String? currencyCode,
+    bool? isIncome,
+    bool? pinned,
+    bool? archived,
+    Value<int?> color = const Value.absent(),
+    int? plannedAmountMinor,
+    bool? specificMode,
+    bool? includeIncome,
+    bool? includeDebtCredit,
+    bool? includeBalanceCorrection,
+    bool? includeInOtherBudgets,
+    bool? absoluteLimit,
+    Value<String?> recurrenceRule = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Budget(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    periodStart: periodStart ?? this.periodStart,
+    periodEnd: periodEnd ?? this.periodEnd,
+    currencyCode: currencyCode ?? this.currencyCode,
+    isIncome: isIncome ?? this.isIncome,
+    pinned: pinned ?? this.pinned,
+    archived: archived ?? this.archived,
+    color: color.present ? color.value : this.color,
+    plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
+    specificMode: specificMode ?? this.specificMode,
+    includeIncome: includeIncome ?? this.includeIncome,
+    includeDebtCredit: includeDebtCredit ?? this.includeDebtCredit,
+    includeBalanceCorrection:
+        includeBalanceCorrection ?? this.includeBalanceCorrection,
+    includeInOtherBudgets: includeInOtherBudgets ?? this.includeInOtherBudgets,
+    absoluteLimit: absoluteLimit ?? this.absoluteLimit,
+    recurrenceRule: recurrenceRule.present
+        ? recurrenceRule.value
+        : this.recurrenceRule,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Budget copyWithCompanion(BudgetsCompanion data) {
+    return Budget(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      periodStart: data.periodStart.present
+          ? data.periodStart.value
+          : this.periodStart,
+      periodEnd: data.periodEnd.present ? data.periodEnd.value : this.periodEnd,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
+      isIncome: data.isIncome.present ? data.isIncome.value : this.isIncome,
+      pinned: data.pinned.present ? data.pinned.value : this.pinned,
+      archived: data.archived.present ? data.archived.value : this.archived,
+      color: data.color.present ? data.color.value : this.color,
+      plannedAmountMinor: data.plannedAmountMinor.present
+          ? data.plannedAmountMinor.value
+          : this.plannedAmountMinor,
+      specificMode: data.specificMode.present
+          ? data.specificMode.value
+          : this.specificMode,
+      includeIncome: data.includeIncome.present
+          ? data.includeIncome.value
+          : this.includeIncome,
+      includeDebtCredit: data.includeDebtCredit.present
+          ? data.includeDebtCredit.value
+          : this.includeDebtCredit,
+      includeBalanceCorrection: data.includeBalanceCorrection.present
+          ? data.includeBalanceCorrection.value
+          : this.includeBalanceCorrection,
+      includeInOtherBudgets: data.includeInOtherBudgets.present
+          ? data.includeInOtherBudgets.value
+          : this.includeInOtherBudgets,
+      absoluteLimit: data.absoluteLimit.present
+          ? data.absoluteLimit.value
+          : this.absoluteLimit,
+      recurrenceRule: data.recurrenceRule.present
+          ? data.recurrenceRule.value
+          : this.recurrenceRule,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Budget(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('periodEnd: $periodEnd, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('isIncome: $isIncome, ')
+          ..write('pinned: $pinned, ')
+          ..write('archived: $archived, ')
+          ..write('color: $color, ')
+          ..write('plannedAmountMinor: $plannedAmountMinor, ')
+          ..write('specificMode: $specificMode, ')
+          ..write('includeIncome: $includeIncome, ')
+          ..write('includeDebtCredit: $includeDebtCredit, ')
+          ..write('includeBalanceCorrection: $includeBalanceCorrection, ')
+          ..write('includeInOtherBudgets: $includeInOtherBudgets, ')
+          ..write('absoluteLimit: $absoluteLimit, ')
+          ..write('recurrenceRule: $recurrenceRule, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    periodStart,
+    periodEnd,
+    currencyCode,
+    isIncome,
+    pinned,
+    archived,
+    color,
+    plannedAmountMinor,
+    specificMode,
+    includeIncome,
+    includeDebtCredit,
+    includeBalanceCorrection,
+    includeInOtherBudgets,
+    absoluteLimit,
+    recurrenceRule,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Budget &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.periodStart == this.periodStart &&
+          other.periodEnd == this.periodEnd &&
+          other.currencyCode == this.currencyCode &&
+          other.isIncome == this.isIncome &&
+          other.pinned == this.pinned &&
+          other.archived == this.archived &&
+          other.color == this.color &&
+          other.plannedAmountMinor == this.plannedAmountMinor &&
+          other.specificMode == this.specificMode &&
+          other.includeIncome == this.includeIncome &&
+          other.includeDebtCredit == this.includeDebtCredit &&
+          other.includeBalanceCorrection == this.includeBalanceCorrection &&
+          other.includeInOtherBudgets == this.includeInOtherBudgets &&
+          other.absoluteLimit == this.absoluteLimit &&
+          other.recurrenceRule == this.recurrenceRule &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class BudgetsCompanion extends UpdateCompanion<Budget> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<DateTime> periodStart;
+  final Value<DateTime> periodEnd;
+  final Value<String> currencyCode;
+  final Value<bool> isIncome;
+  final Value<bool> pinned;
+  final Value<bool> archived;
+  final Value<int?> color;
+  final Value<int> plannedAmountMinor;
+  final Value<bool> specificMode;
+  final Value<bool> includeIncome;
+  final Value<bool> includeDebtCredit;
+  final Value<bool> includeBalanceCorrection;
+  final Value<bool> includeInOtherBudgets;
+  final Value<bool> absoluteLimit;
+  final Value<String?> recurrenceRule;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const BudgetsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.periodStart = const Value.absent(),
+    this.periodEnd = const Value.absent(),
+    this.currencyCode = const Value.absent(),
+    this.isIncome = const Value.absent(),
+    this.pinned = const Value.absent(),
+    this.archived = const Value.absent(),
+    this.color = const Value.absent(),
+    this.plannedAmountMinor = const Value.absent(),
+    this.specificMode = const Value.absent(),
+    this.includeIncome = const Value.absent(),
+    this.includeDebtCredit = const Value.absent(),
+    this.includeBalanceCorrection = const Value.absent(),
+    this.includeInOtherBudgets = const Value.absent(),
+    this.absoluteLimit = const Value.absent(),
+    this.recurrenceRule = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  BudgetsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+    required String currencyCode,
+    this.isIncome = const Value.absent(),
+    this.pinned = const Value.absent(),
+    this.archived = const Value.absent(),
+    this.color = const Value.absent(),
+    this.plannedAmountMinor = const Value.absent(),
+    this.specificMode = const Value.absent(),
+    this.includeIncome = const Value.absent(),
+    this.includeDebtCredit = const Value.absent(),
+    this.includeBalanceCorrection = const Value.absent(),
+    this.includeInOtherBudgets = const Value.absent(),
+    this.absoluteLimit = const Value.absent(),
+    this.recurrenceRule = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : name = Value(name),
+       periodStart = Value(periodStart),
+       periodEnd = Value(periodEnd),
+       currencyCode = Value(currencyCode);
+  static Insertable<Budget> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<DateTime>? periodStart,
+    Expression<DateTime>? periodEnd,
+    Expression<String>? currencyCode,
+    Expression<bool>? isIncome,
+    Expression<bool>? pinned,
+    Expression<bool>? archived,
+    Expression<int>? color,
+    Expression<int>? plannedAmountMinor,
+    Expression<bool>? specificMode,
+    Expression<bool>? includeIncome,
+    Expression<bool>? includeDebtCredit,
+    Expression<bool>? includeBalanceCorrection,
+    Expression<bool>? includeInOtherBudgets,
+    Expression<bool>? absoluteLimit,
+    Expression<String>? recurrenceRule,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (periodStart != null) 'period_start': periodStart,
+      if (periodEnd != null) 'period_end': periodEnd,
+      if (currencyCode != null) 'currency_code': currencyCode,
+      if (isIncome != null) 'is_income': isIncome,
+      if (pinned != null) 'pinned': pinned,
+      if (archived != null) 'archived': archived,
+      if (color != null) 'color': color,
+      if (plannedAmountMinor != null)
+        'planned_amount_minor': plannedAmountMinor,
+      if (specificMode != null) 'specific_mode': specificMode,
+      if (includeIncome != null) 'include_income': includeIncome,
+      if (includeDebtCredit != null) 'include_debt_credit': includeDebtCredit,
+      if (includeBalanceCorrection != null)
+        'include_balance_correction': includeBalanceCorrection,
+      if (includeInOtherBudgets != null)
+        'include_in_other_budgets': includeInOtherBudgets,
+      if (absoluteLimit != null) 'absolute_limit': absoluteLimit,
+      if (recurrenceRule != null) 'recurrence_rule': recurrenceRule,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  BudgetsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<DateTime>? periodStart,
+    Value<DateTime>? periodEnd,
+    Value<String>? currencyCode,
+    Value<bool>? isIncome,
+    Value<bool>? pinned,
+    Value<bool>? archived,
+    Value<int?>? color,
+    Value<int>? plannedAmountMinor,
+    Value<bool>? specificMode,
+    Value<bool>? includeIncome,
+    Value<bool>? includeDebtCredit,
+    Value<bool>? includeBalanceCorrection,
+    Value<bool>? includeInOtherBudgets,
+    Value<bool>? absoluteLimit,
+    Value<String?>? recurrenceRule,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return BudgetsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      periodStart: periodStart ?? this.periodStart,
+      periodEnd: periodEnd ?? this.periodEnd,
+      currencyCode: currencyCode ?? this.currencyCode,
+      isIncome: isIncome ?? this.isIncome,
+      pinned: pinned ?? this.pinned,
+      archived: archived ?? this.archived,
+      color: color ?? this.color,
+      plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
+      specificMode: specificMode ?? this.specificMode,
+      includeIncome: includeIncome ?? this.includeIncome,
+      includeDebtCredit: includeDebtCredit ?? this.includeDebtCredit,
+      includeBalanceCorrection:
+          includeBalanceCorrection ?? this.includeBalanceCorrection,
+      includeInOtherBudgets:
+          includeInOtherBudgets ?? this.includeInOtherBudgets,
+      absoluteLimit: absoluteLimit ?? this.absoluteLimit,
+      recurrenceRule: recurrenceRule ?? this.recurrenceRule,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (periodStart.present) {
+      map['period_start'] = Variable<DateTime>(periodStart.value);
+    }
+    if (periodEnd.present) {
+      map['period_end'] = Variable<DateTime>(periodEnd.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
+    }
+    if (isIncome.present) {
+      map['is_income'] = Variable<bool>(isIncome.value);
+    }
+    if (pinned.present) {
+      map['pinned'] = Variable<bool>(pinned.value);
+    }
+    if (archived.present) {
+      map['archived'] = Variable<bool>(archived.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<int>(color.value);
+    }
+    if (plannedAmountMinor.present) {
+      map['planned_amount_minor'] = Variable<int>(plannedAmountMinor.value);
+    }
+    if (specificMode.present) {
+      map['specific_mode'] = Variable<bool>(specificMode.value);
+    }
+    if (includeIncome.present) {
+      map['include_income'] = Variable<bool>(includeIncome.value);
+    }
+    if (includeDebtCredit.present) {
+      map['include_debt_credit'] = Variable<bool>(includeDebtCredit.value);
+    }
+    if (includeBalanceCorrection.present) {
+      map['include_balance_correction'] = Variable<bool>(
+        includeBalanceCorrection.value,
+      );
+    }
+    if (includeInOtherBudgets.present) {
+      map['include_in_other_budgets'] = Variable<bool>(
+        includeInOtherBudgets.value,
+      );
+    }
+    if (absoluteLimit.present) {
+      map['absolute_limit'] = Variable<bool>(absoluteLimit.value);
+    }
+    if (recurrenceRule.present) {
+      map['recurrence_rule'] = Variable<String>(recurrenceRule.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('periodEnd: $periodEnd, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('isIncome: $isIncome, ')
+          ..write('pinned: $pinned, ')
+          ..write('archived: $archived, ')
+          ..write('color: $color, ')
+          ..write('plannedAmountMinor: $plannedAmountMinor, ')
+          ..write('specificMode: $specificMode, ')
+          ..write('includeIncome: $includeIncome, ')
+          ..write('includeDebtCredit: $includeDebtCredit, ')
+          ..write('includeBalanceCorrection: $includeBalanceCorrection, ')
+          ..write('includeInOtherBudgets: $includeInOtherBudgets, ')
+          ..write('absoluteLimit: $absoluteLimit, ')
+          ..write('recurrenceRule: $recurrenceRule, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ObjectivesTable extends Objectives
     with TableInfo<$ObjectivesTable, Objective> {
   @override
@@ -3058,1103 +4155,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('objectiveFk: $objectiveFk, ')
           ..write('attachmentPath: $attachmentPath, ')
           ..write('methodAdded: $methodAdded, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $BudgetsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _periodStartMeta = const VerificationMeta(
-    'periodStart',
-  );
-  @override
-  late final GeneratedColumn<DateTime> periodStart = GeneratedColumn<DateTime>(
-    'period_start',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _periodEndMeta = const VerificationMeta(
-    'periodEnd',
-  );
-  @override
-  late final GeneratedColumn<DateTime> periodEnd = GeneratedColumn<DateTime>(
-    'period_end',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
-    'currencyCode',
-  );
-  @override
-  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
-    'currency_code',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _isIncomeMeta = const VerificationMeta(
-    'isIncome',
-  );
-  @override
-  late final GeneratedColumn<bool> isIncome = GeneratedColumn<bool>(
-    'is_income',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_income" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _pinnedMeta = const VerificationMeta('pinned');
-  @override
-  late final GeneratedColumn<bool> pinned = GeneratedColumn<bool>(
-    'pinned',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("pinned" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _archivedMeta = const VerificationMeta(
-    'archived',
-  );
-  @override
-  late final GeneratedColumn<bool> archived = GeneratedColumn<bool>(
-    'archived',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("archived" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _colorMeta = const VerificationMeta('color');
-  @override
-  late final GeneratedColumn<int> color = GeneratedColumn<int>(
-    'color',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _plannedAmountMinorMeta =
-      const VerificationMeta('plannedAmountMinor');
-  @override
-  late final GeneratedColumn<int> plannedAmountMinor = GeneratedColumn<int>(
-    'planned_amount_minor',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _specificModeMeta = const VerificationMeta(
-    'specificMode',
-  );
-  @override
-  late final GeneratedColumn<bool> specificMode = GeneratedColumn<bool>(
-    'specific_mode',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("specific_mode" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _includeIncomeMeta = const VerificationMeta(
-    'includeIncome',
-  );
-  @override
-  late final GeneratedColumn<bool> includeIncome = GeneratedColumn<bool>(
-    'include_income',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("include_income" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  static const VerificationMeta _includeDebtCreditMeta = const VerificationMeta(
-    'includeDebtCredit',
-  );
-  @override
-  late final GeneratedColumn<bool> includeDebtCredit = GeneratedColumn<bool>(
-    'include_debt_credit',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("include_debt_credit" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  static const VerificationMeta _includeBalanceCorrectionMeta =
-      const VerificationMeta('includeBalanceCorrection');
-  @override
-  late final GeneratedColumn<bool> includeBalanceCorrection =
-      GeneratedColumn<bool>(
-        'include_balance_correction',
-        aliasedName,
-        false,
-        type: DriftSqlType.bool,
-        requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("include_balance_correction" IN (0, 1))',
-        ),
-        defaultValue: const Constant(true),
-      );
-  static const VerificationMeta _includeInOtherBudgetsMeta =
-      const VerificationMeta('includeInOtherBudgets');
-  @override
-  late final GeneratedColumn<bool> includeInOtherBudgets =
-      GeneratedColumn<bool>(
-        'include_in_other_budgets',
-        aliasedName,
-        false,
-        type: DriftSqlType.bool,
-        requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("include_in_other_budgets" IN (0, 1))',
-        ),
-        defaultValue: const Constant(true),
-      );
-  static const VerificationMeta _absoluteLimitMeta = const VerificationMeta(
-    'absoluteLimit',
-  );
-  @override
-  late final GeneratedColumn<bool> absoluteLimit = GeneratedColumn<bool>(
-    'absolute_limit',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("absolute_limit" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _recurrenceRuleMeta = const VerificationMeta(
-    'recurrenceRule',
-  );
-  @override
-  late final GeneratedColumn<String> recurrenceRule = GeneratedColumn<String>(
-    'recurrence_rule',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    periodStart,
-    periodEnd,
-    currencyCode,
-    isIncome,
-    pinned,
-    archived,
-    color,
-    plannedAmountMinor,
-    specificMode,
-    includeIncome,
-    includeDebtCredit,
-    includeBalanceCorrection,
-    includeInOtherBudgets,
-    absoluteLimit,
-    recurrenceRule,
-    createdAt,
-    updatedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'budgets';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<Budget> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('period_start')) {
-      context.handle(
-        _periodStartMeta,
-        periodStart.isAcceptableOrUnknown(
-          data['period_start']!,
-          _periodStartMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_periodStartMeta);
-    }
-    if (data.containsKey('period_end')) {
-      context.handle(
-        _periodEndMeta,
-        periodEnd.isAcceptableOrUnknown(data['period_end']!, _periodEndMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_periodEndMeta);
-    }
-    if (data.containsKey('currency_code')) {
-      context.handle(
-        _currencyCodeMeta,
-        currencyCode.isAcceptableOrUnknown(
-          data['currency_code']!,
-          _currencyCodeMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_currencyCodeMeta);
-    }
-    if (data.containsKey('is_income')) {
-      context.handle(
-        _isIncomeMeta,
-        isIncome.isAcceptableOrUnknown(data['is_income']!, _isIncomeMeta),
-      );
-    }
-    if (data.containsKey('pinned')) {
-      context.handle(
-        _pinnedMeta,
-        pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta),
-      );
-    }
-    if (data.containsKey('archived')) {
-      context.handle(
-        _archivedMeta,
-        archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
-      );
-    }
-    if (data.containsKey('color')) {
-      context.handle(
-        _colorMeta,
-        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
-      );
-    }
-    if (data.containsKey('planned_amount_minor')) {
-      context.handle(
-        _plannedAmountMinorMeta,
-        plannedAmountMinor.isAcceptableOrUnknown(
-          data['planned_amount_minor']!,
-          _plannedAmountMinorMeta,
-        ),
-      );
-    }
-    if (data.containsKey('specific_mode')) {
-      context.handle(
-        _specificModeMeta,
-        specificMode.isAcceptableOrUnknown(
-          data['specific_mode']!,
-          _specificModeMeta,
-        ),
-      );
-    }
-    if (data.containsKey('include_income')) {
-      context.handle(
-        _includeIncomeMeta,
-        includeIncome.isAcceptableOrUnknown(
-          data['include_income']!,
-          _includeIncomeMeta,
-        ),
-      );
-    }
-    if (data.containsKey('include_debt_credit')) {
-      context.handle(
-        _includeDebtCreditMeta,
-        includeDebtCredit.isAcceptableOrUnknown(
-          data['include_debt_credit']!,
-          _includeDebtCreditMeta,
-        ),
-      );
-    }
-    if (data.containsKey('include_balance_correction')) {
-      context.handle(
-        _includeBalanceCorrectionMeta,
-        includeBalanceCorrection.isAcceptableOrUnknown(
-          data['include_balance_correction']!,
-          _includeBalanceCorrectionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('include_in_other_budgets')) {
-      context.handle(
-        _includeInOtherBudgetsMeta,
-        includeInOtherBudgets.isAcceptableOrUnknown(
-          data['include_in_other_budgets']!,
-          _includeInOtherBudgetsMeta,
-        ),
-      );
-    }
-    if (data.containsKey('absolute_limit')) {
-      context.handle(
-        _absoluteLimitMeta,
-        absoluteLimit.isAcceptableOrUnknown(
-          data['absolute_limit']!,
-          _absoluteLimitMeta,
-        ),
-      );
-    }
-    if (data.containsKey('recurrence_rule')) {
-      context.handle(
-        _recurrenceRuleMeta,
-        recurrenceRule.isAcceptableOrUnknown(
-          data['recurrence_rule']!,
-          _recurrenceRuleMeta,
-        ),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Budget map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Budget(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      periodStart: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}period_start'],
-      )!,
-      periodEnd: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}period_end'],
-      )!,
-      currencyCode: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}currency_code'],
-      )!,
-      isIncome: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_income'],
-      )!,
-      pinned: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}pinned'],
-      )!,
-      archived: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}archived'],
-      )!,
-      color: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}color'],
-      ),
-      plannedAmountMinor: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}planned_amount_minor'],
-      )!,
-      specificMode: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}specific_mode'],
-      )!,
-      includeIncome: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}include_income'],
-      )!,
-      includeDebtCredit: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}include_debt_credit'],
-      )!,
-      includeBalanceCorrection: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}include_balance_correction'],
-      )!,
-      includeInOtherBudgets: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}include_in_other_budgets'],
-      )!,
-      absoluteLimit: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}absolute_limit'],
-      )!,
-      recurrenceRule: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}recurrence_rule'],
-      ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-    );
-  }
-
-  @override
-  $BudgetsTable createAlias(String alias) {
-    return $BudgetsTable(attachedDatabase, alias);
-  }
-}
-
-class Budget extends DataClass implements Insertable<Budget> {
-  final int id;
-  final String name;
-  final DateTime periodStart;
-  final DateTime periodEnd;
-  final String currencyCode;
-  final bool isIncome;
-  final bool pinned;
-  final bool archived;
-  final int? color;
-  final int plannedAmountMinor;
-  final bool specificMode;
-  final bool includeIncome;
-  final bool includeDebtCredit;
-  final bool includeBalanceCorrection;
-  final bool includeInOtherBudgets;
-  final bool absoluteLimit;
-  final String? recurrenceRule;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  const Budget({
-    required this.id,
-    required this.name,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.currencyCode,
-    required this.isIncome,
-    required this.pinned,
-    required this.archived,
-    this.color,
-    required this.plannedAmountMinor,
-    required this.specificMode,
-    required this.includeIncome,
-    required this.includeDebtCredit,
-    required this.includeBalanceCorrection,
-    required this.includeInOtherBudgets,
-    required this.absoluteLimit,
-    this.recurrenceRule,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    map['period_start'] = Variable<DateTime>(periodStart);
-    map['period_end'] = Variable<DateTime>(periodEnd);
-    map['currency_code'] = Variable<String>(currencyCode);
-    map['is_income'] = Variable<bool>(isIncome);
-    map['pinned'] = Variable<bool>(pinned);
-    map['archived'] = Variable<bool>(archived);
-    if (!nullToAbsent || color != null) {
-      map['color'] = Variable<int>(color);
-    }
-    map['planned_amount_minor'] = Variable<int>(plannedAmountMinor);
-    map['specific_mode'] = Variable<bool>(specificMode);
-    map['include_income'] = Variable<bool>(includeIncome);
-    map['include_debt_credit'] = Variable<bool>(includeDebtCredit);
-    map['include_balance_correction'] = Variable<bool>(
-      includeBalanceCorrection,
-    );
-    map['include_in_other_budgets'] = Variable<bool>(includeInOtherBudgets);
-    map['absolute_limit'] = Variable<bool>(absoluteLimit);
-    if (!nullToAbsent || recurrenceRule != null) {
-      map['recurrence_rule'] = Variable<String>(recurrenceRule);
-    }
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    return map;
-  }
-
-  BudgetsCompanion toCompanion(bool nullToAbsent) {
-    return BudgetsCompanion(
-      id: Value(id),
-      name: Value(name),
-      periodStart: Value(periodStart),
-      periodEnd: Value(periodEnd),
-      currencyCode: Value(currencyCode),
-      isIncome: Value(isIncome),
-      pinned: Value(pinned),
-      archived: Value(archived),
-      color: color == null && nullToAbsent
-          ? const Value.absent()
-          : Value(color),
-      plannedAmountMinor: Value(plannedAmountMinor),
-      specificMode: Value(specificMode),
-      includeIncome: Value(includeIncome),
-      includeDebtCredit: Value(includeDebtCredit),
-      includeBalanceCorrection: Value(includeBalanceCorrection),
-      includeInOtherBudgets: Value(includeInOtherBudgets),
-      absoluteLimit: Value(absoluteLimit),
-      recurrenceRule: recurrenceRule == null && nullToAbsent
-          ? const Value.absent()
-          : Value(recurrenceRule),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-    );
-  }
-
-  factory Budget.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Budget(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      periodStart: serializer.fromJson<DateTime>(json['periodStart']),
-      periodEnd: serializer.fromJson<DateTime>(json['periodEnd']),
-      currencyCode: serializer.fromJson<String>(json['currencyCode']),
-      isIncome: serializer.fromJson<bool>(json['isIncome']),
-      pinned: serializer.fromJson<bool>(json['pinned']),
-      archived: serializer.fromJson<bool>(json['archived']),
-      color: serializer.fromJson<int?>(json['color']),
-      plannedAmountMinor: serializer.fromJson<int>(json['plannedAmountMinor']),
-      specificMode: serializer.fromJson<bool>(json['specificMode']),
-      includeIncome: serializer.fromJson<bool>(json['includeIncome']),
-      includeDebtCredit: serializer.fromJson<bool>(json['includeDebtCredit']),
-      includeBalanceCorrection: serializer.fromJson<bool>(
-        json['includeBalanceCorrection'],
-      ),
-      includeInOtherBudgets: serializer.fromJson<bool>(
-        json['includeInOtherBudgets'],
-      ),
-      absoluteLimit: serializer.fromJson<bool>(json['absoluteLimit']),
-      recurrenceRule: serializer.fromJson<String?>(json['recurrenceRule']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'periodStart': serializer.toJson<DateTime>(periodStart),
-      'periodEnd': serializer.toJson<DateTime>(periodEnd),
-      'currencyCode': serializer.toJson<String>(currencyCode),
-      'isIncome': serializer.toJson<bool>(isIncome),
-      'pinned': serializer.toJson<bool>(pinned),
-      'archived': serializer.toJson<bool>(archived),
-      'color': serializer.toJson<int?>(color),
-      'plannedAmountMinor': serializer.toJson<int>(plannedAmountMinor),
-      'specificMode': serializer.toJson<bool>(specificMode),
-      'includeIncome': serializer.toJson<bool>(includeIncome),
-      'includeDebtCredit': serializer.toJson<bool>(includeDebtCredit),
-      'includeBalanceCorrection': serializer.toJson<bool>(
-        includeBalanceCorrection,
-      ),
-      'includeInOtherBudgets': serializer.toJson<bool>(includeInOtherBudgets),
-      'absoluteLimit': serializer.toJson<bool>(absoluteLimit),
-      'recurrenceRule': serializer.toJson<String?>(recurrenceRule),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-    };
-  }
-
-  Budget copyWith({
-    int? id,
-    String? name,
-    DateTime? periodStart,
-    DateTime? periodEnd,
-    String? currencyCode,
-    bool? isIncome,
-    bool? pinned,
-    bool? archived,
-    Value<int?> color = const Value.absent(),
-    int? plannedAmountMinor,
-    bool? specificMode,
-    bool? includeIncome,
-    bool? includeDebtCredit,
-    bool? includeBalanceCorrection,
-    bool? includeInOtherBudgets,
-    bool? absoluteLimit,
-    Value<String?> recurrenceRule = const Value.absent(),
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) => Budget(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    periodStart: periodStart ?? this.periodStart,
-    periodEnd: periodEnd ?? this.periodEnd,
-    currencyCode: currencyCode ?? this.currencyCode,
-    isIncome: isIncome ?? this.isIncome,
-    pinned: pinned ?? this.pinned,
-    archived: archived ?? this.archived,
-    color: color.present ? color.value : this.color,
-    plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
-    specificMode: specificMode ?? this.specificMode,
-    includeIncome: includeIncome ?? this.includeIncome,
-    includeDebtCredit: includeDebtCredit ?? this.includeDebtCredit,
-    includeBalanceCorrection:
-        includeBalanceCorrection ?? this.includeBalanceCorrection,
-    includeInOtherBudgets: includeInOtherBudgets ?? this.includeInOtherBudgets,
-    absoluteLimit: absoluteLimit ?? this.absoluteLimit,
-    recurrenceRule: recurrenceRule.present
-        ? recurrenceRule.value
-        : this.recurrenceRule,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
-  Budget copyWithCompanion(BudgetsCompanion data) {
-    return Budget(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      periodStart: data.periodStart.present
-          ? data.periodStart.value
-          : this.periodStart,
-      periodEnd: data.periodEnd.present ? data.periodEnd.value : this.periodEnd,
-      currencyCode: data.currencyCode.present
-          ? data.currencyCode.value
-          : this.currencyCode,
-      isIncome: data.isIncome.present ? data.isIncome.value : this.isIncome,
-      pinned: data.pinned.present ? data.pinned.value : this.pinned,
-      archived: data.archived.present ? data.archived.value : this.archived,
-      color: data.color.present ? data.color.value : this.color,
-      plannedAmountMinor: data.plannedAmountMinor.present
-          ? data.plannedAmountMinor.value
-          : this.plannedAmountMinor,
-      specificMode: data.specificMode.present
-          ? data.specificMode.value
-          : this.specificMode,
-      includeIncome: data.includeIncome.present
-          ? data.includeIncome.value
-          : this.includeIncome,
-      includeDebtCredit: data.includeDebtCredit.present
-          ? data.includeDebtCredit.value
-          : this.includeDebtCredit,
-      includeBalanceCorrection: data.includeBalanceCorrection.present
-          ? data.includeBalanceCorrection.value
-          : this.includeBalanceCorrection,
-      includeInOtherBudgets: data.includeInOtherBudgets.present
-          ? data.includeInOtherBudgets.value
-          : this.includeInOtherBudgets,
-      absoluteLimit: data.absoluteLimit.present
-          ? data.absoluteLimit.value
-          : this.absoluteLimit,
-      recurrenceRule: data.recurrenceRule.present
-          ? data.recurrenceRule.value
-          : this.recurrenceRule,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Budget(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('periodStart: $periodStart, ')
-          ..write('periodEnd: $periodEnd, ')
-          ..write('currencyCode: $currencyCode, ')
-          ..write('isIncome: $isIncome, ')
-          ..write('pinned: $pinned, ')
-          ..write('archived: $archived, ')
-          ..write('color: $color, ')
-          ..write('plannedAmountMinor: $plannedAmountMinor, ')
-          ..write('specificMode: $specificMode, ')
-          ..write('includeIncome: $includeIncome, ')
-          ..write('includeDebtCredit: $includeDebtCredit, ')
-          ..write('includeBalanceCorrection: $includeBalanceCorrection, ')
-          ..write('includeInOtherBudgets: $includeInOtherBudgets, ')
-          ..write('absoluteLimit: $absoluteLimit, ')
-          ..write('recurrenceRule: $recurrenceRule, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    name,
-    periodStart,
-    periodEnd,
-    currencyCode,
-    isIncome,
-    pinned,
-    archived,
-    color,
-    plannedAmountMinor,
-    specificMode,
-    includeIncome,
-    includeDebtCredit,
-    includeBalanceCorrection,
-    includeInOtherBudgets,
-    absoluteLimit,
-    recurrenceRule,
-    createdAt,
-    updatedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Budget &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.periodStart == this.periodStart &&
-          other.periodEnd == this.periodEnd &&
-          other.currencyCode == this.currencyCode &&
-          other.isIncome == this.isIncome &&
-          other.pinned == this.pinned &&
-          other.archived == this.archived &&
-          other.color == this.color &&
-          other.plannedAmountMinor == this.plannedAmountMinor &&
-          other.specificMode == this.specificMode &&
-          other.includeIncome == this.includeIncome &&
-          other.includeDebtCredit == this.includeDebtCredit &&
-          other.includeBalanceCorrection == this.includeBalanceCorrection &&
-          other.includeInOtherBudgets == this.includeInOtherBudgets &&
-          other.absoluteLimit == this.absoluteLimit &&
-          other.recurrenceRule == this.recurrenceRule &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
-}
-
-class BudgetsCompanion extends UpdateCompanion<Budget> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<DateTime> periodStart;
-  final Value<DateTime> periodEnd;
-  final Value<String> currencyCode;
-  final Value<bool> isIncome;
-  final Value<bool> pinned;
-  final Value<bool> archived;
-  final Value<int?> color;
-  final Value<int> plannedAmountMinor;
-  final Value<bool> specificMode;
-  final Value<bool> includeIncome;
-  final Value<bool> includeDebtCredit;
-  final Value<bool> includeBalanceCorrection;
-  final Value<bool> includeInOtherBudgets;
-  final Value<bool> absoluteLimit;
-  final Value<String?> recurrenceRule;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  const BudgetsCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.periodStart = const Value.absent(),
-    this.periodEnd = const Value.absent(),
-    this.currencyCode = const Value.absent(),
-    this.isIncome = const Value.absent(),
-    this.pinned = const Value.absent(),
-    this.archived = const Value.absent(),
-    this.color = const Value.absent(),
-    this.plannedAmountMinor = const Value.absent(),
-    this.specificMode = const Value.absent(),
-    this.includeIncome = const Value.absent(),
-    this.includeDebtCredit = const Value.absent(),
-    this.includeBalanceCorrection = const Value.absent(),
-    this.includeInOtherBudgets = const Value.absent(),
-    this.absoluteLimit = const Value.absent(),
-    this.recurrenceRule = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-  });
-  BudgetsCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    required DateTime periodStart,
-    required DateTime periodEnd,
-    required String currencyCode,
-    this.isIncome = const Value.absent(),
-    this.pinned = const Value.absent(),
-    this.archived = const Value.absent(),
-    this.color = const Value.absent(),
-    this.plannedAmountMinor = const Value.absent(),
-    this.specificMode = const Value.absent(),
-    this.includeIncome = const Value.absent(),
-    this.includeDebtCredit = const Value.absent(),
-    this.includeBalanceCorrection = const Value.absent(),
-    this.includeInOtherBudgets = const Value.absent(),
-    this.absoluteLimit = const Value.absent(),
-    this.recurrenceRule = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-  }) : name = Value(name),
-       periodStart = Value(periodStart),
-       periodEnd = Value(periodEnd),
-       currencyCode = Value(currencyCode);
-  static Insertable<Budget> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<DateTime>? periodStart,
-    Expression<DateTime>? periodEnd,
-    Expression<String>? currencyCode,
-    Expression<bool>? isIncome,
-    Expression<bool>? pinned,
-    Expression<bool>? archived,
-    Expression<int>? color,
-    Expression<int>? plannedAmountMinor,
-    Expression<bool>? specificMode,
-    Expression<bool>? includeIncome,
-    Expression<bool>? includeDebtCredit,
-    Expression<bool>? includeBalanceCorrection,
-    Expression<bool>? includeInOtherBudgets,
-    Expression<bool>? absoluteLimit,
-    Expression<String>? recurrenceRule,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (periodStart != null) 'period_start': periodStart,
-      if (periodEnd != null) 'period_end': periodEnd,
-      if (currencyCode != null) 'currency_code': currencyCode,
-      if (isIncome != null) 'is_income': isIncome,
-      if (pinned != null) 'pinned': pinned,
-      if (archived != null) 'archived': archived,
-      if (color != null) 'color': color,
-      if (plannedAmountMinor != null)
-        'planned_amount_minor': plannedAmountMinor,
-      if (specificMode != null) 'specific_mode': specificMode,
-      if (includeIncome != null) 'include_income': includeIncome,
-      if (includeDebtCredit != null) 'include_debt_credit': includeDebtCredit,
-      if (includeBalanceCorrection != null)
-        'include_balance_correction': includeBalanceCorrection,
-      if (includeInOtherBudgets != null)
-        'include_in_other_budgets': includeInOtherBudgets,
-      if (absoluteLimit != null) 'absolute_limit': absoluteLimit,
-      if (recurrenceRule != null) 'recurrence_rule': recurrenceRule,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-    });
-  }
-
-  BudgetsCompanion copyWith({
-    Value<int>? id,
-    Value<String>? name,
-    Value<DateTime>? periodStart,
-    Value<DateTime>? periodEnd,
-    Value<String>? currencyCode,
-    Value<bool>? isIncome,
-    Value<bool>? pinned,
-    Value<bool>? archived,
-    Value<int?>? color,
-    Value<int>? plannedAmountMinor,
-    Value<bool>? specificMode,
-    Value<bool>? includeIncome,
-    Value<bool>? includeDebtCredit,
-    Value<bool>? includeBalanceCorrection,
-    Value<bool>? includeInOtherBudgets,
-    Value<bool>? absoluteLimit,
-    Value<String?>? recurrenceRule,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-  }) {
-    return BudgetsCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      periodStart: periodStart ?? this.periodStart,
-      periodEnd: periodEnd ?? this.periodEnd,
-      currencyCode: currencyCode ?? this.currencyCode,
-      isIncome: isIncome ?? this.isIncome,
-      pinned: pinned ?? this.pinned,
-      archived: archived ?? this.archived,
-      color: color ?? this.color,
-      plannedAmountMinor: plannedAmountMinor ?? this.plannedAmountMinor,
-      specificMode: specificMode ?? this.specificMode,
-      includeIncome: includeIncome ?? this.includeIncome,
-      includeDebtCredit: includeDebtCredit ?? this.includeDebtCredit,
-      includeBalanceCorrection:
-          includeBalanceCorrection ?? this.includeBalanceCorrection,
-      includeInOtherBudgets:
-          includeInOtherBudgets ?? this.includeInOtherBudgets,
-      absoluteLimit: absoluteLimit ?? this.absoluteLimit,
-      recurrenceRule: recurrenceRule ?? this.recurrenceRule,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (periodStart.present) {
-      map['period_start'] = Variable<DateTime>(periodStart.value);
-    }
-    if (periodEnd.present) {
-      map['period_end'] = Variable<DateTime>(periodEnd.value);
-    }
-    if (currencyCode.present) {
-      map['currency_code'] = Variable<String>(currencyCode.value);
-    }
-    if (isIncome.present) {
-      map['is_income'] = Variable<bool>(isIncome.value);
-    }
-    if (pinned.present) {
-      map['pinned'] = Variable<bool>(pinned.value);
-    }
-    if (archived.present) {
-      map['archived'] = Variable<bool>(archived.value);
-    }
-    if (color.present) {
-      map['color'] = Variable<int>(color.value);
-    }
-    if (plannedAmountMinor.present) {
-      map['planned_amount_minor'] = Variable<int>(plannedAmountMinor.value);
-    }
-    if (specificMode.present) {
-      map['specific_mode'] = Variable<bool>(specificMode.value);
-    }
-    if (includeIncome.present) {
-      map['include_income'] = Variable<bool>(includeIncome.value);
-    }
-    if (includeDebtCredit.present) {
-      map['include_debt_credit'] = Variable<bool>(includeDebtCredit.value);
-    }
-    if (includeBalanceCorrection.present) {
-      map['include_balance_correction'] = Variable<bool>(
-        includeBalanceCorrection.value,
-      );
-    }
-    if (includeInOtherBudgets.present) {
-      map['include_in_other_budgets'] = Variable<bool>(
-        includeInOtherBudgets.value,
-      );
-    }
-    if (absoluteLimit.present) {
-      map['absolute_limit'] = Variable<bool>(absoluteLimit.value);
-    }
-    if (recurrenceRule.present) {
-      map['recurrence_rule'] = Variable<String>(recurrenceRule.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('BudgetsCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('periodStart: $periodStart, ')
-          ..write('periodEnd: $periodEnd, ')
-          ..write('currencyCode: $currencyCode, ')
-          ..write('isIncome: $isIncome, ')
-          ..write('pinned: $pinned, ')
-          ..write('archived: $archived, ')
-          ..write('color: $color, ')
-          ..write('plannedAmountMinor: $plannedAmountMinor, ')
-          ..write('specificMode: $specificMode, ')
-          ..write('includeIncome: $includeIncome, ')
-          ..write('includeDebtCredit: $includeDebtCredit, ')
-          ..write('includeBalanceCorrection: $includeBalanceCorrection, ')
-          ..write('includeInOtherBudgets: $includeInOtherBudgets, ')
-          ..write('absoluteLimit: $absoluteLimit, ')
-          ..write('recurrenceRule: $recurrenceRule, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -6857,9 +6857,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $WalletsTable wallets = $WalletsTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
+  late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $ObjectivesTable objectives = $ObjectivesTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
-  late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $TransactionBudgetsTable transactionBudgets =
       $TransactionBudgetsTable(this);
   late final $BudgetCategoryLimitsTable budgetCategoryLimits =
@@ -6879,9 +6879,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     wallets,
     categories,
+    budgets,
     objectives,
     transactions,
-    budgets,
     transactionBudgets,
     budgetCategoryLimits,
     budgetWallets,
@@ -8858,6 +8858,802 @@ typedef $$CategoriesTableProcessedTableManager =
         bool associatedTitlesRefs,
       })
     >;
+typedef $$BudgetsTableCreateCompanionBuilder =
+    BudgetsCompanion Function({
+      Value<int> id,
+      required String name,
+      required DateTime periodStart,
+      required DateTime periodEnd,
+      required String currencyCode,
+      Value<bool> isIncome,
+      Value<bool> pinned,
+      Value<bool> archived,
+      Value<int?> color,
+      Value<int> plannedAmountMinor,
+      Value<bool> specificMode,
+      Value<bool> includeIncome,
+      Value<bool> includeDebtCredit,
+      Value<bool> includeBalanceCorrection,
+      Value<bool> includeInOtherBudgets,
+      Value<bool> absoluteLimit,
+      Value<String?> recurrenceRule,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$BudgetsTableUpdateCompanionBuilder =
+    BudgetsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<DateTime> periodStart,
+      Value<DateTime> periodEnd,
+      Value<String> currencyCode,
+      Value<bool> isIncome,
+      Value<bool> pinned,
+      Value<bool> archived,
+      Value<int?> color,
+      Value<int> plannedAmountMinor,
+      Value<bool> specificMode,
+      Value<bool> includeIncome,
+      Value<bool> includeDebtCredit,
+      Value<bool> includeBalanceCorrection,
+      Value<bool> includeInOtherBudgets,
+      Value<bool> absoluteLimit,
+      Value<String?> recurrenceRule,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$BudgetsTableReferences
+    extends BaseReferences<_$AppDatabase, $BudgetsTable, Budget> {
+  $$BudgetsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TransactionBudgetsTable, List<TransactionBudget>>
+  _transactionBudgetsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.transactionBudgets,
+        aliasName: $_aliasNameGenerator(
+          db.budgets.id,
+          db.transactionBudgets.budgetId,
+        ),
+      );
+
+  $$TransactionBudgetsTableProcessedTableManager get transactionBudgetsRefs {
+    final manager = $$TransactionBudgetsTableTableManager(
+      $_db,
+      $_db.transactionBudgets,
+    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _transactionBudgetsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $BudgetCategoryLimitsTable,
+    List<BudgetCategoryLimit>
+  >
+  _budgetCategoryLimitsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.budgetCategoryLimits,
+        aliasName: $_aliasNameGenerator(
+          db.budgets.id,
+          db.budgetCategoryLimits.budgetId,
+        ),
+      );
+
+  $$BudgetCategoryLimitsTableProcessedTableManager
+  get budgetCategoryLimitsRefs {
+    final manager = $$BudgetCategoryLimitsTableTableManager(
+      $_db,
+      $_db.budgetCategoryLimits,
+    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _budgetCategoryLimitsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$BudgetWalletsTable, List<BudgetWallet>>
+  _budgetWalletsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.budgetWallets,
+    aliasName: $_aliasNameGenerator(db.budgets.id, db.budgetWallets.budgetId),
+  );
+
+  $$BudgetWalletsTableProcessedTableManager get budgetWalletsRefs {
+    final manager = $$BudgetWalletsTableTableManager(
+      $_db,
+      $_db.budgetWallets,
+    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_budgetWalletsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$BudgetsTableFilterComposer
+    extends Composer<_$AppDatabase, $BudgetsTable> {
+  $$BudgetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get periodEnd => $composableBuilder(
+    column: $table.periodEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isIncome => $composableBuilder(
+    column: $table.isIncome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archived => $composableBuilder(
+    column: $table.archived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get plannedAmountMinor => $composableBuilder(
+    column: $table.plannedAmountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get specificMode => $composableBuilder(
+    column: $table.specificMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get includeIncome => $composableBuilder(
+    column: $table.includeIncome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get includeDebtCredit => $composableBuilder(
+    column: $table.includeDebtCredit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get includeBalanceCorrection => $composableBuilder(
+    column: $table.includeBalanceCorrection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get includeInOtherBudgets => $composableBuilder(
+    column: $table.includeInOtherBudgets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get absoluteLimit => $composableBuilder(
+    column: $table.absoluteLimit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recurrenceRule => $composableBuilder(
+    column: $table.recurrenceRule,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> transactionBudgetsRefs(
+    Expression<bool> Function($$TransactionBudgetsTableFilterComposer f) f,
+  ) {
+    final $$TransactionBudgetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactionBudgets,
+      getReferencedColumn: (t) => t.budgetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionBudgetsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactionBudgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> budgetCategoryLimitsRefs(
+    Expression<bool> Function($$BudgetCategoryLimitsTableFilterComposer f) f,
+  ) {
+    final $$BudgetCategoryLimitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetCategoryLimits,
+      getReferencedColumn: (t) => t.budgetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetCategoryLimitsTableFilterComposer(
+            $db: $db,
+            $table: $db.budgetCategoryLimits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> budgetWalletsRefs(
+    Expression<bool> Function($$BudgetWalletsTableFilterComposer f) f,
+  ) {
+    final $$BudgetWalletsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetWallets,
+      getReferencedColumn: (t) => t.budgetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetWalletsTableFilterComposer(
+            $db: $db,
+            $table: $db.budgetWallets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BudgetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BudgetsTable> {
+  $$BudgetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get periodEnd => $composableBuilder(
+    column: $table.periodEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isIncome => $composableBuilder(
+    column: $table.isIncome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get archived => $composableBuilder(
+    column: $table.archived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get plannedAmountMinor => $composableBuilder(
+    column: $table.plannedAmountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get specificMode => $composableBuilder(
+    column: $table.specificMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get includeIncome => $composableBuilder(
+    column: $table.includeIncome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get includeDebtCredit => $composableBuilder(
+    column: $table.includeDebtCredit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get includeBalanceCorrection => $composableBuilder(
+    column: $table.includeBalanceCorrection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get includeInOtherBudgets => $composableBuilder(
+    column: $table.includeInOtherBudgets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get absoluteLimit => $composableBuilder(
+    column: $table.absoluteLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recurrenceRule => $composableBuilder(
+    column: $table.recurrenceRule,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BudgetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BudgetsTable> {
+  $$BudgetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get periodEnd =>
+      $composableBuilder(column: $table.periodEnd, builder: (column) => column);
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isIncome =>
+      $composableBuilder(column: $table.isIncome, builder: (column) => column);
+
+  GeneratedColumn<bool> get pinned =>
+      $composableBuilder(column: $table.pinned, builder: (column) => column);
+
+  GeneratedColumn<bool> get archived =>
+      $composableBuilder(column: $table.archived, builder: (column) => column);
+
+  GeneratedColumn<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  GeneratedColumn<int> get plannedAmountMinor => $composableBuilder(
+    column: $table.plannedAmountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get specificMode => $composableBuilder(
+    column: $table.specificMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get includeIncome => $composableBuilder(
+    column: $table.includeIncome,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get includeDebtCredit => $composableBuilder(
+    column: $table.includeDebtCredit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get includeBalanceCorrection => $composableBuilder(
+    column: $table.includeBalanceCorrection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get includeInOtherBudgets => $composableBuilder(
+    column: $table.includeInOtherBudgets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get absoluteLimit => $composableBuilder(
+    column: $table.absoluteLimit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recurrenceRule => $composableBuilder(
+    column: $table.recurrenceRule,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> transactionBudgetsRefs<T extends Object>(
+    Expression<T> Function($$TransactionBudgetsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionBudgetsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.transactionBudgets,
+          getReferencedColumn: (t) => t.budgetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TransactionBudgetsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.transactionBudgets,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> budgetCategoryLimitsRefs<T extends Object>(
+    Expression<T> Function($$BudgetCategoryLimitsTableAnnotationComposer a) f,
+  ) {
+    final $$BudgetCategoryLimitsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.budgetCategoryLimits,
+          getReferencedColumn: (t) => t.budgetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$BudgetCategoryLimitsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.budgetCategoryLimits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> budgetWalletsRefs<T extends Object>(
+    Expression<T> Function($$BudgetWalletsTableAnnotationComposer a) f,
+  ) {
+    final $$BudgetWalletsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgetWallets,
+      getReferencedColumn: (t) => t.budgetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetWalletsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.budgetWallets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BudgetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BudgetsTable,
+          Budget,
+          $$BudgetsTableFilterComposer,
+          $$BudgetsTableOrderingComposer,
+          $$BudgetsTableAnnotationComposer,
+          $$BudgetsTableCreateCompanionBuilder,
+          $$BudgetsTableUpdateCompanionBuilder,
+          (Budget, $$BudgetsTableReferences),
+          Budget,
+          PrefetchHooks Function({
+            bool transactionBudgetsRefs,
+            bool budgetCategoryLimitsRefs,
+            bool budgetWalletsRefs,
+          })
+        > {
+  $$BudgetsTableTableManager(_$AppDatabase db, $BudgetsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BudgetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BudgetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BudgetsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> periodStart = const Value.absent(),
+                Value<DateTime> periodEnd = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
+                Value<bool> isIncome = const Value.absent(),
+                Value<bool> pinned = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
+                Value<int?> color = const Value.absent(),
+                Value<int> plannedAmountMinor = const Value.absent(),
+                Value<bool> specificMode = const Value.absent(),
+                Value<bool> includeIncome = const Value.absent(),
+                Value<bool> includeDebtCredit = const Value.absent(),
+                Value<bool> includeBalanceCorrection = const Value.absent(),
+                Value<bool> includeInOtherBudgets = const Value.absent(),
+                Value<bool> absoluteLimit = const Value.absent(),
+                Value<String?> recurrenceRule = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BudgetsCompanion(
+                id: id,
+                name: name,
+                periodStart: periodStart,
+                periodEnd: periodEnd,
+                currencyCode: currencyCode,
+                isIncome: isIncome,
+                pinned: pinned,
+                archived: archived,
+                color: color,
+                plannedAmountMinor: plannedAmountMinor,
+                specificMode: specificMode,
+                includeIncome: includeIncome,
+                includeDebtCredit: includeDebtCredit,
+                includeBalanceCorrection: includeBalanceCorrection,
+                includeInOtherBudgets: includeInOtherBudgets,
+                absoluteLimit: absoluteLimit,
+                recurrenceRule: recurrenceRule,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required DateTime periodStart,
+                required DateTime periodEnd,
+                required String currencyCode,
+                Value<bool> isIncome = const Value.absent(),
+                Value<bool> pinned = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
+                Value<int?> color = const Value.absent(),
+                Value<int> plannedAmountMinor = const Value.absent(),
+                Value<bool> specificMode = const Value.absent(),
+                Value<bool> includeIncome = const Value.absent(),
+                Value<bool> includeDebtCredit = const Value.absent(),
+                Value<bool> includeBalanceCorrection = const Value.absent(),
+                Value<bool> includeInOtherBudgets = const Value.absent(),
+                Value<bool> absoluteLimit = const Value.absent(),
+                Value<String?> recurrenceRule = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BudgetsCompanion.insert(
+                id: id,
+                name: name,
+                periodStart: periodStart,
+                periodEnd: periodEnd,
+                currencyCode: currencyCode,
+                isIncome: isIncome,
+                pinned: pinned,
+                archived: archived,
+                color: color,
+                plannedAmountMinor: plannedAmountMinor,
+                specificMode: specificMode,
+                includeIncome: includeIncome,
+                includeDebtCredit: includeDebtCredit,
+                includeBalanceCorrection: includeBalanceCorrection,
+                includeInOtherBudgets: includeInOtherBudgets,
+                absoluteLimit: absoluteLimit,
+                recurrenceRule: recurrenceRule,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BudgetsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                transactionBudgetsRefs = false,
+                budgetCategoryLimitsRefs = false,
+                budgetWalletsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (transactionBudgetsRefs) db.transactionBudgets,
+                    if (budgetCategoryLimitsRefs) db.budgetCategoryLimits,
+                    if (budgetWalletsRefs) db.budgetWallets,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (transactionBudgetsRefs)
+                        await $_getPrefetchedData<
+                          Budget,
+                          $BudgetsTable,
+                          TransactionBudget
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BudgetsTableReferences
+                              ._transactionBudgetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BudgetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).transactionBudgetsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.budgetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (budgetCategoryLimitsRefs)
+                        await $_getPrefetchedData<
+                          Budget,
+                          $BudgetsTable,
+                          BudgetCategoryLimit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BudgetsTableReferences
+                              ._budgetCategoryLimitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BudgetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).budgetCategoryLimitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.budgetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (budgetWalletsRefs)
+                        await $_getPrefetchedData<
+                          Budget,
+                          $BudgetsTable,
+                          BudgetWallet
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BudgetsTableReferences
+                              ._budgetWalletsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BudgetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).budgetWalletsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.budgetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$BudgetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BudgetsTable,
+      Budget,
+      $$BudgetsTableFilterComposer,
+      $$BudgetsTableOrderingComposer,
+      $$BudgetsTableAnnotationComposer,
+      $$BudgetsTableCreateCompanionBuilder,
+      $$BudgetsTableUpdateCompanionBuilder,
+      (Budget, $$BudgetsTableReferences),
+      Budget,
+      PrefetchHooks Function({
+        bool transactionBudgetsRefs,
+        bool budgetCategoryLimitsRefs,
+        bool budgetWalletsRefs,
+      })
+    >;
 typedef $$ObjectivesTableCreateCompanionBuilder =
     ObjectivesCompanion Function({
       Value<int> id,
@@ -10401,802 +11197,6 @@ typedef $$TransactionsTableProcessedTableManager =
         bool categoryId,
         bool objectiveFk,
         bool transactionBudgetsRefs,
-      })
-    >;
-typedef $$BudgetsTableCreateCompanionBuilder =
-    BudgetsCompanion Function({
-      Value<int> id,
-      required String name,
-      required DateTime periodStart,
-      required DateTime periodEnd,
-      required String currencyCode,
-      Value<bool> isIncome,
-      Value<bool> pinned,
-      Value<bool> archived,
-      Value<int?> color,
-      Value<int> plannedAmountMinor,
-      Value<bool> specificMode,
-      Value<bool> includeIncome,
-      Value<bool> includeDebtCredit,
-      Value<bool> includeBalanceCorrection,
-      Value<bool> includeInOtherBudgets,
-      Value<bool> absoluteLimit,
-      Value<String?> recurrenceRule,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-    });
-typedef $$BudgetsTableUpdateCompanionBuilder =
-    BudgetsCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<DateTime> periodStart,
-      Value<DateTime> periodEnd,
-      Value<String> currencyCode,
-      Value<bool> isIncome,
-      Value<bool> pinned,
-      Value<bool> archived,
-      Value<int?> color,
-      Value<int> plannedAmountMinor,
-      Value<bool> specificMode,
-      Value<bool> includeIncome,
-      Value<bool> includeDebtCredit,
-      Value<bool> includeBalanceCorrection,
-      Value<bool> includeInOtherBudgets,
-      Value<bool> absoluteLimit,
-      Value<String?> recurrenceRule,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-    });
-
-final class $$BudgetsTableReferences
-    extends BaseReferences<_$AppDatabase, $BudgetsTable, Budget> {
-  $$BudgetsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static MultiTypedResultKey<$TransactionBudgetsTable, List<TransactionBudget>>
-  _transactionBudgetsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.transactionBudgets,
-        aliasName: $_aliasNameGenerator(
-          db.budgets.id,
-          db.transactionBudgets.budgetId,
-        ),
-      );
-
-  $$TransactionBudgetsTableProcessedTableManager get transactionBudgetsRefs {
-    final manager = $$TransactionBudgetsTableTableManager(
-      $_db,
-      $_db.transactionBudgets,
-    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _transactionBudgetsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $BudgetCategoryLimitsTable,
-    List<BudgetCategoryLimit>
-  >
-  _budgetCategoryLimitsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.budgetCategoryLimits,
-        aliasName: $_aliasNameGenerator(
-          db.budgets.id,
-          db.budgetCategoryLimits.budgetId,
-        ),
-      );
-
-  $$BudgetCategoryLimitsTableProcessedTableManager
-  get budgetCategoryLimitsRefs {
-    final manager = $$BudgetCategoryLimitsTableTableManager(
-      $_db,
-      $_db.budgetCategoryLimits,
-    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _budgetCategoryLimitsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$BudgetWalletsTable, List<BudgetWallet>>
-  _budgetWalletsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.budgetWallets,
-    aliasName: $_aliasNameGenerator(db.budgets.id, db.budgetWallets.budgetId),
-  );
-
-  $$BudgetWalletsTableProcessedTableManager get budgetWalletsRefs {
-    final manager = $$BudgetWalletsTableTableManager(
-      $_db,
-      $_db.budgetWallets,
-    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_budgetWalletsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$BudgetsTableFilterComposer
-    extends Composer<_$AppDatabase, $BudgetsTable> {
-  $$BudgetsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get periodStart => $composableBuilder(
-    column: $table.periodStart,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get periodEnd => $composableBuilder(
-    column: $table.periodEnd,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get currencyCode => $composableBuilder(
-    column: $table.currencyCode,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isIncome => $composableBuilder(
-    column: $table.isIncome,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get pinned => $composableBuilder(
-    column: $table.pinned,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get archived => $composableBuilder(
-    column: $table.archived,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get color => $composableBuilder(
-    column: $table.color,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get plannedAmountMinor => $composableBuilder(
-    column: $table.plannedAmountMinor,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get specificMode => $composableBuilder(
-    column: $table.specificMode,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get includeIncome => $composableBuilder(
-    column: $table.includeIncome,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get includeDebtCredit => $composableBuilder(
-    column: $table.includeDebtCredit,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get includeBalanceCorrection => $composableBuilder(
-    column: $table.includeBalanceCorrection,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get includeInOtherBudgets => $composableBuilder(
-    column: $table.includeInOtherBudgets,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get absoluteLimit => $composableBuilder(
-    column: $table.absoluteLimit,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get recurrenceRule => $composableBuilder(
-    column: $table.recurrenceRule,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  Expression<bool> transactionBudgetsRefs(
-    Expression<bool> Function($$TransactionBudgetsTableFilterComposer f) f,
-  ) {
-    final $$TransactionBudgetsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.transactionBudgets,
-      getReferencedColumn: (t) => t.budgetId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TransactionBudgetsTableFilterComposer(
-            $db: $db,
-            $table: $db.transactionBudgets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> budgetCategoryLimitsRefs(
-    Expression<bool> Function($$BudgetCategoryLimitsTableFilterComposer f) f,
-  ) {
-    final $$BudgetCategoryLimitsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.budgetCategoryLimits,
-      getReferencedColumn: (t) => t.budgetId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BudgetCategoryLimitsTableFilterComposer(
-            $db: $db,
-            $table: $db.budgetCategoryLimits,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> budgetWalletsRefs(
-    Expression<bool> Function($$BudgetWalletsTableFilterComposer f) f,
-  ) {
-    final $$BudgetWalletsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.budgetWallets,
-      getReferencedColumn: (t) => t.budgetId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BudgetWalletsTableFilterComposer(
-            $db: $db,
-            $table: $db.budgetWallets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$BudgetsTableOrderingComposer
-    extends Composer<_$AppDatabase, $BudgetsTable> {
-  $$BudgetsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get periodStart => $composableBuilder(
-    column: $table.periodStart,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get periodEnd => $composableBuilder(
-    column: $table.periodEnd,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get currencyCode => $composableBuilder(
-    column: $table.currencyCode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isIncome => $composableBuilder(
-    column: $table.isIncome,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get pinned => $composableBuilder(
-    column: $table.pinned,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get archived => $composableBuilder(
-    column: $table.archived,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get color => $composableBuilder(
-    column: $table.color,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get plannedAmountMinor => $composableBuilder(
-    column: $table.plannedAmountMinor,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get specificMode => $composableBuilder(
-    column: $table.specificMode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get includeIncome => $composableBuilder(
-    column: $table.includeIncome,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get includeDebtCredit => $composableBuilder(
-    column: $table.includeDebtCredit,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get includeBalanceCorrection => $composableBuilder(
-    column: $table.includeBalanceCorrection,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get includeInOtherBudgets => $composableBuilder(
-    column: $table.includeInOtherBudgets,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get absoluteLimit => $composableBuilder(
-    column: $table.absoluteLimit,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get recurrenceRule => $composableBuilder(
-    column: $table.recurrenceRule,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$BudgetsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $BudgetsTable> {
-  $$BudgetsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get periodStart => $composableBuilder(
-    column: $table.periodStart,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get periodEnd =>
-      $composableBuilder(column: $table.periodEnd, builder: (column) => column);
-
-  GeneratedColumn<String> get currencyCode => $composableBuilder(
-    column: $table.currencyCode,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isIncome =>
-      $composableBuilder(column: $table.isIncome, builder: (column) => column);
-
-  GeneratedColumn<bool> get pinned =>
-      $composableBuilder(column: $table.pinned, builder: (column) => column);
-
-  GeneratedColumn<bool> get archived =>
-      $composableBuilder(column: $table.archived, builder: (column) => column);
-
-  GeneratedColumn<int> get color =>
-      $composableBuilder(column: $table.color, builder: (column) => column);
-
-  GeneratedColumn<int> get plannedAmountMinor => $composableBuilder(
-    column: $table.plannedAmountMinor,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get specificMode => $composableBuilder(
-    column: $table.specificMode,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get includeIncome => $composableBuilder(
-    column: $table.includeIncome,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get includeDebtCredit => $composableBuilder(
-    column: $table.includeDebtCredit,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get includeBalanceCorrection => $composableBuilder(
-    column: $table.includeBalanceCorrection,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get includeInOtherBudgets => $composableBuilder(
-    column: $table.includeInOtherBudgets,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get absoluteLimit => $composableBuilder(
-    column: $table.absoluteLimit,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get recurrenceRule => $composableBuilder(
-    column: $table.recurrenceRule,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  Expression<T> transactionBudgetsRefs<T extends Object>(
-    Expression<T> Function($$TransactionBudgetsTableAnnotationComposer a) f,
-  ) {
-    final $$TransactionBudgetsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.transactionBudgets,
-          getReferencedColumn: (t) => t.budgetId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$TransactionBudgetsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.transactionBudgets,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
-  Expression<T> budgetCategoryLimitsRefs<T extends Object>(
-    Expression<T> Function($$BudgetCategoryLimitsTableAnnotationComposer a) f,
-  ) {
-    final $$BudgetCategoryLimitsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.budgetCategoryLimits,
-          getReferencedColumn: (t) => t.budgetId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$BudgetCategoryLimitsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.budgetCategoryLimits,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
-  Expression<T> budgetWalletsRefs<T extends Object>(
-    Expression<T> Function($$BudgetWalletsTableAnnotationComposer a) f,
-  ) {
-    final $$BudgetWalletsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.budgetWallets,
-      getReferencedColumn: (t) => t.budgetId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BudgetWalletsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.budgetWallets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$BudgetsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $BudgetsTable,
-          Budget,
-          $$BudgetsTableFilterComposer,
-          $$BudgetsTableOrderingComposer,
-          $$BudgetsTableAnnotationComposer,
-          $$BudgetsTableCreateCompanionBuilder,
-          $$BudgetsTableUpdateCompanionBuilder,
-          (Budget, $$BudgetsTableReferences),
-          Budget,
-          PrefetchHooks Function({
-            bool transactionBudgetsRefs,
-            bool budgetCategoryLimitsRefs,
-            bool budgetWalletsRefs,
-          })
-        > {
-  $$BudgetsTableTableManager(_$AppDatabase db, $BudgetsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$BudgetsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$BudgetsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$BudgetsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<DateTime> periodStart = const Value.absent(),
-                Value<DateTime> periodEnd = const Value.absent(),
-                Value<String> currencyCode = const Value.absent(),
-                Value<bool> isIncome = const Value.absent(),
-                Value<bool> pinned = const Value.absent(),
-                Value<bool> archived = const Value.absent(),
-                Value<int?> color = const Value.absent(),
-                Value<int> plannedAmountMinor = const Value.absent(),
-                Value<bool> specificMode = const Value.absent(),
-                Value<bool> includeIncome = const Value.absent(),
-                Value<bool> includeDebtCredit = const Value.absent(),
-                Value<bool> includeBalanceCorrection = const Value.absent(),
-                Value<bool> includeInOtherBudgets = const Value.absent(),
-                Value<bool> absoluteLimit = const Value.absent(),
-                Value<String?> recurrenceRule = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-              }) => BudgetsCompanion(
-                id: id,
-                name: name,
-                periodStart: periodStart,
-                periodEnd: periodEnd,
-                currencyCode: currencyCode,
-                isIncome: isIncome,
-                pinned: pinned,
-                archived: archived,
-                color: color,
-                plannedAmountMinor: plannedAmountMinor,
-                specificMode: specificMode,
-                includeIncome: includeIncome,
-                includeDebtCredit: includeDebtCredit,
-                includeBalanceCorrection: includeBalanceCorrection,
-                includeInOtherBudgets: includeInOtherBudgets,
-                absoluteLimit: absoluteLimit,
-                recurrenceRule: recurrenceRule,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                required DateTime periodStart,
-                required DateTime periodEnd,
-                required String currencyCode,
-                Value<bool> isIncome = const Value.absent(),
-                Value<bool> pinned = const Value.absent(),
-                Value<bool> archived = const Value.absent(),
-                Value<int?> color = const Value.absent(),
-                Value<int> plannedAmountMinor = const Value.absent(),
-                Value<bool> specificMode = const Value.absent(),
-                Value<bool> includeIncome = const Value.absent(),
-                Value<bool> includeDebtCredit = const Value.absent(),
-                Value<bool> includeBalanceCorrection = const Value.absent(),
-                Value<bool> includeInOtherBudgets = const Value.absent(),
-                Value<bool> absoluteLimit = const Value.absent(),
-                Value<String?> recurrenceRule = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-              }) => BudgetsCompanion.insert(
-                id: id,
-                name: name,
-                periodStart: periodStart,
-                periodEnd: periodEnd,
-                currencyCode: currencyCode,
-                isIncome: isIncome,
-                pinned: pinned,
-                archived: archived,
-                color: color,
-                plannedAmountMinor: plannedAmountMinor,
-                specificMode: specificMode,
-                includeIncome: includeIncome,
-                includeDebtCredit: includeDebtCredit,
-                includeBalanceCorrection: includeBalanceCorrection,
-                includeInOtherBudgets: includeInOtherBudgets,
-                absoluteLimit: absoluteLimit,
-                recurrenceRule: recurrenceRule,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$BudgetsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({
-                transactionBudgetsRefs = false,
-                budgetCategoryLimitsRefs = false,
-                budgetWalletsRefs = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (transactionBudgetsRefs) db.transactionBudgets,
-                    if (budgetCategoryLimitsRefs) db.budgetCategoryLimits,
-                    if (budgetWalletsRefs) db.budgetWallets,
-                  ],
-                  addJoins: null,
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (transactionBudgetsRefs)
-                        await $_getPrefetchedData<
-                          Budget,
-                          $BudgetsTable,
-                          TransactionBudget
-                        >(
-                          currentTable: table,
-                          referencedTable: $$BudgetsTableReferences
-                              ._transactionBudgetsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$BudgetsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).transactionBudgetsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.budgetId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (budgetCategoryLimitsRefs)
-                        await $_getPrefetchedData<
-                          Budget,
-                          $BudgetsTable,
-                          BudgetCategoryLimit
-                        >(
-                          currentTable: table,
-                          referencedTable: $$BudgetsTableReferences
-                              ._budgetCategoryLimitsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$BudgetsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).budgetCategoryLimitsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.budgetId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (budgetWalletsRefs)
-                        await $_getPrefetchedData<
-                          Budget,
-                          $BudgetsTable,
-                          BudgetWallet
-                        >(
-                          currentTable: table,
-                          referencedTable: $$BudgetsTableReferences
-                              ._budgetWalletsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$BudgetsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).budgetWalletsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.budgetId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$BudgetsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $BudgetsTable,
-      Budget,
-      $$BudgetsTableFilterComposer,
-      $$BudgetsTableOrderingComposer,
-      $$BudgetsTableAnnotationComposer,
-      $$BudgetsTableCreateCompanionBuilder,
-      $$BudgetsTableUpdateCompanionBuilder,
-      (Budget, $$BudgetsTableReferences),
-      Budget,
-      PrefetchHooks Function({
-        bool transactionBudgetsRefs,
-        bool budgetCategoryLimitsRefs,
-        bool budgetWalletsRefs,
       })
     >;
 typedef $$TransactionBudgetsTableCreateCompanionBuilder =
@@ -13864,12 +13864,12 @@ class $AppDatabaseManager {
       $$WalletsTableTableManager(_db, _db.wallets);
   $$CategoriesTableTableManager get categories =>
       $$CategoriesTableTableManager(_db, _db.categories);
+  $$BudgetsTableTableManager get budgets =>
+      $$BudgetsTableTableManager(_db, _db.budgets);
   $$ObjectivesTableTableManager get objectives =>
       $$ObjectivesTableTableManager(_db, _db.objectives);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
-  $$BudgetsTableTableManager get budgets =>
-      $$BudgetsTableTableManager(_db, _db.budgets);
   $$TransactionBudgetsTableTableManager get transactionBudgets =>
       $$TransactionBudgetsTableTableManager(_db, _db.transactionBudgets);
   $$BudgetCategoryLimitsTableTableManager get budgetCategoryLimits =>

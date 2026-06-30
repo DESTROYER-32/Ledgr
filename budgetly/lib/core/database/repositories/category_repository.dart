@@ -51,11 +51,16 @@ class CategoryRepository {
       _db.into(_db.categories).insert(entry);
 
   Future<void> update(int id, CategoriesCompanion entry) =>
-      (_db.categories.update()..where((c) => c.id.equals(id))).write(entry);
+      (_db.categories.update()..where((c) => c.id.equals(id))).write(
+        entry.copyWith(updatedAt: Value(DateTime.now())),
+      );
 
   Future<void> archive(int id) =>
       (_db.categories.update()..where((c) => c.id.equals(id))).write(
-        const CategoriesCompanion(archived: Value(true)),
+        CategoriesCompanion(
+          archived: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ),
       );
 
   Future<void> delete(int id) async {

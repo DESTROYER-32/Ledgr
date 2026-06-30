@@ -22,7 +22,7 @@ void main() {
       final walletRepo = WalletRepository(db, exchangeRates);
       final recurringRepo = RecurringRepository(db);
       final transactionRepo = TransactionRepository(db);
-      final service = RecurringService(recurringRepo, transactionRepo);
+      final service = RecurringService(db, recurringRepo, transactionRepo);
 
       final sourceWalletId = await walletRepo.insert(
         WalletsCompanion.insert(

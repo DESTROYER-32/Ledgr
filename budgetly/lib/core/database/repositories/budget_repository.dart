@@ -27,7 +27,9 @@ class BudgetRepository {
       _db.into(_db.budgets).insert(entry);
 
   Future<void> update(int id, BudgetsCompanion entry) =>
-      (_db.budgets.update()..where((b) => b.id.equals(id))).write(entry);
+      (_db.budgets.update()..where((b) => b.id.equals(id))).write(
+        entry.copyWith(updatedAt: Value(DateTime.now())),
+      );
 
   Future<void> delete(int id) async {
     await _db.transaction(() async {

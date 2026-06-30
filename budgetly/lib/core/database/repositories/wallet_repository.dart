@@ -34,14 +34,19 @@ class WalletRepository {
       _db.into(_db.wallets).insert(entry);
 
   Future<void> update(int id, WalletsCompanion entry) =>
-      (_db.wallets.update()..where((w) => w.id.equals(id))).write(entry);
+      (_db.wallets.update()..where((w) => w.id.equals(id))).write(
+        entry.copyWith(updatedAt: Value(DateTime.now())),
+      );
 
   Future<void> updateSortOrders(List<int> walletIds) async {
     await _db.batch((batch) {
       for (var i = 0; i < walletIds.length; i++) {
         batch.update(
           _db.wallets,
-          WalletsCompanion(sortOrder: Value(i)),
+          WalletsCompanion(
+            sortOrder: Value(i),
+            updatedAt: Value(DateTime.now()),
+          ),
           where: (w) => w.id.equals(walletIds[i]),
         );
       }
@@ -50,7 +55,10 @@ class WalletRepository {
 
   Future<void> archive(int id) =>
       (_db.wallets.update()..where((w) => w.id.equals(id))).write(
-        const WalletsCompanion(archived: Value(true)),
+        WalletsCompanion(
+          archived: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ),
       );
 
   Future<void> delete(int id) async {

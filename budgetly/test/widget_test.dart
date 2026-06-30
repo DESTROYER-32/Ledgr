@@ -21,7 +21,9 @@ void main() {
         child: const BudgetlyApp(initialRoute: '/'),
       ),
     );
-    await tester.pump();
+    for (var i = 0; i < 10 && find.text('Budgetly').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
     expect(find.text('Budgetly'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));

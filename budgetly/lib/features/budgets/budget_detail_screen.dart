@@ -390,7 +390,6 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Widget _buildHistoryCard(ThemeData theme, ColorScheme cs, Budget budget) {
-    if (_prevTotalSpent == 0) return const SizedBox.shrink();
     final diff = _totalSpent - _prevTotalSpent;
     final pctChange = _prevTotalSpent > 0
         ? ((diff / _prevTotalSpent) * 100).round()
