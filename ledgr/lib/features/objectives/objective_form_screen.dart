@@ -49,7 +49,10 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
     final obj = await repo.getById(widget.objectiveId!);
     if (obj != null && mounted) {
       _nameController.text = obj.name;
-      _amountController.text = (obj.amountMinor / 100).toStringAsFixed(2);
+      _amountController.text = MoneyUtils.toMajorText(
+        obj.amountMinor,
+        currencyCode: obj.currencyCode,
+      );
       _type = obj.type;
       _currencyCode = obj.currencyCode;
       _deadline = obj.deadline;

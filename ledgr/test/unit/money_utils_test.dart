@@ -58,6 +58,37 @@ void main() {
       expect(MoneyUtils.toMajor(1234, currencyCode: 'BHD'), 1.234);
     });
 
+    test('convertMinor adjusts for currency decimal digits', () {
+      const rates = {'usd': 1.0, 'jpy': 150.0, 'bhd': 0.376};
+      expect(
+        MoneyUtils.convertMinor(
+          10000,
+          fromCurrency: 'USD',
+          toCurrency: 'JPY',
+          rates: rates,
+        ),
+        15000,
+      );
+      expect(
+        MoneyUtils.convertMinor(
+          15000,
+          fromCurrency: 'JPY',
+          toCurrency: 'USD',
+          rates: rates,
+        ),
+        10000,
+      );
+      expect(
+        MoneyUtils.convertMinor(
+          10000,
+          fromCurrency: 'USD',
+          toCurrency: 'BHD',
+          rates: rates,
+        ),
+        37600,
+      );
+    });
+
     test('formatDate formats date correctly', () {
       final date = DateTime(2024, 3, 15);
       final formatted = MoneyUtils.formatDate(date);

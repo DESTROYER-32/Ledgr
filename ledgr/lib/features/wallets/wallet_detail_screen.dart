@@ -218,7 +218,10 @@ class WalletDetailScreen extends ConsumerWidget {
     int currentBalance,
   ) async {
     final controller = TextEditingController(
-      text: (currentBalance / 100).toStringAsFixed(2),
+      text: MoneyUtils.toMajorText(
+        currentBalance,
+        currencyCode: wallet.currencyCode,
+      ),
     );
     final noteController = TextEditingController();
     try {
@@ -262,9 +265,10 @@ class WalletDetailScreen extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () async {
-                final target =
-                    ((double.tryParse(controller.text.trim()) ?? 0) * 100)
-                        .round();
+                final target = MoneyUtils.toMinor(
+                  double.tryParse(controller.text.trim()) ?? 0,
+                  currencyCode: wallet.currencyCode,
+                );
                 final diff = target - currentBalance;
                 if (diff == 0) {
                   Navigator.pop(dialogContext, true);

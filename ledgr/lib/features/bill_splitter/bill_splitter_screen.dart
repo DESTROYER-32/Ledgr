@@ -109,7 +109,7 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
               child: ListTile(
                 title: Text(item.name),
                 subtitle: Text(
-                  '${MoneyUtils.format((item.amount * 100).round(), currencyCode: splitCurrency)} per person',
+                  '${MoneyUtils.format(MoneyUtils.toMinor(item.amount, currencyCode: splitCurrency), currencyCode: splitCurrency)} per person',
                 ),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline),
@@ -174,7 +174,7 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
                   Text('Summary', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text(
-                    'Total: ${MoneyUtils.format((_items.fold<double>(0, (s, i) => s + i.amount * _people.length) * 100).round(), currencyCode: splitCurrency)}',
+                    'Total: ${MoneyUtils.format(MoneyUtils.toMinor(_items.fold<double>(0, (s, i) => s + i.amount * _people.length), currencyCode: splitCurrency), currencyCode: splitCurrency)}',
                   ),
                   const SizedBox(height: 8),
                   ..._people.map((person) {
@@ -190,7 +190,10 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
                           Text(person),
                           Text(
                             MoneyUtils.format(
-                              (perPerson * 100).round(),
+                              MoneyUtils.toMinor(
+                                perPerson,
+                                currencyCode: splitCurrency,
+                              ),
                               currencyCode: splitCurrency,
                             ),
                             style: TextStyle(
@@ -229,7 +232,8 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
     final title = 'Bill split: ${_items.map((i) => i.name).join(', ')}';
     final perPerson = _items.fold<int>(
       0,
-      (s, i) => s + (i.amount * 100).round(),
+      (s, i) =>
+          s + MoneyUtils.toMinor(i.amount, currencyCode: wallet.currencyCode),
     );
 
     for (final person in _people) {

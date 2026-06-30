@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../database/repositories/settings_repository.dart';
+import '../utils/money_utils.dart';
 
 class ExchangeRateException implements Exception {
   final String message;
@@ -245,7 +246,9 @@ class ExchangeRateService {
   }) async {
     if (from.toLowerCase() == to.toLowerCase()) return amountMinor;
     final r = await ratio(from, to, onDate: onDate);
-    return (amountMinor * r).round();
+    final convertedMajor =
+        MoneyUtils.toMajor(amountMinor, currencyCode: from) * r;
+    return MoneyUtils.toMinor(convertedMajor, currencyCode: to);
   }
 
   Future<Map<String, double>> getAllRates({bool refresh = false}) async {

@@ -131,8 +131,11 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     if (!mounted) return;
     final cat = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) =>
-          _LimitDialog(categories: cats, isIncome: _budget!.isIncome),
+      builder: (ctx) => _LimitDialog(
+        categories: cats,
+        isIncome: _budget!.isIncome,
+        currencyCode: _budget!.currencyCode,
+      ),
     );
     if (cat == null) return;
     final repo = ref.read(budgetRepositoryProvider);
@@ -160,11 +163,14 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     );
     if (result == null || !mounted) return;
     final walletId = result['walletId'] as int;
-    final amount = ((result['amount'] as double) * 100).round();
-    final date = result['date'] as DateTime;
-
     final wallet = await ref.read(walletRepositoryProvider).getById(walletId);
     if (wallet == null || !mounted) return;
+
+    final amount = MoneyUtils.toMinor(
+      result['amount'] as double,
+      currencyCode: wallet.currencyCode,
+    );
+    final date = result['date'] as DateTime;
 
     await ref.read(transactionRepositoryProvider).insertWithBudgets(
       TransactionsCompanion.insert(
@@ -845,7 +851,12 @@ class _CategoryLimitRow extends StatelessWidget {
 class _LimitDialog extends StatefulWidget {
   final List<Category> categories;
   final bool isIncome;
-  const _LimitDialog({required this.categories, required this.isIncome});
+  final String currencyCode;
+  const _LimitDialog({
+    required this.categories,
+    required this.isIncome,
+    required this.currencyCode,
+  });
 
   @override
   State<_LimitDialog> createState() => _LimitDialogState();
@@ -910,10 +921,13 @@ class _LimitDialogState extends State<_LimitDialog> {
             if (_selectedCatId == null || _amountController.text.isEmpty) {
               return;
             }
-            final amt = (double.tryParse(_amountController.text) ?? 0) * 100;
+            final amt = MoneyUtils.toMinor(
+              double.tryParse(_amountController.text) ?? 0,
+              currencyCode: widget.currencyCode,
+            );
             Navigator.pop(context, {
               'categoryId': _selectedCatId!,
-              'amount': amt.round(),
+              'amount': amt,
             });
           },
           child: const Text('Add'),

@@ -358,7 +358,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           [
             t.date.toIso8601String(),
             t.type,
-            (t.amountMinor / 100).toStringAsFixed(2),
+            MoneyUtils.toMajorText(t.amountMinor, currencyCode: t.currencyCode),
             t.currencyCode,
             t.walletId,
             t.categoryId ?? '',

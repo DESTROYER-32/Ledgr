@@ -82,8 +82,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         _startDate = budget.periodStart;
         _endDate = budget.periodEnd;
         _periodDays = days > 0 ? days : 30;
-        _amountController.text = (budget.plannedAmountMinor / 100)
-            .toStringAsFixed(2);
+        _amountController.text = MoneyUtils.toMajorText(
+          budget.plannedAmountMinor,
+          currencyCode: budget.currencyCode,
+        );
       });
       _currencyCode = budget.currencyCode;
       final limits = await repo.watchLimits(budget.id).first;
@@ -97,8 +99,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(budgetRepositoryProvider);
     final currencyCode = _currencyCode;
-    final plannedAmountMinor =
-        ((double.tryParse(_amountController.text) ?? 0) * 100).round();
+    final plannedAmountMinor = MoneyUtils.toMinor(
+      double.tryParse(_amountController.text) ?? 0,
+      currencyCode: currencyCode,
+    );
 
     final companion = BudgetsCompanion(
       name: Value(_nameController.text.trim()),

@@ -157,6 +157,7 @@ class AppLockController extends ChangeNotifier {
     final salt = _randomSalt();
     await _settings.set(_pinSaltKey, salt);
     await _settings.set(_pinHashKey, _hashPin(pin, salt));
+    await clearAttemptState();
     _state = _state.copyWith(
       isEnabled: true,
       isLocked: false,
@@ -176,6 +177,7 @@ class AppLockController extends ChangeNotifier {
     await _settings.remove(_pinSaltKey);
     await _settings.remove(_biometricKey);
     await _settings.remove(_timeoutKey);
+    await clearAttemptState();
     _leftAppAt = null;
     _state = _state.copyWith(
       isEnabled: false,

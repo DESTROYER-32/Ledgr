@@ -87,7 +87,11 @@ class MoneyUtils {
     if (fromRate == null || toRate == null || fromRate == 0) {
       return null;
     }
-    return (amountMinor * toRate * (1 / fromRate)).round();
+    final convertedMajor =
+        toMajor(amountMinor, currencyCode: fromCurrency) *
+        toRate *
+        (1 / fromRate);
+    return toMinor(convertedMajor, currencyCode: toCurrency);
   }
 
   static int toMinor(double amount, {String? currencyCode}) {
@@ -108,6 +112,14 @@ class MoneyUtils {
   static double toMajor(int minor, {String? currencyCode}) {
     final digits = decimalDigitsFor(currencyCode ?? defaultCurrencyCode);
     return minor / math.pow(10, digits);
+  }
+
+  static String toMajorText(int minor, {String? currencyCode}) {
+    final code = currencyCode ?? defaultCurrencyCode;
+    return toMajor(
+      minor,
+      currencyCode: code,
+    ).toStringAsFixed(decimalDigitsFor(code));
   }
 
   static String formatDate(DateTime date) => AppDateUtils.formatDate(date);
