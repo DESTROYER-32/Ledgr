@@ -209,23 +209,19 @@ class TransactionRepository {
   }
 
   Future<Map<int, int>> spentByCategory(DateTime start, DateTime end) async {
-    return _sumByCategory(
-      start,
-      end,
-      "type = 'expense' AND special_type = 'none'",
-    );
+    return _sumByCategory(start, end, type: 'expense', specialType: 'none');
   }
 
   Future<Map<int, int>> incomeByCategory(DateTime start, DateTime end) async {
-    return _sumByCategory(start, end, "type = 'income'");
+    return _sumByCategory(start, end, type: 'income');
   }
 
   Future<int> totalIncome(DateTime start, DateTime end) async {
-    return _sumTotal(start, end, "type = 'income'");
+    return _sumTotal(start, end, type: 'income');
   }
 
   Future<int> totalExpenses(DateTime start, DateTime end) async {
-    return _sumTotal(start, end, "type = 'expense' AND special_type = 'none'");
+    return _sumTotal(start, end, type: 'expense', specialType: 'none');
   }
 
   Future<List<Transaction>> getByObjective(int objectiveId) =>
@@ -330,23 +326,27 @@ class TransactionRepository {
 
   Future<Map<int, int>> _sumByCategory(
     DateTime start,
-    DateTime end,
-    String whereClause,
-  ) async {
-    final rows = await _db
-        .customSelect(
-          '''
+    DateTime end, {
+    required String type,
+    String? specialType,
+  }) async {
+    final specialTypeFilter = specialType == null ? '' : 'AND special_type = ?';
+    final variables = [
+      Variable.withDateTime(start),
+      Variable.withDateTime(end),
+      Variable.withString(type),
+      if (specialType != null) Variable.withString(specialType),
+    ];
+    final rows = await _db.customSelect('''
           SELECT category_id, SUM(amount_minor) AS total
           FROM transactions
           WHERE category_id IS NOT NULL
             AND date >= ?
             AND date <= ?
-            AND $whereClause
+            AND type = ?
+            $specialTypeFilter
           GROUP BY category_id
-          ''',
-          variables: [Variable.withDateTime(start), Variable.withDateTime(end)],
-        )
-        .get();
+          ''', variables: variables).get();
     return {
       for (final row in rows)
         row.data['category_id'] as int: row.data['total'] as int,
@@ -355,21 +355,25 @@ class TransactionRepository {
 
   Future<int> _sumTotal(
     DateTime start,
-    DateTime end,
-    String whereClause,
-  ) async {
-    final row = await _db
-        .customSelect(
-          '''
+    DateTime end, {
+    required String type,
+    String? specialType,
+  }) async {
+    final specialTypeFilter = specialType == null ? '' : 'AND special_type = ?';
+    final variables = [
+      Variable.withDateTime(start),
+      Variable.withDateTime(end),
+      Variable.withString(type),
+      if (specialType != null) Variable.withString(specialType),
+    ];
+    final row = await _db.customSelect('''
           SELECT COALESCE(SUM(amount_minor), 0) AS total
           FROM transactions
           WHERE date >= ?
             AND date <= ?
-            AND $whereClause
-          ''',
-          variables: [Variable.withDateTime(start), Variable.withDateTime(end)],
-        )
-        .getSingle();
+            AND type = ?
+            $specialTypeFilter
+          ''', variables: variables).getSingle();
     return row.data['total'] as int;
   }
 }

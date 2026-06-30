@@ -26,26 +26,21 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [
-        appDatabaseProvider.overrideWithValue(db),
+        appDatabaseProvider.overrideWith((ref) {
+          ref.onDispose(db.close);
+          return db;
+        }),
         initialRouteProvider.overrideWithValue(onboarded ? '/' : '/onboarding'),
       ],
-      child: BudgetlyApp(
-        initialRoute: onboarded ? '/' : '/onboarding',
-        database: db,
-      ),
+      child: BudgetlyApp(initialRoute: onboarded ? '/' : '/onboarding'),
     ),
   );
 }
 
 class BudgetlyApp extends ConsumerStatefulWidget {
   final String initialRoute;
-  final AppDatabase database;
 
-  const BudgetlyApp({
-    super.key,
-    required this.initialRoute,
-    required this.database,
-  });
+  const BudgetlyApp({super.key, required this.initialRoute});
 
   @override
   ConsumerState<BudgetlyApp> createState() => _BudgetlyAppState();
@@ -78,7 +73,6 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    widget.database.close();
     super.dispose();
   }
 

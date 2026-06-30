@@ -22,8 +22,9 @@ class Categories extends Table {
   TextColumn get icon => text().nullable()();
   IntColumn get color => integer().nullable()();
   TextColumn get kind => text()();
-  IntColumn get mainCategoryPk =>
-      integer().references(Categories, #id).nullable()();
+  IntColumn get mainCategoryPk => integer()
+      .references(Categories, #id, onDelete: KeyAction.setNull)
+      .nullable()();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -38,18 +39,22 @@ class Transactions extends Table {
   IntColumn get amountMinor => integer()();
   TextColumn get currencyCode => text()();
   DateTimeColumn get date => dateTime()();
-  IntColumn get walletId => integer().references(Wallets, #id)();
+  IntColumn get walletId =>
+      integer().references(Wallets, #id, onDelete: KeyAction.cascade)();
   @ReferenceName('transactionTransferWallet')
-  IntColumn get transferWalletId =>
-      integer().references(Wallets, #id).nullable()();
-  IntColumn get categoryId =>
-      integer().references(Categories, #id).nullable()();
+  IntColumn get transferWalletId => integer()
+      .references(Wallets, #id, onDelete: KeyAction.setNull)
+      .nullable()();
+  IntColumn get categoryId => integer()
+      .references(Categories, #id, onDelete: KeyAction.setNull)
+      .nullable()();
   TextColumn get title => text().nullable()();
   TextColumn get note => text().nullable()();
   TextColumn get tags => text().nullable()();
   TextColumn get recurrenceRule => text().nullable()();
-  IntColumn get objectiveFk =>
-      integer().references(Objectives, #id).nullable()();
+  IntColumn get objectiveFk => integer()
+      .references(Objectives, #id, onDelete: KeyAction.setNull)
+      .nullable()();
   TextColumn get attachmentPath => text().nullable()();
   TextColumn get methodAdded => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -87,8 +92,10 @@ class Budgets extends Table {
 @DataClassName('TransactionBudget')
 class TransactionBudgets extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get transactionId => integer().references(Transactions, #id)();
-  IntColumn get budgetId => integer().references(Budgets, #id)();
+  IntColumn get transactionId =>
+      integer().references(Transactions, #id, onDelete: KeyAction.cascade)();
+  IntColumn get budgetId =>
+      integer().references(Budgets, #id, onDelete: KeyAction.cascade)();
 
   @override
   List<Set<Column<Object>>>? get uniqueKeys => [
@@ -99,17 +106,28 @@ class TransactionBudgets extends Table {
 @DataClassName('BudgetCategoryLimit')
 class BudgetCategoryLimits extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get budgetId => integer().references(Budgets, #id)();
-  IntColumn get categoryId => integer().references(Categories, #id)();
-  IntColumn get walletId => integer().references(Wallets, #id).nullable()();
+  IntColumn get budgetId =>
+      integer().references(Budgets, #id, onDelete: KeyAction.cascade)();
+  IntColumn get categoryId =>
+      integer().references(Categories, #id, onDelete: KeyAction.cascade)();
+  IntColumn get walletId => integer()
+      .references(Wallets, #id, onDelete: KeyAction.setNull)
+      .nullable()();
   IntColumn get plannedAmountMinor => integer()();
+
+  @override
+  List<Set<Column<Object>>>? get uniqueKeys => [
+    {budgetId, categoryId, walletId},
+  ];
 }
 
 @DataClassName('BudgetWallet')
 class BudgetWallets extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get budgetId => integer().references(Budgets, #id)();
-  IntColumn get walletId => integer().references(Wallets, #id)();
+  IntColumn get budgetId =>
+      integer().references(Budgets, #id, onDelete: KeyAction.cascade)();
+  IntColumn get walletId =>
+      integer().references(Wallets, #id, onDelete: KeyAction.cascade)();
 
   @override
   List<Set<Column<Object>>>? get uniqueKeys => [
@@ -124,12 +142,15 @@ class RecurringTransactions extends Table {
   TextColumn get specialType => text().withDefault(const Constant('none'))();
   IntColumn get amountMinor => integer()();
   TextColumn get currencyCode => text().withDefault(const Constant('USD'))();
-  IntColumn get walletId => integer().references(Wallets, #id)();
+  IntColumn get walletId =>
+      integer().references(Wallets, #id, onDelete: KeyAction.cascade)();
   @ReferenceName('recurringTransferWallet')
-  IntColumn get transferWalletId =>
-      integer().references(Wallets, #id).nullable()();
-  IntColumn get categoryId =>
-      integer().references(Categories, #id).nullable()();
+  IntColumn get transferWalletId => integer()
+      .references(Wallets, #id, onDelete: KeyAction.setNull)
+      .nullable()();
+  IntColumn get categoryId => integer()
+      .references(Categories, #id, onDelete: KeyAction.setNull)
+      .nullable()();
   TextColumn get title => text().nullable()();
   TextColumn get note => text().nullable()();
   TextColumn get scheduleRule => text()();
@@ -155,7 +176,9 @@ class Objectives extends Table {
   TextColumn get name => text()();
   TextColumn get type => text()();
   IntColumn get amountMinor => integer()();
-  IntColumn get walletId => integer().references(Wallets, #id).nullable()();
+  IntColumn get walletId => integer()
+      .references(Wallets, #id, onDelete: KeyAction.setNull)
+      .nullable()();
   TextColumn get currencyCode => text()();
   DateTimeColumn get deadline => dateTime().nullable()();
   IntColumn get color => integer().nullable()();
@@ -171,7 +194,8 @@ class Objectives extends Table {
 class AssociatedTitles extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get title => text()();
-  IntColumn get categoryId => integer().references(Categories, #id)();
+  IntColumn get categoryId =>
+      integer().references(Categories, #id, onDelete: KeyAction.cascade)();
   BoolColumn get exactMatch => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
