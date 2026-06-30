@@ -147,6 +147,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _completeOnboarding() async {
     if (_busy) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _busy = true);
     try {
       final settings = ref.read(settingsRepositoryProvider);
@@ -192,6 +193,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _next() {
+    FocusManager.instance.primaryFocus?.unfocus();
     _pageController.nextPage(
       duration: const Duration(milliseconds: 320),
       curve: Curves.easeOutCubic,
@@ -199,6 +201,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _skipCurrentStep() {
+    FocusManager.instance.primaryFocus?.unfocus();
     final step = _steps[_currentPage];
     switch (step.custom) {
       case _StepCustom.name:
@@ -214,7 +217,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_currentPage == _steps.length - 1) {
       _completeOnboarding();
     } else {
-      setState(() {});
       _next();
     }
   }
@@ -236,7 +238,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                onPageChanged: (i) => setState(() => _currentPage = i),
+                onPageChanged: (i) {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  setState(() => _currentPage = i);
+                },
                 itemCount: _steps.length,
                 itemBuilder: (context, index) =>
                     _buildStep(theme, _steps[index]),
@@ -880,10 +885,11 @@ class _DemoDataSeeder {
           RecurringTransactionsCompanion.insert(
             transactionType: 'expense',
             amountMinor: 145000,
+            currencyCode: Value(currency),
             walletId: checkingId,
             categoryId: Value(cat('Rent')),
             title: const Value('Rent'),
-            scheduleRule: 'FREQ=MONTHLY;INTERVAL=1',
+            scheduleRule: 'monthly',
             startDate: monthStart,
             nextDueDate: Value(DateTime(now.year, now.month + 1, 1)),
           ),
@@ -894,10 +900,11 @@ class _DemoDataSeeder {
           RecurringTransactionsCompanion.insert(
             transactionType: 'income',
             amountMinor: 420000,
+            currencyCode: Value(currency),
             walletId: checkingId,
             categoryId: Value(cat('Salary')),
             title: const Value('Paycheck'),
-            scheduleRule: 'FREQ=MONTHLY;INTERVAL=1',
+            scheduleRule: 'monthly',
             startDate: monthStart,
             nextDueDate: Value(DateTime(now.year, now.month + 1, 5)),
           ),

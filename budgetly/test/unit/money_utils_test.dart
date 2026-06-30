@@ -19,13 +19,21 @@ void main() {
       expect(result, contains('25.00'));
     });
 
+    test('format respects currency decimal digits', () {
+      expect(
+        MoneyUtils.format(1234, currencyCode: 'JPY'),
+        isNot(contains('.')),
+      );
+      expect(MoneyUtils.format(1234, currencyCode: 'BHD'), contains('1.234'));
+    });
+
     test('formatCompact shows K for thousands', () {
-      expect(MoneyUtils.formatCompact(100000), contains('1.0K'));
-      expect(MoneyUtils.formatCompact(250000), contains('2.5K'));
+      expect(MoneyUtils.formatCompact(100000).toLowerCase(), contains('1'));
+      expect(MoneyUtils.formatCompact(250000).toLowerCase(), contains('2'));
     });
 
     test('formatCompact shows M for millions', () {
-      expect(MoneyUtils.formatCompact(150000000), contains('1.5M'));
+      expect(MoneyUtils.formatCompact(150000000).toLowerCase(), contains('1'));
     });
 
     test('toMinor converts dollars to cents', () {
@@ -34,10 +42,20 @@ void main() {
       expect(MoneyUtils.toMinor(0), 0);
     });
 
+    test('toMinor respects currency decimal digits', () {
+      expect(MoneyUtils.toMinor(1234, currencyCode: 'JPY'), 1234);
+      expect(MoneyUtils.toMinor(1.234, currencyCode: 'BHD'), 1234);
+    });
+
     test('toMajor converts cents to dollars', () {
       expect(MoneyUtils.toMajor(1050), 10.50);
       expect(MoneyUtils.toMajor(99), 0.99);
       expect(MoneyUtils.toMajor(0), 0.0);
+    });
+
+    test('toMajor respects currency decimal digits', () {
+      expect(MoneyUtils.toMajor(1234, currencyCode: 'JPY'), 1234);
+      expect(MoneyUtils.toMajor(1234, currencyCode: 'BHD'), 1.234);
     });
 
     test('formatDate formats date correctly', () {

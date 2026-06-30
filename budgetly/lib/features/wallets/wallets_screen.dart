@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -76,12 +75,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
               final items = [...wallets];
               final item = items.removeAt(from);
               items.insert(to, item);
-              for (var i = 0; i < items.length; i++) {
-                await repo.update(
-                  items[i].id,
-                  WalletsCompanion(sortOrder: Value(i)),
-                );
-              }
+              await repo.updateSortOrders(items.map((w) => w.id).toList());
             },
             itemBuilder: (context, index) {
               if (index == 0) {

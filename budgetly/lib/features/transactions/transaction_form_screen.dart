@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +53,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   DateTime _date = DateTime.now();
   bool _isLoading = false;
   bool _isEditing = false;
+  Timer? _autoCategorizeDebounce;
 
   @override
   void initState() {
@@ -86,11 +89,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final repo = ref.read(transactionRepositoryProvider);
     final t = await repo.getById(widget.transactionId!);
     if (t != null && mounted) {
+      final budgetIds = await repo.getBudgetIdsForTransaction(t.id);
+      if (!mounted) return;
       setState(() {
         _type = t.type;
-        _specialType = t.specialType == 'repetitive'
-            ? 'scheduled'
-            : t.specialType;
+        _specialType = t.specialType;
         _recurrenceRule = t.recurrenceRule;
         _hydrateRepeatControls(t.recurrenceRule);
         _walletId = t.walletId;
@@ -98,14 +101,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _categoryId = t.categoryId;
         _objectiveId = t.objectiveFk;
         _currencyCode = t.currencyCode;
-        if (t.budgetFks != null && t.budgetFks!.isNotEmpty) {
-          _budgetIds = t.budgetFks!
-              .split(',')
-              .map((s) => int.tryParse(s.trim()))
-              .where((n) => n != null)
-              .cast<int>()
-              .toSet();
-        }
+        _budgetIds = budgetIds;
         _date = t.date;
         _titleController.text = t.title ?? '';
         _noteController.text = t.note ?? '';
@@ -122,6 +118,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _noteController.dispose();
     _tagsController.dispose();
     _repeatMonthsController.dispose();
+    _autoCategorizeDebounce?.cancel();
     super.dispose();
   }
 
@@ -165,7 +162,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     setState(() => _isEditing = false);
   }
 
-  Future<void> _autoCategorize(String title) async {
+  void _autoCategorize(String title) {
+    _autoCategorizeDebounce?.cancel();
+    _autoCategorizeDebounce = Timer(
+      const Duration(milliseconds: 350),
+      () => _autoCategorizeNow(title),
+    );
+  }
+
+  Future<void> _autoCategorizeNow(String title) async {
     if (title.isEmpty) return;
     final repo = ref.read(associatedTitleRepositoryProvider);
     final catId = await repo.findCategoryIdForTitle(title);
@@ -191,48 +196,54 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     setState(() => _isLoading = true);
 
     final repo = ref.read(transactionRepositoryProvider);
-    final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
     final wallet = await ref.read(walletRepositoryProvider).getById(_walletId!);
     final walletCurrency =
         wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode;
     final currencyCode = _currencyCode ?? walletCurrency;
+    final amount = MoneyUtils.toMinor(
+      double.tryParse(_amountController.text) ?? 0,
+      currencyCode: currencyCode,
+    );
+
+    final transferWalletId = _type == 'transfer' ? _transferWalletId : null;
 
     final companion = TransactionsCompanion(
       type: Value(_type),
       specialType: Value(_specialType),
       recurrenceRule: Value(_effectiveRecurrenceRule),
-      amountMinor: Value(amount.round()),
+      amountMinor: Value(amount),
       currencyCode: Value(currencyCode),
       date: Value(_date),
       walletId: Value(_walletId!),
-      transferWalletId: Value(_transferWalletId),
+      transferWalletId: Value(transferWalletId),
       categoryId: Value(_categoryId),
       title: Value(
         _titleController.text.isEmpty ? null : _titleController.text,
       ),
       note: Value(_noteController.text.isEmpty ? null : _noteController.text),
       tags: Value(_tagsController.text.isEmpty ? null : _tagsController.text),
-      budgetFks: _budgetIds.isNotEmpty
-          ? Value(_budgetIds.join(','))
-          : const Value(null),
       objectiveFk: _objectiveId != null
           ? Value(_objectiveId!)
           : const Value(null),
     );
 
     if (_isEditing) {
-      await repo.update(widget.transactionId!, companion);
+      await repo.updateWithBudgets(
+        widget.transactionId!,
+        companion,
+        _budgetIds,
+      );
     } else {
-      await repo.insert(
+      await repo.insertWithBudgets(
         TransactionsCompanion.insert(
           type: _type,
           specialType: Value(_specialType),
           recurrenceRule: Value(_effectiveRecurrenceRule),
-          amountMinor: amount.round(),
+          amountMinor: amount,
           currencyCode: currencyCode,
           date: _date,
           walletId: _walletId!,
-          transferWalletId: Value(_transferWalletId),
+          transferWalletId: Value(transferWalletId),
           categoryId: Value(_categoryId),
           title: Value(
             _titleController.text.isEmpty ? null : _titleController.text,
@@ -243,13 +254,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           tags: Value(
             _tagsController.text.isEmpty ? null : _tagsController.text,
           ),
-          budgetFks: _budgetIds.isNotEmpty
-              ? Value(_budgetIds.join(','))
-              : const Value(null),
           objectiveFk: _objectiveId != null
               ? Value(_objectiveId!)
               : const Value(null),
         ),
+        _budgetIds,
       );
     }
 
@@ -311,7 +320,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               selected: {_type},
               onSelectionChanged: (v) => setState(() {
                 _type = v.first;
-                if (_type == 'transfer') _categoryId = null;
+                if (_type == 'transfer') {
+                  _categoryId = null;
+                } else {
+                  _transferWalletId = null;
+                }
               }),
             ),
             const SizedBox(height: 12),
@@ -325,6 +338,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   _specialChip('upcoming', 'Upcoming'),
                   _specialChip('subscription', 'Subscription'),
                   _specialChip('scheduled', 'Scheduled'),
+                  if (_specialType == 'repetitive')
+                    _specialChip('repetitive', 'Repeating'),
                   if (_type == 'expense') _specialChip('debt', 'Debt'),
                   if (_type == 'income') _specialChip('credit', 'Credit'),
                 ],
@@ -471,7 +486,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   context: context,
                   initialDate: _date,
                   firstDate: DateTime(2020),
-                  lastDate: DateTime(2030),
+                  lastDate: DateTime.now().add(const Duration(days: 36500)),
                 );
                 if (picked != null) {
                   setState(() => _date = picked);
@@ -716,7 +731,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   bool get _isRecurringSpecial =>
-      _specialType == 'subscription' || _specialType == 'scheduled';
+      _specialType == 'subscription' ||
+      _specialType == 'scheduled' ||
+      _specialType == 'repetitive';
 
   Widget _specialChip(String value, String label) {
     final selected = _specialType == value;

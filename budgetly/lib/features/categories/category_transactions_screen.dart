@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/transaction_tile.dart';
@@ -186,9 +187,12 @@ class _CategoryTransactionsScreenState
                               displayCurrencyCode: displayCurrency,
                               showDisplayCurrency: showDefaultCurrency,
                               categoryName: category?.name,
-                              categoryColor: category?.color == null
+                              categoryColor: category == null
                                   ? null
-                                  : Color(category!.color!),
+                                  : AppColors.fromStored(
+                                      category.color,
+                                      Theme.of(context).colorScheme.primary,
+                                    ),
                               categoryIcon: category?.icon,
                               onTap: () =>
                                   context.push('/transactions/${t.id}'),

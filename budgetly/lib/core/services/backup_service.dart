@@ -83,6 +83,7 @@ class BackupService {
     'objectives',
     'settings',
     'transactions',
+    'transaction_budgets',
     'budget_category_limits',
     'budget_wallets',
     'recurring_transactions',
@@ -118,7 +119,8 @@ class BackupService {
     };
     final tableData = data['tables'] as Map<String, dynamic>;
     for (final table in tables) {
-      final rows = await _db.customSelect('SELECT * FROM $table').get();
+      final quotedTable = _quoteTableName(table);
+      final rows = await _db.customSelect('SELECT * FROM $quotedTable').get();
       tableData[table] = rows.map((row) => _jsonSafeMap(row.data)).toList();
     }
     return data;
@@ -254,37 +256,41 @@ class BackupService {
     final decoded = jsonDecode(await sourceFile.readAsString());
     if (decoded is! Map<String, dynamic> ||
         decoded['app'] != 'budgetly' ||
-        decoded['tables'] is! Map<String, dynamic>) {
+        decoded['tables'] is! Map<String, dynamic> ||
+        decoded['version'] != backupVersion) {
       throw const FormatException(
         'This is not a valid Budgetly full backup file.',
       );
     }
     final tableData = decoded['tables'] as Map<String, dynamic>;
-    await _db.transaction(() async {
-      await _db.customStatement('PRAGMA foreign_keys = OFF');
-      for (final table in tables.reversed) {
-        await _db.customStatement('DELETE FROM $table');
-      }
-      for (final table in tables) {
-        final rows = tableData[table];
-        if (rows is! List) continue;
-        for (final row in rows) {
-          if (row is Map<String, dynamic>) {
-            await _db.customStatement(
-              _insertSql(table, _normalizeRow(table, row)),
-            );
-          } else if (row is Map) {
-            await _db.customStatement(
-              _insertSql(
-                table,
-                _normalizeRow(table, Map<String, dynamic>.from(row)),
-              ),
-            );
+    await _db.customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      await _db.transaction(() async {
+        for (final table in tables.reversed) {
+          await _db.customStatement('DELETE FROM ${_quoteTableName(table)}');
+        }
+        for (final table in tables) {
+          final rows = tableData[table];
+          if (rows is! List) continue;
+          for (final row in rows) {
+            if (row is Map<String, dynamic>) {
+              await _db.customStatement(
+                _insertSql(table, _normalizeRow(table, row)),
+              );
+            } else if (row is Map) {
+              await _db.customStatement(
+                _insertSql(
+                  table,
+                  _normalizeRow(table, Map<String, dynamic>.from(row)),
+                ),
+              );
+            }
           }
         }
-      }
+      });
+    } finally {
       await _db.customStatement('PRAGMA foreign_keys = ON');
-    });
+    }
   }
 
   Map<String, dynamic> _jsonSafeMap(Map<String, dynamic> source) {
@@ -295,9 +301,25 @@ class BackupService {
   }
 
   String _insertSql(String table, Map<String, dynamic> row) {
-    final columns = row.keys.map((column) => '"$column"').join(', ');
+    final quotedTable = _quoteTableName(table);
+    final columns = row.keys.map(_quoteIdentifier).join(', ');
     final values = row.values.map(_sqlLiteral).join(', ');
-    return 'INSERT OR REPLACE INTO $table ($columns) VALUES ($values)';
+    return 'INSERT OR REPLACE INTO $quotedTable ($columns) VALUES ($values)';
+  }
+
+  String _quoteTableName(String table) {
+    if (!tables.contains(table)) {
+      throw FormatException('Unknown backup table: $table');
+    }
+    return _quoteIdentifier(table);
+  }
+
+  String _quoteIdentifier(String identifier) {
+    final valid = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(identifier);
+    if (!valid) {
+      throw FormatException('Invalid backup column or table name: $identifier');
+    }
+    return '"$identifier"';
   }
 
   Map<String, dynamic> _normalizeRow(String table, Map<String, dynamic> row) {

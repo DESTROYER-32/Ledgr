@@ -168,14 +168,11 @@ class CurrencyUtils {
     CurrencyInfo('ZMW', 'Zambian Kwacha', 'ZK', 2),
   ];
 
-  static List<String> get codes =>
-      currencies.map((c) => c.code).toList();
+  static List<String> get codes => currencies.map((c) => c.code).toList();
 
-  static String? symbolFor(String code) {
-    try {
-      return currencies.firstWhere((c) => c.code == code).symbol;
-    } catch (_) {
-      return code;
-    }
-  }
+  static final Map<String, CurrencyInfo> _byCode = {
+    for (final currency in currencies) currency.code: currency,
+  };
+
+  static String symbolFor(String code) => _byCode[code]?.symbol ?? code;
 }

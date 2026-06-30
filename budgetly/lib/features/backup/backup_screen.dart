@@ -11,6 +11,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/backup_service.dart';
+import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
@@ -136,13 +137,20 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 .toList(),
             onChanged: (frequency) async {
               if (frequency == null) return;
-              await ref
-                  .read(backupServiceProvider)
-                  .saveScheduleConfig(
-                    frequency: frequency,
-                    slotCount: config.slotCount,
-                  );
-              _reload();
+              try {
+                await ref
+                    .read(backupServiceProvider)
+                    .saveScheduleConfig(
+                      frequency: frequency,
+                      slotCount: config.slotCount,
+                    );
+                _reload();
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to save backup schedule: $e')),
+                );
+              }
             },
           ),
         ),
@@ -159,13 +167,20 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               divisions: BackupService.maxSlots - BackupService.minSlots,
               label: config.slotCount.toString(),
               onChanged: (value) async {
-                await ref
-                    .read(backupServiceProvider)
-                    .saveScheduleConfig(
-                      frequency: config.frequency,
-                      slotCount: value.round(),
-                    );
-                _reload();
+                try {
+                  await ref
+                      .read(backupServiceProvider)
+                      .saveScheduleConfig(
+                        frequency: config.frequency,
+                        slotCount: value.round(),
+                      );
+                  _reload();
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to save backup slots: $e')),
+                  );
+                }
               },
             ),
           ),
@@ -388,6 +403,18 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           .read(walletRepositoryProvider)
           .watchActive()
           .first;
+      if (wallets.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Create a wallet before importing CSV transactions.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
       final walletIds = wallets.map((w) => w.id).toSet();
       final header = rows.first
           .map((cell) => cell.toString().toLowerCase().trim())
@@ -416,7 +443,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       var count = 0;
       for (var i = 1; i < rows.length; i++) {
         final row = rows[i];
-        if (wallets.isEmpty || dateIndex == null || amountIndex == null) break;
+        if (dateIndex == null || amountIndex == null) break;
         try {
           final date = DateTime.parse(_cell(row, dateIndex));
           final rawAmount = double.tryParse(_cell(row, amountIndex)) ?? 0;
@@ -426,18 +453,22 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           final type = rawType == 'income' || rawAmount > 0
               ? 'income'
               : 'expense';
-          final amountMinor = (rawAmount.abs() * 100).round();
+          final rowCurrency = currencyIndex == null
+              ? wallets.first.currencyCode
+              : (_emptyToNull(_cell(row, currencyIndex)) ??
+                        wallets.first.currencyCode)
+                    .toUpperCase();
+          final amountMinor = MoneyUtils.toMinor(
+            rawAmount.abs(),
+            currencyCode: rowCurrency,
+          );
           final title = titleIndex == null
               ? null
               : _emptyToNull(_cell(row, titleIndex));
           final note = noteIndex == null
               ? null
               : _emptyToNull(_cell(row, noteIndex));
-          final currency = currencyIndex == null
-              ? wallets.first.currencyCode
-              : (_emptyToNull(_cell(row, currencyIndex)) ??
-                        wallets.first.currencyCode)
-                    .toUpperCase();
+          final currency = rowCurrency;
           final parsedWalletId = walletIndex == null
               ? null
               : int.tryParse(_cell(row, walletIndex));

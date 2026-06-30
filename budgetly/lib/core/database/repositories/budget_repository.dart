@@ -1,10 +1,12 @@
 import 'package:drift/drift.dart';
 
 import '../app_database.dart';
+import '../../services/exchange_rate_service.dart';
 
 class BudgetRepository {
   final AppDatabase _db;
-  BudgetRepository(this._db);
+  final ExchangeRateService _exchangeRates;
+  BudgetRepository(this._db, this._exchangeRates);
 
   Stream<List<Budget>> watchAll() =>
       (_db.budgets.select()..where((b) => b.archived.equals(false))).watch();
@@ -28,6 +30,9 @@ class BudgetRepository {
       (_db.budgets.update()..where((b) => b.id.equals(id))).write(entry);
 
   Future<void> delete(int id) async {
+    await (_db.transactionBudgets.delete()
+          ..where((tb) => tb.budgetId.equals(id)))
+        .go();
     await (_db.budgetCategoryLimits.delete()
           ..where((l) => l.budgetId.equals(id)))
         .go();
@@ -137,8 +142,12 @@ class BudgetRepository {
             .get();
 
     final q = _db.transactions.select();
-    q.where((t) => t.type.equals('expense'));
-    q.where((t) => t.specialType.equals('none'));
+    q.where((t) {
+      final expenses = t.type.equals('expense');
+      return budget.includeIncome
+          ? expenses | t.type.equals('income')
+          : expenses;
+    });
     q.where((t) => t.date.isBiggerOrEqualValue(start));
     q.where((t) => t.date.isSmallerOrEqualValue(end));
 
@@ -154,22 +163,36 @@ class BudgetRepository {
       q.where((t) => t.specialType.equals('none') | t.specialType.isNull());
     }
 
-    var rows = await q.get();
-    if (budget.specificMode) {
-      final budgetIdStr = budget.id.toString();
-      rows = rows.where((t) {
-        if (t.budgetFks == null) return false;
-        final ids = t.budgetFks!.split(',').map((s) => s.trim());
-        return ids.contains(budgetIdStr);
-      }).toList();
+    if (!budget.includeBalanceCorrection) {
+      q.where((t) => t.specialType.equals('balance_correction').not());
     }
+
+    Set<int>? explicitTransactionIds;
+    if (budget.specificMode) {
+      final rows =
+          await (_db.transactionBudgets.select()
+                ..where((tb) => tb.budgetId.equals(budgetId)))
+              .get();
+      explicitTransactionIds = rows.map((row) => row.transactionId).toSet();
+      if (explicitTransactionIds.isEmpty) return {};
+      q.where((t) => t.id.isIn(explicitTransactionIds!));
+    }
+
+    final rows = await q.get();
     final map = <int, int>{};
     for (final t in rows) {
       if (t.categoryId != null) {
+        final converted = await _exchangeRates.convert(
+          t.amountMinor,
+          t.currencyCode,
+          budget.currencyCode,
+          onDate: t.date,
+        );
+        final signedAmount = t.type == 'income' ? -converted : converted;
         map.update(
           t.categoryId!,
-          (v) => v + t.amountMinor,
-          ifAbsent: () => t.amountMinor,
+          (v) => v + signedAmount,
+          ifAbsent: () => signedAmount,
         );
       }
     }

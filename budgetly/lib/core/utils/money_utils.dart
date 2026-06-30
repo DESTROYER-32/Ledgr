@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:intl/intl.dart';
 
 class MoneyUtils {
@@ -5,38 +7,46 @@ class MoneyUtils {
 
   static const String defaultCurrencyCode = 'USD';
 
-  static String _symbol(String code) {
-    try {
-      return NumberFormat.simpleCurrency(
-        name: code,
-        decimalDigits: 2,
-      ).currencySymbol;
-    } catch (_) {
-      return code;
-    }
-  }
-
-  static String format(int amountMinor, {String? currencyCode}) {
-    final amount = amountMinor / 100;
+  static String format(
+    int amountMinor, {
+    String? currencyCode,
+    String? locale,
+  }) {
     final code = currencyCode ?? defaultCurrencyCode;
+    final digits = decimalDigitsFor(code);
+    final amount = amountMinor / math.pow(10, digits);
     try {
-      final format = NumberFormat.simpleCurrency(name: code, decimalDigits: 2);
+      final format = NumberFormat.simpleCurrency(
+        locale: locale,
+        name: code,
+        decimalDigits: digits,
+      );
       return format.format(amount);
     } catch (_) {
-      return '$code ${amount.toStringAsFixed(2)}';
+      return '$code ${amount.toStringAsFixed(digits)}';
     }
   }
 
-  static String formatCompact(int amountMinor, {String? currencyCode}) {
-    final amount = amountMinor / 100;
-    final sym = _symbol(currencyCode ?? defaultCurrencyCode);
-    if (amount.abs() >= 1000000) {
-      return '$sym${(amount / 1000000).toStringAsFixed(1)}M';
+  static String formatCompact(
+    int amountMinor, {
+    String? currencyCode,
+    String? locale,
+  }) {
+    final code = currencyCode ?? defaultCurrencyCode;
+    final digits = decimalDigitsFor(code);
+    final amount = amountMinor / math.pow(10, digits);
+    return NumberFormat.compactSimpleCurrency(
+      locale: locale,
+      name: code,
+    ).format(amount);
+  }
+
+  static int decimalDigitsFor(String code) {
+    try {
+      return NumberFormat.simpleCurrency(name: code).decimalDigits ?? 2;
+    } catch (_) {
+      return 2;
     }
-    if (amount.abs() >= 1000) {
-      return '$sym${(amount / 1000).toStringAsFixed(1)}K';
-    }
-    return format(amountMinor, currencyCode: currencyCode);
   }
 
   static int convertMinor(
@@ -60,9 +70,25 @@ class MoneyUtils {
     return (amountMinor * toRate * (1 / fromRate)).round();
   }
 
-  static int toMinor(double amount) => (amount * 100).round();
+  static int toMinor(double amount, {String? currencyCode}) {
+    final digits = decimalDigitsFor(currencyCode ?? defaultCurrencyCode);
+    final fixed = amount.toStringAsFixed(digits);
+    final negative = fixed.startsWith('-');
+    final normalized = negative ? fixed.substring(1) : fixed;
+    final parts = normalized.split('.');
+    final major = int.tryParse(parts[0]) ?? 0;
+    final fraction = parts.length > 1
+        ? parts[1].padRight(digits, '0')
+        : ''.padRight(digits, '0');
+    final minor =
+        major * math.pow(10, digits).toInt() + (int.tryParse(fraction) ?? 0);
+    return negative ? -minor : minor;
+  }
 
-  static double toMajor(int minor) => minor / 100;
+  static double toMajor(int minor, {String? currencyCode}) {
+    final digits = decimalDigitsFor(currencyCode ?? defaultCurrencyCode);
+    return minor / math.pow(10, digits);
+  }
 
   static String formatDate(DateTime date) => AppDateUtils.formatDate(date);
 
@@ -86,7 +112,8 @@ class AppDateUtils {
   }
 
   static DateTime monthEnd(DateTime date) {
-    return DateTime(date.year, date.month + 1, 0);
+    final nextMonthStart = DateTime(date.year, date.month + 1, 1);
+    return nextMonthStart.subtract(const Duration(days: 1));
   }
 
   static DateTime previousMonth(DateTime date) {

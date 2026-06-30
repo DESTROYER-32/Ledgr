@@ -7,24 +7,17 @@ class SettingsRepository {
   SettingsRepository(this._db);
 
   Future<String?> get(String key) async {
-    final row = await (_db.settings.select()
-          ..where((s) => s.key.equals(key)))
+    final row = await (_db.settings.select()..where((s) => s.key.equals(key)))
         .getSingleOrNull();
     return row?.value;
   }
 
   Future<void> set(String key, String value) async {
-    final existing = await (_db.settings.select()
-          ..where((s) => s.key.equals(key)))
-        .get();
-    if (existing.isNotEmpty) {
-      await (_db.settings.update()..where((s) => s.key.equals(key)))
-          .write(SettingsCompanion(value: Value(value)));
-    } else {
-      await _db.into(_db.settings).insert(
-            SettingsCompanion.insert(key: key, value: value),
-          );
-    }
+    await _db
+        .into(_db.settings)
+        .insertOnConflictUpdate(
+          SettingsCompanion.insert(key: key, value: value),
+        );
   }
 
   Future<void> remove(String key) async {
@@ -36,6 +29,5 @@ class SettingsRepository {
     return val == 'true';
   }
 
-  Future<void> completeOnboarding() =>
-      set('onboarding_complete', 'true');
+  Future<void> completeOnboarding() => set('onboarding_complete', 'true');
 }

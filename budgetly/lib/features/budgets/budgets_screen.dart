@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/database/repositories/transaction_repository.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 
 class BudgetsScreen extends ConsumerStatefulWidget {
@@ -151,7 +152,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     Budget budget,
     bool isGoal,
   ) {
-    final color = budget.color != null ? Color(budget.color!) : cs.primary;
+    final color = AppColors.fromStored(budget.color, cs.primary);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -284,23 +285,12 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     bool isGoal,
   ) async {
     if (budget.specificMode) {
-      final txns = await repo.search(
-        startDate: budget.periodStart,
-        endDate: budget.periodEnd,
+      return repo.totalByBudget(
+        budgetId: budget.id,
+        start: budget.periodStart,
+        end: budget.periodEnd,
         type: isGoal ? 'income' : 'expense',
       );
-      return txns
-          .where((t) {
-            if (t.budgetFks == null) return false;
-            final fks = t.budgetFks!
-                .split(',')
-                .map((s) => int.tryParse(s.trim()))
-                .where((n) => n != null)
-                .cast<int>()
-                .toList();
-            return fks.contains(budget.id);
-          })
-          .fold<int>(0, (sum, t) => sum + t.amountMinor);
     }
     return isGoal
         ? repo.totalIncome(budget.periodStart, budget.periodEnd)

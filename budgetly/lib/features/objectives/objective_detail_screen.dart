@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
@@ -27,15 +28,17 @@ class ObjectiveDetailScreen extends ConsumerWidget {
           return const Center(child: Text('Not found'));
         }
 
-        final transactions =
-            transactionsAsync.valueOrNull
-                ?.where((t) => t.objectiveFk == objectiveId)
-                .toList() ??
-            [];
-        final totalSpent = transactions.fold<int>(
-          0,
-          (sum, t) => sum + t.amountMinor,
-        );
+        final transactions = transactionsAsync.valueOrNull
+            ?.where((t) => t.objectiveFk == objectiveId)
+            .toList();
+        final totalSpent =
+            transactions?.fold<int>(0, (sum, t) => sum + t.amountMinor) ?? 0;
+        final progress = objective.amountMinor > 0
+            ? (totalSpent / objective.amountMinor).clamp(0.0, 1.0)
+            : 0.0;
+        final progressPercent = objective.amountMinor > 0
+            ? totalSpent / objective.amountMinor * 100
+            : 0.0;
 
         return Scaffold(
           floatingActionButton: objective.type == 'goal'
@@ -67,9 +70,10 @@ class ObjectiveDetailScreen extends ConsumerWidget {
                             ? Icons.swap_horiz
                             : Icons.flag,
                         size: 48,
-                        color: objective.color != null
-                            ? Color(objective.color!)
-                            : theme.colorScheme.primary,
+                        color: AppColors.fromStored(
+                          objective.color,
+                          theme.colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -100,18 +104,13 @@ class ObjectiveDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       LinearProgressIndicator(
-                        value: objective.amountMinor > 0
-                            ? (totalSpent / objective.amountMinor).clamp(
-                                0.0,
-                                1.0,
-                              )
-                            : 0,
+                        value: progress,
                         minHeight: 8,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${(totalSpent / objective.amountMinor * 100).toStringAsFixed(1)}%  \u2022  ${MoneyUtils.format(totalSpent, currencyCode: objective.currencyCode)} saved',
+                        '${progressPercent.toStringAsFixed(1)}%  •  ${MoneyUtils.format(totalSpent, currencyCode: objective.currencyCode)} saved',
                         style: theme.textTheme.bodySmall,
                       ),
                       if (objective.deadline != null) ...[
@@ -127,7 +126,22 @@ class ObjectiveDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text('Linked Transactions', style: theme.textTheme.titleMedium),
-              if (transactions.isEmpty)
+              if (transactionsAsync.isLoading && transactions == null)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (transactions == null)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Could not load linked transactions.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                )
+              else if (transactions.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
@@ -179,7 +193,10 @@ Future<void> _addMoney(
   );
   if (result == null || !context.mounted) return;
   final walletId = result['walletId'] as int;
-  final amount = ((result['amount'] as double) * 100).round();
+  final amount = MoneyUtils.toMinor(
+    result['amount'] as double,
+    currencyCode: objective.currencyCode,
+  );
   final date = result['date'] as DateTime;
 
   final wallet = await ref.read(walletRepositoryProvider).getById(walletId);

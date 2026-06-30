@@ -13,6 +13,32 @@ import '../../core/widgets/section_header.dart';
 import '../../core/widgets/stat_tile.dart';
 import '../../core/widgets/transaction_tile.dart';
 
+final _dashboardObjectiveTotalProvider = FutureProvider.autoDispose
+    .family<int, int>((ref, objectiveId) {
+      return ref
+          .watch(transactionRepositoryProvider)
+          .totalByObjective(objectiveId);
+    });
+
+final _dashboardBudgetPreviewProvider = FutureProvider.autoDispose
+    .family<int, Budget>((ref, budget) {
+      return DashboardScreen._getBudgetPreviewTotal(
+        ref.watch(transactionRepositoryProvider),
+        budget,
+        budget.isIncome,
+      );
+    });
+
+final _dashboardInsightsProvider =
+    FutureProvider.autoDispose<_DashboardInsights>((ref) async {
+      final budgets = await ref.watch(allBudgetsProvider.future);
+      final now = DateTime.now();
+      final activeBudgets = budgets
+          .where((b) => b.periodEnd.isAfter(now))
+          .toList();
+      return DashboardScreen._loadInsights(ref, activeBudgets);
+    });
+
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -319,7 +345,7 @@ class DashboardScreen extends ConsumerWidget {
     IconData icon,
     int balance,
   ) {
-    final color = w.color != null ? Color(w.color!) : cs.primary;
+    final color = AppColors.fromStored(w.color, cs.primary);
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -423,9 +449,7 @@ class DashboardScreen extends ConsumerWidget {
     ColorScheme cs,
     Objective objective,
   ) {
-    final color = objective.color != null
-        ? Color(objective.color!)
-        : cs.primary;
+    final color = AppColors.fromStored(objective.color, cs.primary);
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -434,69 +458,64 @@ class DashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Consumer(
             builder: (context, ref, _) {
-              final txRepo = ref.watch(transactionRepositoryProvider);
-              return FutureBuilder<List<Transaction>>(
-                future: txRepo.getByObjective(objective.id),
-                builder: (context, snap) {
-                  final total = (snap.data ?? const <Transaction>[]).fold<int>(
-                    0,
-                    (sum, t) => sum + t.amountMinor,
-                  );
-                  final progress = objective.amountMinor > 0
-                      ? (total / objective.amountMinor).clamp(0.0, 1.0)
-                      : 0.0;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              final total =
+                  ref
+                      .watch(_dashboardObjectiveTotalProvider(objective.id))
+                      .valueOrNull ??
+                  0;
+              final progress = objective.amountMinor > 0
+                  ? (total / objective.amountMinor).clamp(0.0, 1.0)
+                  : 0.0;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            objective.type == 'loan'
-                                ? Icons.swap_horiz
-                                : Icons.flag,
-                            color: color,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              objective.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            objective.type == 'loan' ? 'Loan' : 'Goal',
-                            style: TextStyle(fontSize: 12, color: color),
-                          ),
-                        ],
+                      Icon(
+                        objective.type == 'loan'
+                            ? Icons.swap_horiz
+                            : Icons.flag,
+                        color: color,
+                        size: 22,
                       ),
-                      if (objective.type == 'goal') ...[
-                        const Spacer(),
-                        Text(
-                          '${MoneyUtils.format(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.format(objective.amountMinor, currencyCode: objective.currencyCode)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: cs.onSurfaceVariant,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          objective.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 6,
-                            backgroundColor: cs.surfaceContainerHighest,
-                            color: color,
-                          ),
-                        ),
-                      ],
+                      ),
+                      Text(
+                        objective.type == 'loan' ? 'Loan' : 'Goal',
+                        style: TextStyle(fontSize: 12, color: color),
+                      ),
                     ],
-                  );
-                },
+                  ),
+                  if (objective.type == 'goal') ...[
+                    const Spacer(),
+                    Text(
+                      '${MoneyUtils.format(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.format(objective.amountMinor, currencyCode: objective.currencyCode)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 6,
+                        backgroundColor: cs.surfaceContainerHighest,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ],
               );
             },
           ),
@@ -556,7 +575,7 @@ class DashboardScreen extends ConsumerWidget {
     ColorScheme cs,
     Budget budget,
   ) {
-    final color = budget.color != null ? Color(budget.color!) : cs.primary;
+    final color = AppColors.fromStored(budget.color, cs.primary);
     final isGoal = budget.isIncome;
     return GestureDetector(
       onTap: () => context.push('/budgets/${budget.id}'),
@@ -603,47 +622,42 @@ class DashboardScreen extends ConsumerWidget {
               const Spacer(),
               Consumer(
                 builder: (context, ref, _) {
-                  final txRepo = ref.watch(transactionRepositoryProvider);
-                  return FutureBuilder<int>(
-                    future: _getBudgetPreviewTotal(txRepo, budget, isGoal),
-                    builder: (context, snap) {
-                      final total = snap.data ?? 0;
-                      if (budget.plannedAmountMinor > 0) {
-                        final pct = (total / budget.plannedAmountMinor).clamp(
-                          0.0,
-                          1.0,
-                        );
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${MoneyUtils.format(total, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: cs.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: pct,
-                                minHeight: 6,
-                                backgroundColor: cs.surfaceContainerHighest,
-                                color: isGoal ? AppColors.income : cs.primary,
-                              ),
-                            ),
-                          ],
-                        );
-                      }
-                      return Text(
-                        '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant,
+                  final total =
+                      ref
+                          .watch(_dashboardBudgetPreviewProvider(budget))
+                          .valueOrNull ??
+                      0;
+                  if (budget.plannedAmountMinor > 0) {
+                    final pct = (total / budget.plannedAmountMinor).clamp(
+                      0.0,
+                      1.0,
+                    );
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${MoneyUtils.format(total, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
-                      );
-                    },
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: pct,
+                            minHeight: 6,
+                            backgroundColor: cs.surfaceContainerHighest,
+                            color: isGoal ? AppColors.income : cs.primary,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Text(
+                    '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                   );
                 },
               ),
@@ -788,23 +802,12 @@ class DashboardScreen extends ConsumerWidget {
     bool isGoal,
   ) async {
     if (budget.specificMode) {
-      final txns = await txRepo.search(
-        startDate: budget.periodStart,
-        endDate: budget.periodEnd,
+      return txRepo.totalByBudget(
+        budgetId: budget.id,
+        start: budget.periodStart,
+        end: budget.periodEnd,
         type: isGoal ? 'income' : 'expense',
       );
-      return txns
-          .where((t) {
-            if (t.budgetFks == null) return false;
-            final fks = t.budgetFks!
-                .split(',')
-                .map((s) => int.tryParse(s.trim()))
-                .where((n) => n != null)
-                .cast<int>()
-                .toList();
-            return fks.contains(budget.id);
-          })
-          .fold<int>(0, (sum, t) => sum + t.amountMinor);
     }
     return isGoal
         ? txRepo.totalIncome(budget.periodStart, budget.periodEnd)
@@ -873,61 +876,61 @@ class DashboardScreen extends ConsumerWidget {
   ) {
     final currencyCode =
         displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
-    return FutureBuilder<_DashboardInsights>(
-      future: _loadInsights(ref, activeBudgets),
-      builder: (context, snapshot) {
-        final insights = snapshot.data;
-        if (insights == null) return _loadingCard;
-        if (!insights.hasData) return const SizedBox.shrink();
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final insights = ref.watch(_dashboardInsightsProvider).valueOrNull;
+    if (insights == null) return _loadingCard;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.insights, color: cs.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Insights',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+                Icon(Icons.insights, color: cs.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Insights',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                if (insights.previousExpenses > 0)
-                  _InsightRow(
-                    icon: insights.expenseDelta >= 0
-                        ? Icons.trending_up
-                        : Icons.trending_down,
-                    text:
-                        'Expenses are ${insights.expenseDelta.abs().toStringAsFixed(0)}% ${insights.expenseDelta >= 0 ? 'higher' : 'lower'} than last month.',
-                  ),
-                if (insights.largestExpense != null)
-                  _InsightRow(
-                    icon: Icons.receipt_long,
-                    text:
-                        'Largest expense: ${insights.largestExpense!.title ?? 'Untitled'} at ${MoneyUtils.format(insights.largestExpense!.amountMinor, currencyCode: insights.largestExpense!.currencyCode)}.',
-                  ),
-                if (insights.rolloverPreview != 0)
-                  _InsightRow(
-                    icon: Icons.sync_alt,
-                    text:
-                        'Budget rollover preview: ${MoneyUtils.format(insights.rolloverPreview, currencyCode: currencyCode)} ${insights.rolloverPreview >= 0 ? 'available' : 'overspent'} across active budgets.',
-                  ),
               ],
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 12),
+            if (!insights.hasData)
+              const _InsightRow(
+                icon: Icons.emoji_objects_outlined,
+                text:
+                    'No spending insights yet. Add transactions and budgets to see trends here.',
+              ),
+            if (insights.previousExpenses > 0)
+              _InsightRow(
+                icon: insights.expenseDelta >= 0
+                    ? Icons.trending_up
+                    : Icons.trending_down,
+                text:
+                    'Expenses are ${insights.expenseDelta.abs().toStringAsFixed(0)}% ${insights.expenseDelta >= 0 ? 'higher' : 'lower'} than last month.',
+              ),
+            if (insights.largestExpense != null)
+              _InsightRow(
+                icon: Icons.receipt_long,
+                text:
+                    'Largest expense: ${insights.largestExpense!.title ?? 'Untitled'} at ${MoneyUtils.format(insights.largestExpense!.amountMinor, currencyCode: insights.largestExpense!.currencyCode)}.',
+              ),
+            if (insights.rolloverPreview != 0)
+              _InsightRow(
+                icon: Icons.sync_alt,
+                text:
+                    'Budget rollover preview: ${MoneyUtils.format(insights.rolloverPreview, currencyCode: currencyCode)} ${insights.rolloverPreview >= 0 ? 'available' : 'overspent'} across active budgets.',
+              ),
+          ],
+        ),
+      ),
     );
   }
 
   static Future<_DashboardInsights> _loadInsights(
-    WidgetRef ref,
+    Ref ref,
     List<Budget> activeBudgets,
   ) async {
     final txRepo = ref.read(transactionRepositoryProvider);
@@ -1045,9 +1048,12 @@ class DashboardScreen extends ConsumerWidget {
                               PieChartData(
                                 sections: top.map((e) {
                                   final cat = catMap[e.key];
-                                  final color = cat?.color != null
-                                      ? Color(cat!.color!)
-                                      : cs.primary;
+                                  final color = cat == null
+                                      ? cs.primary
+                                      : AppColors.fromStored(
+                                          cat.color,
+                                          cs.primary,
+                                        );
                                   final pct = e.value / totalSpent;
                                   return PieChartSectionData(
                                     value: pct * 100,
@@ -1073,9 +1079,12 @@ class DashboardScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: top.map((e) {
                                 final cat = catMap[e.key];
-                                final color = cat?.color != null
-                                    ? Color(cat!.color!)
-                                    : cs.primary;
+                                final color = cat == null
+                                    ? cs.primary
+                                    : AppColors.fromStored(
+                                        cat.color,
+                                        cs.primary,
+                                      );
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 2,
@@ -1351,9 +1360,12 @@ class DashboardScreen extends ConsumerWidget {
                       displayCurrencyCode: displayCurrency,
                       showDisplayCurrency: showDefaultCurrency,
                       categoryName: category?.name,
-                      categoryColor: category?.color == null
+                      categoryColor: category == null
                           ? null
-                          : Color(category!.color!),
+                          : AppColors.fromStored(
+                              category.color,
+                              AppColors.transfer,
+                            ),
                       categoryIcon: category?.icon,
                       onTap: () => context.push('/transactions/${t.id}'),
                     );

@@ -867,6 +867,7 @@ class _TransactionFlowList extends StatelessWidget {
                   displayCurrency: displayCurrency,
                   showDefaultCurrency: showDefaultCurrency,
                   exchangeRates: exchangeRates,
+                  walletId: wallet.id,
                 ),
                 if (t != transactions.last) const Divider(height: 8),
               ],
@@ -1048,6 +1049,7 @@ class _ActivityTile extends StatelessWidget {
   final String displayCurrency;
   final bool showDefaultCurrency;
   final Map<String, double> exchangeRates;
+  final int walletId;
   const _ActivityTile({
     required this.transaction,
     this.category,
@@ -1055,24 +1057,32 @@ class _ActivityTile extends StatelessWidget {
     required this.displayCurrency,
     required this.showDefaultCurrency,
     required this.exchangeRates,
+    required this.walletId,
   });
 
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.type == 'expense';
     final isIncome = transaction.type == 'income';
-    final color =
-        (category?.color == null ? null : Color(category!.color!)) ??
+    final fallbackColor =
         overrideColor ??
         (isExpense
             ? AppColors.expense
             : (isIncome ? AppColors.income : AppColors.transfer));
+    final itemCategory = category;
+    final color = itemCategory == null
+        ? fallbackColor
+        : AppColors.fromStored(itemCategory.color, fallbackColor);
     final amountColor =
         overrideColor ??
         (isExpense
             ? AppColors.expense
             : (isIncome ? AppColors.income : AppColors.transfer));
-    final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final sign =
+        isExpense ||
+            (transaction.type == 'transfer' && transaction.walletId == walletId)
+        ? '-'
+        : '+';
     final originalCurrency = transaction.currencyCode;
     final convertedAmount = MoneyUtils.convertMinor(
       transaction.amountMinor,

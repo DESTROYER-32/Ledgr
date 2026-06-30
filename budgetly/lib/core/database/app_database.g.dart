@@ -105,18 +105,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _decimalsMeta = const VerificationMeta(
-    'decimals',
-  );
-  @override
-  late final GeneratedColumn<int> decimals = GeneratedColumn<int>(
-    'decimals',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(2),
-  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -152,7 +140,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
     sortOrder,
     color,
     icon,
-    decimals,
     createdAt,
     updatedAt,
   ];
@@ -233,12 +220,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
         icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
       );
     }
-    if (data.containsKey('decimals')) {
-      context.handle(
-        _decimalsMeta,
-        decimals.isAcceptableOrUnknown(data['decimals']!, _decimalsMeta),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -296,10 +277,6 @@ class $WalletsTable extends Wallets with TableInfo<$WalletsTable, Wallet> {
         DriftSqlType.string,
         data['${effectivePrefix}icon'],
       ),
-      decimals: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}decimals'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -327,7 +304,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
   final int sortOrder;
   final int? color;
   final String? icon;
-  final int decimals;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Wallet({
@@ -340,7 +316,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     required this.sortOrder,
     this.color,
     this.icon,
-    required this.decimals,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -360,7 +335,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     if (!nullToAbsent || icon != null) {
       map['icon'] = Variable<String>(icon);
     }
-    map['decimals'] = Variable<int>(decimals);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -379,7 +353,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
           ? const Value.absent()
           : Value(color),
       icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
-      decimals: Value(decimals),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -402,7 +375,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       color: serializer.fromJson<int?>(json['color']),
       icon: serializer.fromJson<String?>(json['icon']),
-      decimals: serializer.fromJson<int>(json['decimals']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -420,7 +392,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
       'sortOrder': serializer.toJson<int>(sortOrder),
       'color': serializer.toJson<int?>(color),
       'icon': serializer.toJson<String?>(icon),
-      'decimals': serializer.toJson<int>(decimals),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -436,7 +407,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     int? sortOrder,
     Value<int?> color = const Value.absent(),
     Value<String?> icon = const Value.absent(),
-    int? decimals,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Wallet(
@@ -449,7 +419,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     sortOrder: sortOrder ?? this.sortOrder,
     color: color.present ? color.value : this.color,
     icon: icon.present ? icon.value : this.icon,
-    decimals: decimals ?? this.decimals,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -468,7 +437,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       color: data.color.present ? data.color.value : this.color,
       icon: data.icon.present ? data.icon.value : this.icon,
-      decimals: data.decimals.present ? data.decimals.value : this.decimals,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -486,7 +454,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
           ..write('sortOrder: $sortOrder, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
-          ..write('decimals: $decimals, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -504,7 +471,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
     sortOrder,
     color,
     icon,
-    decimals,
     createdAt,
     updatedAt,
   );
@@ -521,7 +487,6 @@ class Wallet extends DataClass implements Insertable<Wallet> {
           other.sortOrder == this.sortOrder &&
           other.color == this.color &&
           other.icon == this.icon &&
-          other.decimals == this.decimals &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -536,7 +501,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
   final Value<int> sortOrder;
   final Value<int?> color;
   final Value<String?> icon;
-  final Value<int> decimals;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const WalletsCompanion({
@@ -549,7 +513,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     this.sortOrder = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
-    this.decimals = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -563,7 +526,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     this.sortOrder = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
-    this.decimals = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : name = Value(name),
@@ -580,7 +542,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     Expression<int>? sortOrder,
     Expression<int>? color,
     Expression<String>? icon,
-    Expression<int>? decimals,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -595,7 +556,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
       if (sortOrder != null) 'sort_order': sortOrder,
       if (color != null) 'color': color,
       if (icon != null) 'icon': icon,
-      if (decimals != null) 'decimals': decimals,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -611,7 +571,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     Value<int>? sortOrder,
     Value<int?>? color,
     Value<String?>? icon,
-    Value<int>? decimals,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -625,7 +584,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
       sortOrder: sortOrder ?? this.sortOrder,
       color: color ?? this.color,
       icon: icon ?? this.icon,
-      decimals: decimals ?? this.decimals,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -661,9 +619,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
     if (icon.present) {
       map['icon'] = Variable<String>(icon.value);
     }
-    if (decimals.present) {
-      map['decimals'] = Variable<int>(decimals.value);
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -685,7 +640,6 @@ class WalletsCompanion extends UpdateCompanion<Wallet> {
           ..write('sortOrder: $sortOrder, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
-          ..write('decimals: $decimals, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2231,28 +2185,6 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _budgetFksExcludeMeta = const VerificationMeta(
-    'budgetFksExclude',
-  );
-  @override
-  late final GeneratedColumn<String> budgetFksExclude = GeneratedColumn<String>(
-    'budget_fks_exclude',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _budgetFksMeta = const VerificationMeta(
-    'budgetFks',
-  );
-  @override
-  late final GeneratedColumn<String> budgetFks = GeneratedColumn<String>(
-    'budget_fks',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _objectiveFkMeta = const VerificationMeta(
     'objectiveFk',
   );
@@ -2328,8 +2260,6 @@ class $TransactionsTable extends Transactions
     note,
     tags,
     recurrenceRule,
-    budgetFksExclude,
-    budgetFks,
     objectiveFk,
     attachmentPath,
     methodAdded,
@@ -2448,21 +2378,6 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
-    if (data.containsKey('budget_fks_exclude')) {
-      context.handle(
-        _budgetFksExcludeMeta,
-        budgetFksExclude.isAcceptableOrUnknown(
-          data['budget_fks_exclude']!,
-          _budgetFksExcludeMeta,
-        ),
-      );
-    }
-    if (data.containsKey('budget_fks')) {
-      context.handle(
-        _budgetFksMeta,
-        budgetFks.isAcceptableOrUnknown(data['budget_fks']!, _budgetFksMeta),
-      );
-    }
     if (data.containsKey('objective_fk')) {
       context.handle(
         _objectiveFkMeta,
@@ -2563,14 +2478,6 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}recurrence_rule'],
       ),
-      budgetFksExclude: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}budget_fks_exclude'],
-      ),
-      budgetFks: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}budget_fks'],
-      ),
       objectiveFk: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}objective_fk'],
@@ -2614,8 +2521,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? note;
   final String? tags;
   final String? recurrenceRule;
-  final String? budgetFksExclude;
-  final String? budgetFks;
   final int? objectiveFk;
   final String? attachmentPath;
   final String? methodAdded;
@@ -2635,8 +2540,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.note,
     this.tags,
     this.recurrenceRule,
-    this.budgetFksExclude,
-    this.budgetFks,
     this.objectiveFk,
     this.attachmentPath,
     this.methodAdded,
@@ -2670,12 +2573,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     }
     if (!nullToAbsent || recurrenceRule != null) {
       map['recurrence_rule'] = Variable<String>(recurrenceRule);
-    }
-    if (!nullToAbsent || budgetFksExclude != null) {
-      map['budget_fks_exclude'] = Variable<String>(budgetFksExclude);
-    }
-    if (!nullToAbsent || budgetFks != null) {
-      map['budget_fks'] = Variable<String>(budgetFks);
     }
     if (!nullToAbsent || objectiveFk != null) {
       map['objective_fk'] = Variable<int>(objectiveFk);
@@ -2714,12 +2611,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurrenceRule: recurrenceRule == null && nullToAbsent
           ? const Value.absent()
           : Value(recurrenceRule),
-      budgetFksExclude: budgetFksExclude == null && nullToAbsent
-          ? const Value.absent()
-          : Value(budgetFksExclude),
-      budgetFks: budgetFks == null && nullToAbsent
-          ? const Value.absent()
-          : Value(budgetFks),
       objectiveFk: objectiveFk == null && nullToAbsent
           ? const Value.absent()
           : Value(objectiveFk),
@@ -2753,8 +2644,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       note: serializer.fromJson<String?>(json['note']),
       tags: serializer.fromJson<String?>(json['tags']),
       recurrenceRule: serializer.fromJson<String?>(json['recurrenceRule']),
-      budgetFksExclude: serializer.fromJson<String?>(json['budgetFksExclude']),
-      budgetFks: serializer.fromJson<String?>(json['budgetFks']),
       objectiveFk: serializer.fromJson<int?>(json['objectiveFk']),
       attachmentPath: serializer.fromJson<String?>(json['attachmentPath']),
       methodAdded: serializer.fromJson<String?>(json['methodAdded']),
@@ -2779,8 +2668,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'note': serializer.toJson<String?>(note),
       'tags': serializer.toJson<String?>(tags),
       'recurrenceRule': serializer.toJson<String?>(recurrenceRule),
-      'budgetFksExclude': serializer.toJson<String?>(budgetFksExclude),
-      'budgetFks': serializer.toJson<String?>(budgetFks),
       'objectiveFk': serializer.toJson<int?>(objectiveFk),
       'attachmentPath': serializer.toJson<String?>(attachmentPath),
       'methodAdded': serializer.toJson<String?>(methodAdded),
@@ -2803,8 +2690,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> note = const Value.absent(),
     Value<String?> tags = const Value.absent(),
     Value<String?> recurrenceRule = const Value.absent(),
-    Value<String?> budgetFksExclude = const Value.absent(),
-    Value<String?> budgetFks = const Value.absent(),
     Value<int?> objectiveFk = const Value.absent(),
     Value<String?> attachmentPath = const Value.absent(),
     Value<String?> methodAdded = const Value.absent(),
@@ -2828,10 +2713,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     recurrenceRule: recurrenceRule.present
         ? recurrenceRule.value
         : this.recurrenceRule,
-    budgetFksExclude: budgetFksExclude.present
-        ? budgetFksExclude.value
-        : this.budgetFksExclude,
-    budgetFks: budgetFks.present ? budgetFks.value : this.budgetFks,
     objectiveFk: objectiveFk.present ? objectiveFk.value : this.objectiveFk,
     attachmentPath: attachmentPath.present
         ? attachmentPath.value
@@ -2867,10 +2748,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurrenceRule: data.recurrenceRule.present
           ? data.recurrenceRule.value
           : this.recurrenceRule,
-      budgetFksExclude: data.budgetFksExclude.present
-          ? data.budgetFksExclude.value
-          : this.budgetFksExclude,
-      budgetFks: data.budgetFks.present ? data.budgetFks.value : this.budgetFks,
       objectiveFk: data.objectiveFk.present
           ? data.objectiveFk.value
           : this.objectiveFk,
@@ -2901,8 +2778,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('note: $note, ')
           ..write('tags: $tags, ')
           ..write('recurrenceRule: $recurrenceRule, ')
-          ..write('budgetFksExclude: $budgetFksExclude, ')
-          ..write('budgetFks: $budgetFks, ')
           ..write('objectiveFk: $objectiveFk, ')
           ..write('attachmentPath: $attachmentPath, ')
           ..write('methodAdded: $methodAdded, ')
@@ -2927,8 +2802,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     note,
     tags,
     recurrenceRule,
-    budgetFksExclude,
-    budgetFks,
     objectiveFk,
     attachmentPath,
     methodAdded,
@@ -2952,8 +2825,6 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.note == this.note &&
           other.tags == this.tags &&
           other.recurrenceRule == this.recurrenceRule &&
-          other.budgetFksExclude == this.budgetFksExclude &&
-          other.budgetFks == this.budgetFks &&
           other.objectiveFk == this.objectiveFk &&
           other.attachmentPath == this.attachmentPath &&
           other.methodAdded == this.methodAdded &&
@@ -2975,8 +2846,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> note;
   final Value<String?> tags;
   final Value<String?> recurrenceRule;
-  final Value<String?> budgetFksExclude;
-  final Value<String?> budgetFks;
   final Value<int?> objectiveFk;
   final Value<String?> attachmentPath;
   final Value<String?> methodAdded;
@@ -2996,8 +2865,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.note = const Value.absent(),
     this.tags = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
-    this.budgetFksExclude = const Value.absent(),
-    this.budgetFks = const Value.absent(),
     this.objectiveFk = const Value.absent(),
     this.attachmentPath = const Value.absent(),
     this.methodAdded = const Value.absent(),
@@ -3018,8 +2885,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.note = const Value.absent(),
     this.tags = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
-    this.budgetFksExclude = const Value.absent(),
-    this.budgetFks = const Value.absent(),
     this.objectiveFk = const Value.absent(),
     this.attachmentPath = const Value.absent(),
     this.methodAdded = const Value.absent(),
@@ -3044,8 +2909,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? note,
     Expression<String>? tags,
     Expression<String>? recurrenceRule,
-    Expression<String>? budgetFksExclude,
-    Expression<String>? budgetFks,
     Expression<int>? objectiveFk,
     Expression<String>? attachmentPath,
     Expression<String>? methodAdded,
@@ -3066,8 +2929,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (note != null) 'note': note,
       if (tags != null) 'tags': tags,
       if (recurrenceRule != null) 'recurrence_rule': recurrenceRule,
-      if (budgetFksExclude != null) 'budget_fks_exclude': budgetFksExclude,
-      if (budgetFks != null) 'budget_fks': budgetFks,
       if (objectiveFk != null) 'objective_fk': objectiveFk,
       if (attachmentPath != null) 'attachment_path': attachmentPath,
       if (methodAdded != null) 'method_added': methodAdded,
@@ -3090,8 +2951,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? note,
     Value<String?>? tags,
     Value<String?>? recurrenceRule,
-    Value<String?>? budgetFksExclude,
-    Value<String?>? budgetFks,
     Value<int?>? objectiveFk,
     Value<String?>? attachmentPath,
     Value<String?>? methodAdded,
@@ -3112,8 +2971,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       note: note ?? this.note,
       tags: tags ?? this.tags,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
-      budgetFksExclude: budgetFksExclude ?? this.budgetFksExclude,
-      budgetFks: budgetFks ?? this.budgetFks,
       objectiveFk: objectiveFk ?? this.objectiveFk,
       attachmentPath: attachmentPath ?? this.attachmentPath,
       methodAdded: methodAdded ?? this.methodAdded,
@@ -3164,12 +3021,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (recurrenceRule.present) {
       map['recurrence_rule'] = Variable<String>(recurrenceRule.value);
     }
-    if (budgetFksExclude.present) {
-      map['budget_fks_exclude'] = Variable<String>(budgetFksExclude.value);
-    }
-    if (budgetFks.present) {
-      map['budget_fks'] = Variable<String>(budgetFks.value);
-    }
     if (objectiveFk.present) {
       map['objective_fk'] = Variable<int>(objectiveFk.value);
     }
@@ -3204,8 +3055,6 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('note: $note, ')
           ..write('tags: $tags, ')
           ..write('recurrenceRule: $recurrenceRule, ')
-          ..write('budgetFksExclude: $budgetFksExclude, ')
-          ..write('budgetFks: $budgetFks, ')
           ..write('objectiveFk: $objectiveFk, ')
           ..write('attachmentPath: $attachmentPath, ')
           ..write('methodAdded: $methodAdded, ')
@@ -4313,6 +4162,273 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   }
 }
 
+class $TransactionBudgetsTable extends TransactionBudgets
+    with TableInfo<$TransactionBudgetsTable, TransactionBudget> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TransactionBudgetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _transactionIdMeta = const VerificationMeta(
+    'transactionId',
+  );
+  @override
+  late final GeneratedColumn<int> transactionId = GeneratedColumn<int>(
+    'transaction_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES transactions (id)',
+    ),
+  );
+  static const VerificationMeta _budgetIdMeta = const VerificationMeta(
+    'budgetId',
+  );
+  @override
+  late final GeneratedColumn<int> budgetId = GeneratedColumn<int>(
+    'budget_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES budgets (id)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, transactionId, budgetId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'transaction_budgets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TransactionBudget> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('transaction_id')) {
+      context.handle(
+        _transactionIdMeta,
+        transactionId.isAcceptableOrUnknown(
+          data['transaction_id']!,
+          _transactionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_transactionIdMeta);
+    }
+    if (data.containsKey('budget_id')) {
+      context.handle(
+        _budgetIdMeta,
+        budgetId.isAcceptableOrUnknown(data['budget_id']!, _budgetIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_budgetIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {transactionId, budgetId},
+  ];
+  @override
+  TransactionBudget map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TransactionBudget(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      transactionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}transaction_id'],
+      )!,
+      budgetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}budget_id'],
+      )!,
+    );
+  }
+
+  @override
+  $TransactionBudgetsTable createAlias(String alias) {
+    return $TransactionBudgetsTable(attachedDatabase, alias);
+  }
+}
+
+class TransactionBudget extends DataClass
+    implements Insertable<TransactionBudget> {
+  final int id;
+  final int transactionId;
+  final int budgetId;
+  const TransactionBudget({
+    required this.id,
+    required this.transactionId,
+    required this.budgetId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['transaction_id'] = Variable<int>(transactionId);
+    map['budget_id'] = Variable<int>(budgetId);
+    return map;
+  }
+
+  TransactionBudgetsCompanion toCompanion(bool nullToAbsent) {
+    return TransactionBudgetsCompanion(
+      id: Value(id),
+      transactionId: Value(transactionId),
+      budgetId: Value(budgetId),
+    );
+  }
+
+  factory TransactionBudget.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TransactionBudget(
+      id: serializer.fromJson<int>(json['id']),
+      transactionId: serializer.fromJson<int>(json['transactionId']),
+      budgetId: serializer.fromJson<int>(json['budgetId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'transactionId': serializer.toJson<int>(transactionId),
+      'budgetId': serializer.toJson<int>(budgetId),
+    };
+  }
+
+  TransactionBudget copyWith({int? id, int? transactionId, int? budgetId}) =>
+      TransactionBudget(
+        id: id ?? this.id,
+        transactionId: transactionId ?? this.transactionId,
+        budgetId: budgetId ?? this.budgetId,
+      );
+  TransactionBudget copyWithCompanion(TransactionBudgetsCompanion data) {
+    return TransactionBudget(
+      id: data.id.present ? data.id.value : this.id,
+      transactionId: data.transactionId.present
+          ? data.transactionId.value
+          : this.transactionId,
+      budgetId: data.budgetId.present ? data.budgetId.value : this.budgetId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TransactionBudget(')
+          ..write('id: $id, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('budgetId: $budgetId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, transactionId, budgetId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TransactionBudget &&
+          other.id == this.id &&
+          other.transactionId == this.transactionId &&
+          other.budgetId == this.budgetId);
+}
+
+class TransactionBudgetsCompanion extends UpdateCompanion<TransactionBudget> {
+  final Value<int> id;
+  final Value<int> transactionId;
+  final Value<int> budgetId;
+  const TransactionBudgetsCompanion({
+    this.id = const Value.absent(),
+    this.transactionId = const Value.absent(),
+    this.budgetId = const Value.absent(),
+  });
+  TransactionBudgetsCompanion.insert({
+    this.id = const Value.absent(),
+    required int transactionId,
+    required int budgetId,
+  }) : transactionId = Value(transactionId),
+       budgetId = Value(budgetId);
+  static Insertable<TransactionBudget> custom({
+    Expression<int>? id,
+    Expression<int>? transactionId,
+    Expression<int>? budgetId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (transactionId != null) 'transaction_id': transactionId,
+      if (budgetId != null) 'budget_id': budgetId,
+    });
+  }
+
+  TransactionBudgetsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? transactionId,
+    Value<int>? budgetId,
+  }) {
+    return TransactionBudgetsCompanion(
+      id: id ?? this.id,
+      transactionId: transactionId ?? this.transactionId,
+      budgetId: budgetId ?? this.budgetId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (transactionId.present) {
+      map['transaction_id'] = Variable<int>(transactionId.value);
+    }
+    if (budgetId.present) {
+      map['budget_id'] = Variable<int>(budgetId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TransactionBudgetsCompanion(')
+          ..write('id: $id, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('budgetId: $budgetId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $BudgetCategoryLimitsTable extends BudgetCategoryLimits
     with TableInfo<$BudgetCategoryLimitsTable, BudgetCategoryLimit> {
   @override
@@ -4999,6 +5115,18 @@ class $RecurringTransactionsTable extends RecurringTransactions
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  @override
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('USD'),
+  );
   static const VerificationMeta _walletIdMeta = const VerificationMeta(
     'walletId',
   );
@@ -5134,6 +5262,7 @@ class $RecurringTransactionsTable extends RecurringTransactions
     transactionType,
     specialType,
     amountMinor,
+    currencyCode,
     walletId,
     transferWalletId,
     categoryId,
@@ -5191,6 +5320,15 @@ class $RecurringTransactionsTable extends RecurringTransactions
       );
     } else if (isInserting) {
       context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
     }
     if (data.containsKey('wallet_id')) {
       context.handle(
@@ -5298,6 +5436,10 @@ class $RecurringTransactionsTable extends RecurringTransactions
         DriftSqlType.int,
         data['${effectivePrefix}amount_minor'],
       )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
       walletId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}wallet_id'],
@@ -5357,6 +5499,7 @@ class RecurringTransaction extends DataClass
   final String transactionType;
   final String specialType;
   final int amountMinor;
+  final String currencyCode;
   final int walletId;
   final int? transferWalletId;
   final int? categoryId;
@@ -5373,6 +5516,7 @@ class RecurringTransaction extends DataClass
     required this.transactionType,
     required this.specialType,
     required this.amountMinor,
+    required this.currencyCode,
     required this.walletId,
     this.transferWalletId,
     this.categoryId,
@@ -5392,6 +5536,7 @@ class RecurringTransaction extends DataClass
     map['transaction_type'] = Variable<String>(transactionType);
     map['special_type'] = Variable<String>(specialType);
     map['amount_minor'] = Variable<int>(amountMinor);
+    map['currency_code'] = Variable<String>(currencyCode);
     map['wallet_id'] = Variable<int>(walletId);
     if (!nullToAbsent || transferWalletId != null) {
       map['transfer_wallet_id'] = Variable<int>(transferWalletId);
@@ -5424,6 +5569,7 @@ class RecurringTransaction extends DataClass
       transactionType: Value(transactionType),
       specialType: Value(specialType),
       amountMinor: Value(amountMinor),
+      currencyCode: Value(currencyCode),
       walletId: Value(walletId),
       transferWalletId: transferWalletId == null && nullToAbsent
           ? const Value.absent()
@@ -5458,6 +5604,7 @@ class RecurringTransaction extends DataClass
       transactionType: serializer.fromJson<String>(json['transactionType']),
       specialType: serializer.fromJson<String>(json['specialType']),
       amountMinor: serializer.fromJson<int>(json['amountMinor']),
+      currencyCode: serializer.fromJson<String>(json['currencyCode']),
       walletId: serializer.fromJson<int>(json['walletId']),
       transferWalletId: serializer.fromJson<int?>(json['transferWalletId']),
       categoryId: serializer.fromJson<int?>(json['categoryId']),
@@ -5479,6 +5626,7 @@ class RecurringTransaction extends DataClass
       'transactionType': serializer.toJson<String>(transactionType),
       'specialType': serializer.toJson<String>(specialType),
       'amountMinor': serializer.toJson<int>(amountMinor),
+      'currencyCode': serializer.toJson<String>(currencyCode),
       'walletId': serializer.toJson<int>(walletId),
       'transferWalletId': serializer.toJson<int?>(transferWalletId),
       'categoryId': serializer.toJson<int?>(categoryId),
@@ -5498,6 +5646,7 @@ class RecurringTransaction extends DataClass
     String? transactionType,
     String? specialType,
     int? amountMinor,
+    String? currencyCode,
     int? walletId,
     Value<int?> transferWalletId = const Value.absent(),
     Value<int?> categoryId = const Value.absent(),
@@ -5514,6 +5663,7 @@ class RecurringTransaction extends DataClass
     transactionType: transactionType ?? this.transactionType,
     specialType: specialType ?? this.specialType,
     amountMinor: amountMinor ?? this.amountMinor,
+    currencyCode: currencyCode ?? this.currencyCode,
     walletId: walletId ?? this.walletId,
     transferWalletId: transferWalletId.present
         ? transferWalletId.value
@@ -5540,6 +5690,9 @@ class RecurringTransaction extends DataClass
       amountMinor: data.amountMinor.present
           ? data.amountMinor.value
           : this.amountMinor,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
       walletId: data.walletId.present ? data.walletId.value : this.walletId,
       transferWalletId: data.transferWalletId.present
           ? data.transferWalletId.value
@@ -5569,6 +5722,7 @@ class RecurringTransaction extends DataClass
           ..write('transactionType: $transactionType, ')
           ..write('specialType: $specialType, ')
           ..write('amountMinor: $amountMinor, ')
+          ..write('currencyCode: $currencyCode, ')
           ..write('walletId: $walletId, ')
           ..write('transferWalletId: $transferWalletId, ')
           ..write('categoryId: $categoryId, ')
@@ -5590,6 +5744,7 @@ class RecurringTransaction extends DataClass
     transactionType,
     specialType,
     amountMinor,
+    currencyCode,
     walletId,
     transferWalletId,
     categoryId,
@@ -5610,6 +5765,7 @@ class RecurringTransaction extends DataClass
           other.transactionType == this.transactionType &&
           other.specialType == this.specialType &&
           other.amountMinor == this.amountMinor &&
+          other.currencyCode == this.currencyCode &&
           other.walletId == this.walletId &&
           other.transferWalletId == this.transferWalletId &&
           other.categoryId == this.categoryId &&
@@ -5629,6 +5785,7 @@ class RecurringTransactionsCompanion
   final Value<String> transactionType;
   final Value<String> specialType;
   final Value<int> amountMinor;
+  final Value<String> currencyCode;
   final Value<int> walletId;
   final Value<int?> transferWalletId;
   final Value<int?> categoryId;
@@ -5645,6 +5802,7 @@ class RecurringTransactionsCompanion
     this.transactionType = const Value.absent(),
     this.specialType = const Value.absent(),
     this.amountMinor = const Value.absent(),
+    this.currencyCode = const Value.absent(),
     this.walletId = const Value.absent(),
     this.transferWalletId = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -5662,6 +5820,7 @@ class RecurringTransactionsCompanion
     required String transactionType,
     this.specialType = const Value.absent(),
     required int amountMinor,
+    this.currencyCode = const Value.absent(),
     required int walletId,
     this.transferWalletId = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -5683,6 +5842,7 @@ class RecurringTransactionsCompanion
     Expression<String>? transactionType,
     Expression<String>? specialType,
     Expression<int>? amountMinor,
+    Expression<String>? currencyCode,
     Expression<int>? walletId,
     Expression<int>? transferWalletId,
     Expression<int>? categoryId,
@@ -5700,6 +5860,7 @@ class RecurringTransactionsCompanion
       if (transactionType != null) 'transaction_type': transactionType,
       if (specialType != null) 'special_type': specialType,
       if (amountMinor != null) 'amount_minor': amountMinor,
+      if (currencyCode != null) 'currency_code': currencyCode,
       if (walletId != null) 'wallet_id': walletId,
       if (transferWalletId != null) 'transfer_wallet_id': transferWalletId,
       if (categoryId != null) 'category_id': categoryId,
@@ -5719,6 +5880,7 @@ class RecurringTransactionsCompanion
     Value<String>? transactionType,
     Value<String>? specialType,
     Value<int>? amountMinor,
+    Value<String>? currencyCode,
     Value<int>? walletId,
     Value<int?>? transferWalletId,
     Value<int?>? categoryId,
@@ -5736,6 +5898,7 @@ class RecurringTransactionsCompanion
       transactionType: transactionType ?? this.transactionType,
       specialType: specialType ?? this.specialType,
       amountMinor: amountMinor ?? this.amountMinor,
+      currencyCode: currencyCode ?? this.currencyCode,
       walletId: walletId ?? this.walletId,
       transferWalletId: transferWalletId ?? this.transferWalletId,
       categoryId: categoryId ?? this.categoryId,
@@ -5764,6 +5927,9 @@ class RecurringTransactionsCompanion
     }
     if (amountMinor.present) {
       map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
     }
     if (walletId.present) {
       map['wallet_id'] = Variable<int>(walletId.value);
@@ -5808,6 +5974,7 @@ class RecurringTransactionsCompanion
           ..write('transactionType: $transactionType, ')
           ..write('specialType: $specialType, ')
           ..write('amountMinor: $amountMinor, ')
+          ..write('currencyCode: $currencyCode, ')
           ..write('walletId: $walletId, ')
           ..write('transferWalletId: $transferWalletId, ')
           ..write('categoryId: $categoryId, ')
@@ -6689,6 +6856,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ObjectivesTable objectives = $ObjectivesTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
+  late final $TransactionBudgetsTable transactionBudgets =
+      $TransactionBudgetsTable(this);
   late final $BudgetCategoryLimitsTable budgetCategoryLimits =
       $BudgetCategoryLimitsTable(this);
   late final $BudgetWalletsTable budgetWallets = $BudgetWalletsTable(this);
@@ -6709,6 +6878,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     objectives,
     transactions,
     budgets,
+    transactionBudgets,
     budgetCategoryLimits,
     budgetWallets,
     recurringTransactions,
@@ -6729,7 +6899,6 @@ typedef $$WalletsTableCreateCompanionBuilder =
       Value<int> sortOrder,
       Value<int?> color,
       Value<String?> icon,
-      Value<int> decimals,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -6744,7 +6913,6 @@ typedef $$WalletsTableUpdateCompanionBuilder =
       Value<int> sortOrder,
       Value<int?> color,
       Value<String?> icon,
-      Value<int> decimals,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -6967,11 +7135,6 @@ class $$WalletsTableFilterComposer
 
   ColumnFilters<String> get icon => $composableBuilder(
     column: $table.icon,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get decimals => $composableBuilder(
-    column: $table.decimals,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7217,11 +7380,6 @@ class $$WalletsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get decimals => $composableBuilder(
-    column: $table.decimals,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -7272,9 +7430,6 @@ class $$WalletsTableAnnotationComposer
 
   GeneratedColumn<String> get icon =>
       $composableBuilder(column: $table.icon, builder: (column) => column);
-
-  GeneratedColumn<int> get decimals =>
-      $composableBuilder(column: $table.decimals, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -7506,7 +7661,6 @@ class $$WalletsTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 Value<String?> icon = const Value.absent(),
-                Value<int> decimals = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => WalletsCompanion(
@@ -7519,7 +7673,6 @@ class $$WalletsTableTableManager
                 sortOrder: sortOrder,
                 color: color,
                 icon: icon,
-                decimals: decimals,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -7534,7 +7687,6 @@ class $$WalletsTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 Value<String?> icon = const Value.absent(),
-                Value<int> decimals = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => WalletsCompanion.insert(
@@ -7547,7 +7699,6 @@ class $$WalletsTableTableManager
                 sortOrder: sortOrder,
                 color: color,
                 icon: icon,
-                decimals: decimals,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -9179,8 +9330,6 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> note,
       Value<String?> tags,
       Value<String?> recurrenceRule,
-      Value<String?> budgetFksExclude,
-      Value<String?> budgetFks,
       Value<int?> objectiveFk,
       Value<String?> attachmentPath,
       Value<String?> methodAdded,
@@ -9202,8 +9351,6 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> note,
       Value<String?> tags,
       Value<String?> recurrenceRule,
-      Value<String?> budgetFksExclude,
-      Value<String?> budgetFks,
       Value<int?> objectiveFk,
       Value<String?> attachmentPath,
       Value<String?> methodAdded,
@@ -9290,6 +9437,30 @@ final class $$TransactionsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$TransactionBudgetsTable, List<TransactionBudget>>
+  _transactionBudgetsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.transactionBudgets,
+        aliasName: $_aliasNameGenerator(
+          db.transactions.id,
+          db.transactionBudgets.transactionId,
+        ),
+      );
+
+  $$TransactionBudgetsTableProcessedTableManager get transactionBudgetsRefs {
+    final manager = $$TransactionBudgetsTableTableManager(
+      $_db,
+      $_db.transactionBudgets,
+    ).filter((f) => f.transactionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _transactionBudgetsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$TransactionsTableFilterComposer
@@ -9348,16 +9519,6 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get recurrenceRule => $composableBuilder(
     column: $table.recurrenceRule,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get budgetFksExclude => $composableBuilder(
-    column: $table.budgetFksExclude,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get budgetFks => $composableBuilder(
-    column: $table.budgetFks,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9472,6 +9633,31 @@ class $$TransactionsTableFilterComposer
     );
     return composer;
   }
+
+  Expression<bool> transactionBudgetsRefs(
+    Expression<bool> Function($$TransactionBudgetsTableFilterComposer f) f,
+  ) {
+    final $$TransactionBudgetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactionBudgets,
+      getReferencedColumn: (t) => t.transactionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionBudgetsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactionBudgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TransactionsTableOrderingComposer
@@ -9530,16 +9716,6 @@ class $$TransactionsTableOrderingComposer
 
   ColumnOrderings<String> get recurrenceRule => $composableBuilder(
     column: $table.recurrenceRule,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get budgetFksExclude => $composableBuilder(
-    column: $table.budgetFksExclude,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get budgetFks => $composableBuilder(
-    column: $table.budgetFks,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -9703,14 +9879,6 @@ class $$TransactionsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get budgetFksExclude => $composableBuilder(
-    column: $table.budgetFksExclude,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get budgetFks =>
-      $composableBuilder(column: $table.budgetFks, builder: (column) => column);
-
   GeneratedColumn<String> get attachmentPath => $composableBuilder(
     column: $table.attachmentPath,
     builder: (column) => column,
@@ -9818,6 +9986,32 @@ class $$TransactionsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> transactionBudgetsRefs<T extends Object>(
+    Expression<T> Function($$TransactionBudgetsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionBudgetsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.transactionBudgets,
+          getReferencedColumn: (t) => t.transactionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TransactionBudgetsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.transactionBudgets,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$TransactionsTableTableManager
@@ -9838,6 +10032,7 @@ class $$TransactionsTableTableManager
             bool transferWalletId,
             bool categoryId,
             bool objectiveFk,
+            bool transactionBudgetsRefs,
           })
         > {
   $$TransactionsTableTableManager(_$AppDatabase db, $TransactionsTable table)
@@ -9866,8 +10061,6 @@ class $$TransactionsTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<String?> recurrenceRule = const Value.absent(),
-                Value<String?> budgetFksExclude = const Value.absent(),
-                Value<String?> budgetFks = const Value.absent(),
                 Value<int?> objectiveFk = const Value.absent(),
                 Value<String?> attachmentPath = const Value.absent(),
                 Value<String?> methodAdded = const Value.absent(),
@@ -9887,8 +10080,6 @@ class $$TransactionsTableTableManager
                 note: note,
                 tags: tags,
                 recurrenceRule: recurrenceRule,
-                budgetFksExclude: budgetFksExclude,
-                budgetFks: budgetFks,
                 objectiveFk: objectiveFk,
                 attachmentPath: attachmentPath,
                 methodAdded: methodAdded,
@@ -9910,8 +10101,6 @@ class $$TransactionsTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<String?> recurrenceRule = const Value.absent(),
-                Value<String?> budgetFksExclude = const Value.absent(),
-                Value<String?> budgetFks = const Value.absent(),
                 Value<int?> objectiveFk = const Value.absent(),
                 Value<String?> attachmentPath = const Value.absent(),
                 Value<String?> methodAdded = const Value.absent(),
@@ -9931,8 +10120,6 @@ class $$TransactionsTableTableManager
                 note: note,
                 tags: tags,
                 recurrenceRule: recurrenceRule,
-                budgetFksExclude: budgetFksExclude,
-                budgetFks: budgetFks,
                 objectiveFk: objectiveFk,
                 attachmentPath: attachmentPath,
                 methodAdded: methodAdded,
@@ -9953,10 +10140,13 @@ class $$TransactionsTableTableManager
                 transferWalletId = false,
                 categoryId = false,
                 objectiveFk = false,
+                transactionBudgetsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (transactionBudgetsRefs) db.transactionBudgets,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -10037,7 +10227,29 @@ class $$TransactionsTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (transactionBudgetsRefs)
+                        await $_getPrefetchedData<
+                          Transaction,
+                          $TransactionsTable,
+                          TransactionBudget
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TransactionsTableReferences
+                              ._transactionBudgetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TransactionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).transactionBudgetsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.transactionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -10062,6 +10274,7 @@ typedef $$TransactionsTableProcessedTableManager =
         bool transferWalletId,
         bool categoryId,
         bool objectiveFk,
+        bool transactionBudgetsRefs,
       })
     >;
 typedef $$BudgetsTableCreateCompanionBuilder =
@@ -10112,6 +10325,30 @@ typedef $$BudgetsTableUpdateCompanionBuilder =
 final class $$BudgetsTableReferences
     extends BaseReferences<_$AppDatabase, $BudgetsTable, Budget> {
   $$BudgetsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TransactionBudgetsTable, List<TransactionBudget>>
+  _transactionBudgetsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.transactionBudgets,
+        aliasName: $_aliasNameGenerator(
+          db.budgets.id,
+          db.transactionBudgets.budgetId,
+        ),
+      );
+
+  $$TransactionBudgetsTableProcessedTableManager get transactionBudgetsRefs {
+    final manager = $$TransactionBudgetsTableTableManager(
+      $_db,
+      $_db.transactionBudgets,
+    ).filter((f) => f.budgetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _transactionBudgetsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 
   static MultiTypedResultKey<
     $BudgetCategoryLimitsTable,
@@ -10263,6 +10500,31 @@ class $$BudgetsTableFilterComposer
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> transactionBudgetsRefs(
+    Expression<bool> Function($$TransactionBudgetsTableFilterComposer f) f,
+  ) {
+    final $$TransactionBudgetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactionBudgets,
+      getReferencedColumn: (t) => t.budgetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionBudgetsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactionBudgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 
   Expression<bool> budgetCategoryLimitsRefs(
     Expression<bool> Function($$BudgetCategoryLimitsTableFilterComposer f) f,
@@ -10506,6 +10768,32 @@ class $$BudgetsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
+  Expression<T> transactionBudgetsRefs<T extends Object>(
+    Expression<T> Function($$TransactionBudgetsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionBudgetsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.transactionBudgets,
+          getReferencedColumn: (t) => t.budgetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TransactionBudgetsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.transactionBudgets,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> budgetCategoryLimitsRefs<T extends Object>(
     Expression<T> Function($$BudgetCategoryLimitsTableAnnotationComposer a) f,
   ) {
@@ -10572,6 +10860,7 @@ class $$BudgetsTableTableManager
           (Budget, $$BudgetsTableReferences),
           Budget,
           PrefetchHooks Function({
+            bool transactionBudgetsRefs,
             bool budgetCategoryLimitsRefs,
             bool budgetWalletsRefs,
           })
@@ -10680,16 +10969,42 @@ class $$BudgetsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({budgetCategoryLimitsRefs = false, budgetWalletsRefs = false}) {
+              ({
+                transactionBudgetsRefs = false,
+                budgetCategoryLimitsRefs = false,
+                budgetWalletsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (transactionBudgetsRefs) db.transactionBudgets,
                     if (budgetCategoryLimitsRefs) db.budgetCategoryLimits,
                     if (budgetWalletsRefs) db.budgetWallets,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (transactionBudgetsRefs)
+                        await $_getPrefetchedData<
+                          Budget,
+                          $BudgetsTable,
+                          TransactionBudget
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BudgetsTableReferences
+                              ._transactionBudgetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BudgetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).transactionBudgetsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.budgetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (budgetCategoryLimitsRefs)
                         await $_getPrefetchedData<
                           Budget,
@@ -10753,9 +11068,394 @@ typedef $$BudgetsTableProcessedTableManager =
       (Budget, $$BudgetsTableReferences),
       Budget,
       PrefetchHooks Function({
+        bool transactionBudgetsRefs,
         bool budgetCategoryLimitsRefs,
         bool budgetWalletsRefs,
       })
+    >;
+typedef $$TransactionBudgetsTableCreateCompanionBuilder =
+    TransactionBudgetsCompanion Function({
+      Value<int> id,
+      required int transactionId,
+      required int budgetId,
+    });
+typedef $$TransactionBudgetsTableUpdateCompanionBuilder =
+    TransactionBudgetsCompanion Function({
+      Value<int> id,
+      Value<int> transactionId,
+      Value<int> budgetId,
+    });
+
+final class $$TransactionBudgetsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TransactionBudgetsTable,
+          TransactionBudget
+        > {
+  $$TransactionBudgetsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TransactionsTable _transactionIdTable(_$AppDatabase db) =>
+      db.transactions.createAlias(
+        $_aliasNameGenerator(
+          db.transactionBudgets.transactionId,
+          db.transactions.id,
+        ),
+      );
+
+  $$TransactionsTableProcessedTableManager get transactionId {
+    final $_column = $_itemColumn<int>('transaction_id')!;
+
+    final manager = $$TransactionsTableTableManager(
+      $_db,
+      $_db.transactions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_transactionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $BudgetsTable _budgetIdTable(_$AppDatabase db) =>
+      db.budgets.createAlias(
+        $_aliasNameGenerator(db.transactionBudgets.budgetId, db.budgets.id),
+      );
+
+  $$BudgetsTableProcessedTableManager get budgetId {
+    final $_column = $_itemColumn<int>('budget_id')!;
+
+    final manager = $$BudgetsTableTableManager(
+      $_db,
+      $_db.budgets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_budgetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TransactionBudgetsTableFilterComposer
+    extends Composer<_$AppDatabase, $TransactionBudgetsTable> {
+  $$TransactionBudgetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TransactionsTableFilterComposer get transactionId {
+    final $$TransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BudgetsTableFilterComposer get budgetId {
+    final $$BudgetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.budgetId,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetsTableFilterComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TransactionBudgetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TransactionBudgetsTable> {
+  $$TransactionBudgetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TransactionsTableOrderingComposer get transactionId {
+    final $$TransactionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BudgetsTableOrderingComposer get budgetId {
+    final $$BudgetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.budgetId,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TransactionBudgetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TransactionBudgetsTable> {
+  $$TransactionBudgetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  $$TransactionsTableAnnotationComposer get transactionId {
+    final $$TransactionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BudgetsTableAnnotationComposer get budgetId {
+    final $$BudgetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.budgetId,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TransactionBudgetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TransactionBudgetsTable,
+          TransactionBudget,
+          $$TransactionBudgetsTableFilterComposer,
+          $$TransactionBudgetsTableOrderingComposer,
+          $$TransactionBudgetsTableAnnotationComposer,
+          $$TransactionBudgetsTableCreateCompanionBuilder,
+          $$TransactionBudgetsTableUpdateCompanionBuilder,
+          (TransactionBudget, $$TransactionBudgetsTableReferences),
+          TransactionBudget,
+          PrefetchHooks Function({bool transactionId, bool budgetId})
+        > {
+  $$TransactionBudgetsTableTableManager(
+    _$AppDatabase db,
+    $TransactionBudgetsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TransactionBudgetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TransactionBudgetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TransactionBudgetsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> transactionId = const Value.absent(),
+                Value<int> budgetId = const Value.absent(),
+              }) => TransactionBudgetsCompanion(
+                id: id,
+                transactionId: transactionId,
+                budgetId: budgetId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int transactionId,
+                required int budgetId,
+              }) => TransactionBudgetsCompanion.insert(
+                id: id,
+                transactionId: transactionId,
+                budgetId: budgetId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TransactionBudgetsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({transactionId = false, budgetId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (transactionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.transactionId,
+                                referencedTable:
+                                    $$TransactionBudgetsTableReferences
+                                        ._transactionIdTable(db),
+                                referencedColumn:
+                                    $$TransactionBudgetsTableReferences
+                                        ._transactionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (budgetId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.budgetId,
+                                referencedTable:
+                                    $$TransactionBudgetsTableReferences
+                                        ._budgetIdTable(db),
+                                referencedColumn:
+                                    $$TransactionBudgetsTableReferences
+                                        ._budgetIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TransactionBudgetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TransactionBudgetsTable,
+      TransactionBudget,
+      $$TransactionBudgetsTableFilterComposer,
+      $$TransactionBudgetsTableOrderingComposer,
+      $$TransactionBudgetsTableAnnotationComposer,
+      $$TransactionBudgetsTableCreateCompanionBuilder,
+      $$TransactionBudgetsTableUpdateCompanionBuilder,
+      (TransactionBudget, $$TransactionBudgetsTableReferences),
+      TransactionBudget,
+      PrefetchHooks Function({bool transactionId, bool budgetId})
     >;
 typedef $$BudgetCategoryLimitsTableCreateCompanionBuilder =
     BudgetCategoryLimitsCompanion Function({
@@ -11652,6 +12352,7 @@ typedef $$RecurringTransactionsTableCreateCompanionBuilder =
       required String transactionType,
       Value<String> specialType,
       required int amountMinor,
+      Value<String> currencyCode,
       required int walletId,
       Value<int?> transferWalletId,
       Value<int?> categoryId,
@@ -11670,6 +12371,7 @@ typedef $$RecurringTransactionsTableUpdateCompanionBuilder =
       Value<String> transactionType,
       Value<String> specialType,
       Value<int> amountMinor,
+      Value<String> currencyCode,
       Value<int> walletId,
       Value<int?> transferWalletId,
       Value<int?> categoryId,
@@ -11786,6 +12488,11 @@ class $$RecurringTransactionsTableFilterComposer
 
   ColumnFilters<int> get amountMinor => $composableBuilder(
     column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11928,6 +12635,11 @@ class $$RecurringTransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get title => $composableBuilder(
     column: $table.title,
     builder: (column) => ColumnOrderings(column),
@@ -12062,6 +12774,11 @@ class $$RecurringTransactionsTableAnnotationComposer
 
   GeneratedColumn<int> get amountMinor => $composableBuilder(
     column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
     builder: (column) => column,
   );
 
@@ -12210,6 +12927,7 @@ class $$RecurringTransactionsTableTableManager
                 Value<String> transactionType = const Value.absent(),
                 Value<String> specialType = const Value.absent(),
                 Value<int> amountMinor = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
                 Value<int> walletId = const Value.absent(),
                 Value<int?> transferWalletId = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
@@ -12226,6 +12944,7 @@ class $$RecurringTransactionsTableTableManager
                 transactionType: transactionType,
                 specialType: specialType,
                 amountMinor: amountMinor,
+                currencyCode: currencyCode,
                 walletId: walletId,
                 transferWalletId: transferWalletId,
                 categoryId: categoryId,
@@ -12244,6 +12963,7 @@ class $$RecurringTransactionsTableTableManager
                 required String transactionType,
                 Value<String> specialType = const Value.absent(),
                 required int amountMinor,
+                Value<String> currencyCode = const Value.absent(),
                 required int walletId,
                 Value<int?> transferWalletId = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
@@ -12260,6 +12980,7 @@ class $$RecurringTransactionsTableTableManager
                 transactionType: transactionType,
                 specialType: specialType,
                 amountMinor: amountMinor,
+                currencyCode: currencyCode,
                 walletId: walletId,
                 transferWalletId: transferWalletId,
                 categoryId: categoryId,
@@ -13023,6 +13744,8 @@ class $AppDatabaseManager {
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$BudgetsTableTableManager get budgets =>
       $$BudgetsTableTableManager(_db, _db.budgets);
+  $$TransactionBudgetsTableTableManager get transactionBudgets =>
+      $$TransactionBudgetsTableTableManager(_db, _db.transactionBudgets);
   $$BudgetCategoryLimitsTableTableManager get budgetCategoryLimits =>
       $$BudgetCategoryLimitsTableTableManager(_db, _db.budgetCategoryLimits);
   $$BudgetWalletsTableTableManager get budgetWallets =>

@@ -25,6 +25,8 @@ class ExchangeRateService {
   }) : _client = client ?? http.Client(),
        _apiUrls = apiUrls ?? _defaultApiUrls;
 
+  void close() => _client.close();
+
   static const _cacheKey = 'cached_currency_exchange';
   static const _cacheDatePrefix = 'cached_currency_exchange_date_';
   static const _customKey = 'custom_currency_amounts';
@@ -158,8 +160,19 @@ class ExchangeRateService {
   }
 
   Future<void> setCustomRate(String currency, double rate) async {
+    final normalizedCurrency = currency.trim().toLowerCase();
+    if (normalizedCurrency.isEmpty) {
+      throw ArgumentError.value(currency, 'currency', 'Currency is required.');
+    }
+    if (!rate.isFinite || rate <= 0) {
+      throw ArgumentError.value(
+        rate,
+        'rate',
+        'Rate must be a finite positive number.',
+      );
+    }
     final custom = await getCustomRates();
-    custom[currency.toLowerCase()] = rate;
+    custom[normalizedCurrency] = rate;
     await _settings.set(_customKey, json.encode(custom));
   }
 
@@ -184,18 +197,42 @@ class ExchangeRateService {
         ? await _getCachedRates()
         : await _getRatesForDate(onDate);
     if (!cached.containsKey(key)) {
-      try {
+      if (onDate != null && !_isSameDate(onDate, DateTime.now())) {
+        cached = await _getCachedRates();
+        if (!cached.containsKey(key)) {
+          try {
+            cached = await fetchRates();
+          } catch (_) {
+            // Preserve the final missing-rate error below with the requested
+            // currency code. Historical precision is best-effort because old
+            // local caches may be absent after restore or device migration.
+          }
+        }
+      } else {
         cached = await fetchRates();
-      } catch (_) {}
+      }
     }
 
-    return cached[key] ?? 1.0;
+    final rate = cached[key];
+    if (rate == null) {
+      throw ExchangeRateException(
+        'Missing exchange rate for ${currencyCode.toUpperCase()}.',
+      );
+    }
+    return rate;
   }
+
+  bool _isSameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Future<double> ratio(String from, String to, {DateTime? onDate}) async {
     if (from.toLowerCase() == to.toLowerCase()) return 1.0;
-    final toRate = await getRate(to, onDate: onDate);
-    final fromRate = await getRate(from, onDate: onDate);
+    final rates = await Future.wait([
+      getRate(to, onDate: onDate),
+      getRate(from, onDate: onDate),
+    ]);
+    final toRate = rates[0];
+    final fromRate = rates[1];
     if (fromRate == 0) return 1.0;
     return toRate * (1 / fromRate);
   }

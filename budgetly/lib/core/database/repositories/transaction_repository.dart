@@ -50,11 +50,62 @@ class TransactionRepository {
       (_db.transactions.select()..where((t) => t.id.equals(id)))
           .getSingleOrNull();
 
-  Future<void> insert(TransactionsCompanion entry) =>
+  Future<int> insert(TransactionsCompanion entry) =>
       _db.into(_db.transactions).insert(entry);
+
+  Future<int> insertWithBudgets(
+    TransactionsCompanion entry,
+    Iterable<int> budgetIds,
+  ) async {
+    return _db.transaction(() async {
+      final id = await insert(entry);
+      await setTransactionBudgets(id, budgetIds);
+      return id;
+    });
+  }
 
   Future<void> update(int id, TransactionsCompanion entry) =>
       (_db.transactions.update()..where((t) => t.id.equals(id))).write(entry);
+
+  Future<void> updateWithBudgets(
+    int id,
+    TransactionsCompanion entry,
+    Iterable<int> budgetIds,
+  ) async {
+    await _db.transaction(() async {
+      await update(id, entry);
+      await setTransactionBudgets(id, budgetIds);
+    });
+  }
+
+  Future<Set<int>> getBudgetIdsForTransaction(int transactionId) async {
+    final rows =
+        await (_db.transactionBudgets.select()
+              ..where((tb) => tb.transactionId.equals(transactionId)))
+            .get();
+    return rows.map((row) => row.budgetId).toSet();
+  }
+
+  Future<void> setTransactionBudgets(
+    int transactionId,
+    Iterable<int> budgetIds,
+  ) async {
+    final uniqueIds = budgetIds.toSet();
+    await (_db.transactionBudgets.delete()
+          ..where((tb) => tb.transactionId.equals(transactionId)))
+        .go();
+    for (final budgetId in uniqueIds) {
+      await _db
+          .into(_db.transactionBudgets)
+          .insert(
+            TransactionBudgetsCompanion.insert(
+              transactionId: transactionId,
+              budgetId: budgetId,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    }
+  }
 
   Future<void> delete(int id) async {
     final t = await getById(id);
@@ -80,6 +131,9 @@ class TransactionRepository {
             ),
           );
     }
+    await (_db.transactionBudgets.delete()
+          ..where((tb) => tb.transactionId.equals(id)))
+        .go();
     await (_db.transactions.delete()..where((t) => t.id.equals(id))).go();
   }
 
@@ -109,7 +163,12 @@ class TransactionRepository {
     if (type != null) q.where((t) => t.type.equals(type));
     if (specialType != null) q.where((t) => t.specialType.equals(specialType));
     if (query != null && query.isNotEmpty) {
-      q.where((t) => t.title.like('%$query%') | t.note.like('%$query%'));
+      final pattern = _containsLikePattern(query);
+      q.where(
+        (t) =>
+            t.title.like(pattern, escapeChar: '\\') |
+            t.note.like(pattern, escapeChar: '\\'),
+      );
     }
     if (minAmount != null) {
       q.where((t) => t.amountMinor.isBiggerOrEqualValue(minAmount));
@@ -134,7 +193,12 @@ class TransactionRepository {
       ..where((t) => t.categoryId.isIn(categoryIds));
     final trimmed = query?.trim();
     if (trimmed != null && trimmed.isNotEmpty) {
-      q.where((t) => t.title.like('%$trimmed%') | t.note.like('%$trimmed%'));
+      final pattern = _containsLikePattern(trimmed);
+      q.where(
+        (t) =>
+            t.title.like(pattern, escapeChar: '\\') |
+            t.note.like(pattern, escapeChar: '\\'),
+      );
     }
     q
       ..orderBy([
@@ -145,87 +209,23 @@ class TransactionRepository {
   }
 
   Future<Map<int, int>> spentByCategory(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()
-              ..where(
-                (t) =>
-                    t.type.equals('expense') &
-                    t.specialType.equals('none') &
-                    t.date.isBiggerOrEqualValue(start) &
-                    t.date.isSmallerOrEqualValue(end),
-              )
-              ..orderBy([]))
-            .get();
-
-    final map = <int, int>{};
-    for (final t in rows) {
-      if (t.categoryId != null) {
-        map.update(
-          t.categoryId!,
-          (v) => v + t.amountMinor,
-          ifAbsent: () => t.amountMinor,
-        );
-      }
-    }
-    return map;
+    return _sumByCategory(
+      start,
+      end,
+      "type = 'expense' AND special_type = 'none'",
+    );
   }
 
   Future<Map<int, int>> incomeByCategory(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()
-              ..where(
-                (t) =>
-                    t.type.equals('income') &
-                    t.date.isBiggerOrEqualValue(start) &
-                    t.date.isSmallerOrEqualValue(end),
-              )
-              ..orderBy([]))
-            .get();
-
-    final map = <int, int>{};
-    for (final t in rows) {
-      if (t.categoryId != null) {
-        map.update(
-          t.categoryId!,
-          (v) => v + t.amountMinor,
-          ifAbsent: () => t.amountMinor,
-        );
-      }
-    }
-    return map;
+    return _sumByCategory(start, end, "type = 'income'");
   }
 
   Future<int> totalIncome(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()..where(
-              (t) =>
-                  t.type.equals('income') &
-                  t.date.isBiggerOrEqualValue(start) &
-                  t.date.isSmallerOrEqualValue(end),
-            ))
-            .get();
-    var total = 0;
-    for (final t in rows) {
-      total += t.amountMinor;
-    }
-    return total;
+    return _sumTotal(start, end, "type = 'income'");
   }
 
   Future<int> totalExpenses(DateTime start, DateTime end) async {
-    final rows =
-        await (_db.transactions.select()..where(
-              (t) =>
-                  t.type.equals('expense') &
-                  t.specialType.equals('none') &
-                  t.date.isBiggerOrEqualValue(start) &
-                  t.date.isSmallerOrEqualValue(end),
-            ))
-            .get();
-    var total = 0;
-    for (final t in rows) {
-      total += t.amountMinor;
-    }
-    return total;
+    return _sumTotal(start, end, "type = 'expense' AND special_type = 'none'");
   }
 
   Future<List<Transaction>> getByObjective(int objectiveId) =>
@@ -235,4 +235,141 @@ class TransactionRepository {
               (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
             ]))
           .get();
+
+  Future<List<Transaction>> getByBudget({
+    required int budgetId,
+    required DateTime start,
+    required DateTime end,
+    required String type,
+  }) async {
+    final rows = await _db
+        .customSelect(
+          '''
+          SELECT t.*
+          FROM transactions t
+          INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
+          WHERE tb.budget_id = ?
+            AND t.date >= ?
+            AND t.date <= ?
+            AND t.type = ?
+          ORDER BY t.date DESC
+          ''',
+          readsFrom: {_db.transactions, _db.transactionBudgets},
+          variables: [
+            Variable.withInt(budgetId),
+            Variable.withDateTime(start),
+            Variable.withDateTime(end),
+            Variable.withString(type),
+          ],
+        )
+        .get();
+    return rows.map((row) => _db.transactions.map(row.data)).toList();
+  }
+
+  Future<int> totalByBudget({
+    required int budgetId,
+    required DateTime start,
+    required DateTime end,
+    required String type,
+  }) async {
+    final row = await _db
+        .customSelect(
+          '''
+          SELECT COALESCE(SUM(t.amount_minor), 0) AS total
+          FROM transactions t
+          INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
+          WHERE tb.budget_id = ?
+            AND t.date >= ?
+            AND t.date <= ?
+            AND t.type = ?
+          ''',
+          readsFrom: {_db.transactions, _db.transactionBudgets},
+          variables: [
+            Variable.withInt(budgetId),
+            Variable.withDateTime(start),
+            Variable.withDateTime(end),
+            Variable.withString(type),
+          ],
+        )
+        .getSingle();
+    return row.data['total'] as int;
+  }
+
+  Future<int> totalByObjective(int objectiveId) async {
+    final row = await _db
+        .customSelect(
+          '''
+          SELECT COALESCE(SUM(amount_minor), 0) AS total
+          FROM transactions
+          WHERE objective_fk = ?
+          ''',
+          variables: [Variable.withInt(objectiveId)],
+        )
+        .getSingle();
+    return row.data['total'] as int;
+  }
+
+  Future<Map<int, int>> totalsByObjectives(Iterable<int> objectiveIds) async {
+    final ids = objectiveIds.toSet().toList();
+    if (ids.isEmpty) return {};
+    final placeholders = List.filled(ids.length, '?').join(', ');
+    final rows = await _db.customSelect('''
+          SELECT objective_fk, SUM(amount_minor) AS total
+          FROM transactions
+          WHERE objective_fk IN ($placeholders)
+          GROUP BY objective_fk
+          ''', variables: ids.map(Variable.withInt).toList()).get();
+    return {
+      for (final row in rows)
+        row.data['objective_fk'] as int: row.data['total'] as int,
+    };
+  }
+
+  String _containsLikePattern(String value) =>
+      '%${value.replaceAll('\\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+
+  Future<Map<int, int>> _sumByCategory(
+    DateTime start,
+    DateTime end,
+    String whereClause,
+  ) async {
+    final rows = await _db
+        .customSelect(
+          '''
+          SELECT category_id, SUM(amount_minor) AS total
+          FROM transactions
+          WHERE category_id IS NOT NULL
+            AND date >= ?
+            AND date <= ?
+            AND $whereClause
+          GROUP BY category_id
+          ''',
+          variables: [Variable.withDateTime(start), Variable.withDateTime(end)],
+        )
+        .get();
+    return {
+      for (final row in rows)
+        row.data['category_id'] as int: row.data['total'] as int,
+    };
+  }
+
+  Future<int> _sumTotal(
+    DateTime start,
+    DateTime end,
+    String whereClause,
+  ) async {
+    final row = await _db
+        .customSelect(
+          '''
+          SELECT COALESCE(SUM(amount_minor), 0) AS total
+          FROM transactions
+          WHERE date >= ?
+            AND date <= ?
+            AND $whereClause
+          ''',
+          variables: [Variable.withDateTime(start), Variable.withDateTime(end)],
+        )
+        .getSingle();
+    return row.data['total'] as int;
+  }
 }

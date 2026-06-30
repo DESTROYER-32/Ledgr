@@ -24,6 +24,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _securityBusy = false;
   bool _demoMode = false;
   bool _resetBusy = false;
+  String? _userName;
   String _themeMode = 'system';
   int _themeSeed = 0xFF1A6D4A;
   String _displayCurrency = MoneyUtils.defaultCurrencyCode;
@@ -85,6 +86,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final showDefaultCurrency = await repo.get('show_default_currency');
     final favoriteCurrencies = await repo.get('favorite_currencies');
     final demoMode = await repo.get('budgetly_demo_mode');
+    final userName = await repo.get('user_name');
     if (mounted) {
       setState(() {
         _notifications = notifications == 'true';
@@ -97,6 +99,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _showDefaultCurrency = showDefaultCurrency != 'false';
         _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
         _demoMode = demoMode == 'true';
+        final trimmedName = userName?.trim();
+        _userName = trimmedName == null || trimmedName.isEmpty
+            ? null
+            : trimmedName;
         _isLoading = false;
       });
     }
@@ -167,28 +173,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _resetBusy = true);
     final db = ref.read(appDatabaseProvider);
-    await db.transaction(() async {
-      await db.customStatement('PRAGMA foreign_keys = OFF');
-      for (final table in [
-        'delete_logs',
-        'associated_titles',
-        'recurring_transactions',
-        'budget_wallets',
-        'budget_category_limits',
-        'transactions',
-        'objectives',
-        'budgets',
-        'categories',
-        'wallets',
-        'settings',
-      ]) {
-        await db.customStatement('DELETE FROM $table');
-        await db.customStatement(
-          "DELETE FROM sqlite_sequence WHERE name = '$table'",
-        );
-      }
+    await db.customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      await db.transaction(() async {
+        for (final table in [
+          'delete_logs',
+          'associated_titles',
+          'recurring_transactions',
+          'budget_wallets',
+          'budget_category_limits',
+          'transactions',
+          'objectives',
+          'budgets',
+          'categories',
+          'wallets',
+          'settings',
+        ]) {
+          await db.customStatement('DELETE FROM $table');
+          await db.customStatement(
+            "DELETE FROM sqlite_sequence WHERE name = '$table'",
+          );
+        }
+      });
+    } finally {
       await db.customStatement('PRAGMA foreign_keys = ON');
-    });
+    }
     ref.invalidate(activeWalletsProvider);
     ref.invalidate(activeCategoriesProvider);
     ref.invalidate(allTransactionsProvider);
@@ -242,6 +251,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref.read(settingsRepositoryProvider).set('display_currency', code);
     ref.invalidate(displayCurrencyProvider);
     ref.invalidate(totalBalanceProvider);
+  }
+
+  Future<void> _editUserName() async {
+    final controller = TextEditingController(text: _userName ?? '');
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Your name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            hintText: 'What should Budgetly call you?',
+          ),
+          onSubmitted: (_) => Navigator.pop(context, controller.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ''),
+            child: const Text('Clear'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result == null) return;
+
+    final trimmed = result.trim();
+    final repo = ref.read(settingsRepositoryProvider);
+    if (trimmed.isEmpty) {
+      await repo.remove('user_name');
+    } else {
+      await repo.set('user_name', trimmed);
+    }
+    if (!mounted) return;
+    setState(() => _userName = trimmed.isEmpty ? null : trimmed);
+    ref.invalidate(userNameProvider);
   }
 
   Future<void> _setShowDefaultCurrency(bool value) async {
@@ -757,6 +814,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ]),
           const SizedBox(height: 8),
           _section(theme, 'Account Defaults', [
+            ListTile(
+              leading: Icon(
+                Icons.person_outline,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Your Name'),
+              subtitle: Text(
+                _userName == null
+                    ? 'Add a name for dashboard greetings'
+                    : _userName!,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _editUserName,
+            ),
+            const Divider(height: 1),
             walletsAsync.when(
               data: (wallets) {
                 final hasSelected = wallets.any(

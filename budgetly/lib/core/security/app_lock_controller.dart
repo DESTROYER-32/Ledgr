@@ -53,6 +53,8 @@ class AppLockController extends ChangeNotifier {
   static const _pinSaltKey = 'app_lock_pin_salt';
   static const _biometricKey = 'app_lock_biometrics_enabled';
   static const _timeoutKey = 'app_lock_timeout_seconds';
+  static const _pbkdf2Iterations = 100000;
+  static const _pbkdf2Prefix = 'pbkdf2-sha256';
 
   final SettingsRepository _settings;
   final LocalAuthentication _localAuth;
@@ -61,7 +63,7 @@ class AppLockController extends ChangeNotifier {
 
   AppLockState get state => _state;
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool preserveLockState = false}) async {
     final pinHash = await _settings.get(_pinHashKey);
     final biometricsEnabled = await _settings.get(_biometricKey) == 'true';
     final timeoutSeconds =
@@ -69,7 +71,7 @@ class AppLockController extends ChangeNotifier {
     final biometricsAvailable = await _canUseBiometrics();
     _state = AppLockState(
       isEnabled: pinHash != null,
-      isLocked: pinHash != null,
+      isLocked: preserveLockState ? _state.isLocked : pinHash != null,
       biometricsEnabled: biometricsEnabled && biometricsAvailable,
       biometricsAvailable: biometricsAvailable,
       lockTimeoutSeconds: timeoutSeconds,
@@ -138,8 +140,12 @@ class AppLockController extends ChangeNotifier {
   Future<bool> verifyPin(String pin) async {
     final salt = await _settings.get(_pinSaltKey);
     final expected = await _settings.get(_pinHashKey);
-    final ok = salt != null && expected == _hashPin(pin, salt);
+    final ok =
+        salt != null && expected != null && _verifyHash(pin, salt, expected);
     if (ok) {
+      if (!expected.startsWith('$_pbkdf2Prefix\$')) {
+        await _settings.set(_pinHashKey, _hashPin(pin, salt));
+      }
       _state = _state.copyWith(isLocked: false);
       notifyListeners();
     }
@@ -195,8 +201,77 @@ class AppLockController extends ChangeNotifier {
     }
   }
 
-  String _hashPin(String pin, String salt) =>
-      sha256.convert(utf8.encode('$salt:$pin')).toString();
+  String _hashPin(String pin, String salt) {
+    final hash = _pbkdf2Sha256(
+      password: utf8.encode(pin),
+      salt: utf8.encode(salt),
+      iterations: _pbkdf2Iterations,
+      length: 32,
+    );
+    return '$_pbkdf2Prefix\$$_pbkdf2Iterations\$$salt\$${base64UrlEncode(hash)}';
+  }
+
+  bool _verifyHash(String pin, String salt, String expected) {
+    if (expected.startsWith('$_pbkdf2Prefix\$')) {
+      final parts = expected.split('\$');
+      if (parts.length != 4) return false;
+      final iterations = int.tryParse(parts[1]);
+      if (iterations == null || iterations <= 0) return false;
+      final hash = _pbkdf2Sha256(
+        password: utf8.encode(pin),
+        salt: utf8.encode(parts[2]),
+        iterations: iterations,
+        length: 32,
+      );
+      return _constantTimeEquals(base64UrlEncode(hash), parts[3]);
+    }
+
+    final legacy = sha256.convert(utf8.encode('$salt:$pin')).toString();
+    return _constantTimeEquals(legacy, expected);
+  }
+
+  List<int> _pbkdf2Sha256({
+    required List<int> password,
+    required List<int> salt,
+    required int iterations,
+    required int length,
+  }) {
+    final hmac = Hmac(sha256, password);
+    final result = <int>[];
+    var block = 1;
+
+    while (result.length < length) {
+      var u = hmac.convert([...salt, ..._int32BigEndian(block)]).bytes;
+      final output = List<int>.from(u);
+      for (var i = 1; i < iterations; i++) {
+        u = hmac.convert(u).bytes;
+        for (var j = 0; j < output.length; j++) {
+          output[j] ^= u[j];
+        }
+      }
+      result.addAll(output);
+      block++;
+    }
+
+    return result.take(length).toList(growable: false);
+  }
+
+  List<int> _int32BigEndian(int value) => [
+    (value >> 24) & 0xff,
+    (value >> 16) & 0xff,
+    (value >> 8) & 0xff,
+    value & 0xff,
+  ];
+
+  bool _constantTimeEquals(String a, String b) {
+    if (a.length != b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) {
+      diff |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    }
+    return diff == 0;
+  }
+
   String _randomSalt() => base64UrlEncode(
     List<int>.generate(24, (_) => Random.secure().nextInt(256)),
   );

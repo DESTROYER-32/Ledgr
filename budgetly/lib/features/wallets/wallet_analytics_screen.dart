@@ -138,8 +138,26 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
     var totalOutgoing = 0;
     var count = 0;
 
-    for (var i = 5; i >= 0; i--) {
-      final d = DateTime(DateTime.now().year, DateTime.now().month - i);
+    final now = DateTime.now();
+    final visibleTransactions = transactions.where((t) {
+      final touchesWallet =
+          t.walletId == wallet.id || t.transferWalletId == wallet.id;
+      if (!touchesWallet) return false;
+      if (start != null && t.date.isBefore(start)) return false;
+      if (t.type == 'transfer' && !_includeTransfers) return false;
+      return true;
+    }).toList();
+    final firstChartMonth =
+        _range == _Range.all && visibleTransactions.isNotEmpty
+        ? visibleTransactions
+              .map((t) => DateTime(t.date.year, t.date.month))
+              .reduce((a, b) => a.isBefore(b) ? a : b)
+        : DateTime(now.year, now.month - _chartMonthsForRange(_range) + 1);
+    for (
+      var d = firstChartMonth;
+      !d.isAfter(DateTime(now.year, now.month));
+      d = DateTime(d.year, d.month + 1)
+    ) {
       incoming[_monthKey(d)] = 0;
       outgoing[_monthKey(d)] = 0;
     }
@@ -197,6 +215,12 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
 }
 
 enum _Range { month, threeMonths, year, all }
+
+int _chartMonthsForRange(_Range range) => switch (range) {
+  _Range.month => 1,
+  _Range.threeMonths => 3,
+  _Range.year || _Range.all => 12,
+};
 
 extension on _Range {
   DateTime? startDate() {

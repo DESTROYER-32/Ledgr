@@ -26,13 +26,27 @@ class AppTheme {
 
   static ThemeData amoled({Color? seedOverride}) {
     final seed = seedOverride ?? _defaultSeed;
-    final base = ColorScheme.fromSeed(
-      seedColor: seed,
-      brightness: Brightness.dark,
-    );
-    final colorScheme = base.copyWith(
+    final colorScheme = ColorScheme.dark(
+      primary: seed,
+      onPrimary: Colors.white,
+      primaryContainer: _darken(seed, .35),
+      onPrimaryContainer: Colors.white,
+      secondary: _soften(seed),
+      onSecondary: Colors.white,
+      secondaryContainer: _darken(seed, .45),
+      onSecondaryContainer: Colors.white,
+      tertiary: _rotateHue(seed, 45),
+      onTertiary: Colors.white,
+      tertiaryContainer: _darken(_rotateHue(seed, 45), .45),
+      onTertiaryContainer: Colors.white,
+      error: const Color(0xFFFFB4AB),
+      onError: const Color(0xFF690005),
+      errorContainer: const Color(0xFF93000A),
+      onErrorContainer: const Color(0xFFFFDAD6),
       surface: Colors.black,
       onSurface: Colors.white,
+      onSurfaceVariant: const Color(0xFFE0E0E0),
+      outline: const Color(0xFF8A8A8A),
       surfaceDim: Colors.black,
       surfaceBright: const Color(0xFF121212),
       surfaceContainerLowest: Colors.black,
@@ -48,6 +62,23 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.black,
       canvasColor: Colors.black,
     );
+  }
+
+  static Color _darken(Color color, double amount) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withLightness((hsl.lightness * (1 - amount)).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  static Color _soften(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withSaturation((hsl.saturation * .72).clamp(0.0, 1.0)).toColor();
+  }
+
+  static Color _rotateHue(Color color, double degrees) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withHue((hsl.hue + degrees) % 360).toColor();
   }
 
   static ThemeData _buildTheme(ColorScheme colorScheme) {
@@ -179,12 +210,18 @@ class AppColors {
   static const income = Color(0xFF43A047);
   static const transfer = Color(0xFF1E88E5);
 
-  static const expenseSoft = Color(0xFFFFF0F0);
-  static const incomeSoft = Color(0xFFF0FFF0);
-  static const transferSoft = Color(0xFFF0F5FF);
+  static Color expenseSoft(ColorScheme cs) => cs.errorContainer;
+  static Color incomeSoft(ColorScheme cs) => cs.primaryContainer;
+  static Color transferSoft(ColorScheme cs) => cs.secondaryContainer;
 
   static Color expenseContainer(ColorScheme cs) => cs.errorContainer;
   static Color incomeContainer(ColorScheme cs) => cs.primaryContainer;
+
+  static Color fromStored(int? value, Color fallback) {
+    if (value == null) return fallback;
+    final color = Color(value);
+    return color.a == 0 ? fallback : color;
+  }
 
   static const categoryColors = [
     Color(0xFFE53935),
@@ -199,5 +236,17 @@ class AppColors {
     Color(0xFF546E7A),
     Color(0xFFFF7043),
     Color(0xFF8BC34A),
+    Color(0xFF00897B),
+    Color(0xFFC0CA33),
+    Color(0xFF3949AB),
+    Color(0xFFAD1457),
+    Color(0xFF7CB342),
+    Color(0xFF039BE5),
+    Color(0xFF8D6E63),
+    Color(0xFF6A1B9A),
+    Color(0xFFFFB300),
+    Color(0xFF00838F),
+    Color(0xFFE64A19),
+    Color(0xFF455A64),
   ];
 }

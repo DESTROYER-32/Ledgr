@@ -59,7 +59,10 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
 });
 
 final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
-  return BudgetRepository(ref.watch(appDatabaseProvider));
+  return BudgetRepository(
+    ref.watch(appDatabaseProvider),
+    ref.watch(exchangeRateServiceProvider),
+  );
 });
 
 final recurringRepositoryProvider = Provider<RecurringRepository>((ref) {
@@ -105,12 +108,13 @@ final recurringServiceProvider = Provider<RecurringService>((ref) {
   return RecurringService(
     ref.watch(recurringRepositoryProvider),
     ref.watch(transactionRepositoryProvider),
-    ref.watch(walletRepositoryProvider),
   );
 });
 
 final exchangeRateServiceProvider = Provider<ExchangeRateService>((ref) {
-  return ExchangeRateService(ref.watch(settingsRepositoryProvider));
+  final service = ExchangeRateService(ref.watch(settingsRepositoryProvider));
+  ref.onDispose(service.close);
+  return service;
 });
 
 final exchangeRatesRefreshProvider = StateProvider<int>((ref) => 0);
@@ -261,32 +265,15 @@ final totalBalanceProvider = FutureProvider<int>((ref) async {
   ref.watch(allTransactionsProvider);
   ref.watch(exchangeRatesProvider);
   final repo = ref.watch(walletRepositoryProvider);
-  final wallets = await repo.getAll();
-  final rateService = ref.watch(exchangeRateServiceProvider);
   final displayCurrency = await ref.watch(displayCurrencyProvider.future);
-  var total = 0;
-  for (final w in wallets) {
-    if (w.archived) continue;
-    final balance = await repo.balanceForWallet(w.id);
-    total += await rateService.convert(
-      balance,
-      w.currencyCode,
-      displayCurrency,
-    );
-  }
-  return total;
+  return repo.totalBalance(currencyCode: displayCurrency);
 });
 
 Future<Map<int, int>> walletBalancesByWalletCurrency(
   WalletRepository repo,
 ) async {
   final wallets = await repo.getAll();
-  final map = <int, int>{};
-  for (final w in wallets) {
-    final balance = await repo.balanceForWallet(w.id);
-    map[w.id] = balance;
-  }
-  return map;
+  return repo.balancesForWallets(wallets);
 }
 
 final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
@@ -302,9 +289,9 @@ final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final parts = key.split(',');
-  final start = DateTime.parse(parts[0]);
-  final end = DateTime.parse(parts[1]);
+  final range = _dateRangeFromKey(key);
+  if (range == null) return {};
+  final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).spentByCategory(start, end);
 });
 
@@ -313,9 +300,9 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final parts = key.split(',');
-  final start = DateTime.parse(parts[0]);
-  final end = DateTime.parse(parts[1]);
+  final range = _dateRangeFromKey(key);
+  if (range == null) return 0;
+  final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
 });
 
@@ -328,11 +315,20 @@ final monthlyExpensesProvider = FutureProvider.family<int, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final parts = key.split(',');
-  final start = DateTime.parse(parts[0]);
-  final end = DateTime.parse(parts[1]);
+  final range = _dateRangeFromKey(key);
+  if (range == null) return 0;
+  final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).totalExpenses(start, end);
 });
+
+(DateTime, DateTime)? _dateRangeFromKey(String key) {
+  final parts = key.split(',');
+  if (parts.length != 2) return null;
+  final start = DateTime.tryParse(parts[0]);
+  final end = DateTime.tryParse(parts[1]);
+  if (start == null || end == null) return null;
+  return (start, end);
+}
 
 final deleteLogsProvider = StreamProvider<List<DeleteLog>>(
   (ref) => ref.watch(deleteLogRepositoryProvider).watchAll(),

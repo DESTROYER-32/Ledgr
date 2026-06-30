@@ -43,7 +43,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
       if (mounted) context.pop();
       return;
     }
-    _currentStart ??= budget.periodStart;
+    _currentStart = budget.periodStart;
     final limits = await repo.watchLimits(budget.id).first;
     final txRepo = ref.read(transactionRepositoryProvider);
     final totalPlanned = limits.isNotEmpty
@@ -53,21 +53,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     Map<int, int> byCategory;
     int totalSpent;
     if (budget.specificMode) {
-      final txns = await txRepo.search(
-        startDate: _currentStart!,
-        endDate: budget.periodEnd,
+      final filtered = await txRepo.getByBudget(
+        budgetId: budget.id,
+        start: _currentStart!,
+        end: budget.periodEnd,
         type: budget.isIncome ? 'income' : 'expense',
       );
-      final filtered = txns.where((t) {
-        if (t.budgetFks == null) return false;
-        final fks = t.budgetFks!
-            .split(',')
-            .map((s) => int.tryParse(s.trim()))
-            .where((n) => n != null)
-            .cast<int>()
-            .toList();
-        return fks.contains(budget.id);
-      }).toList();
       byCategory = <int, int>{};
       for (final t in filtered) {
         if (t.categoryId != null) {
@@ -106,23 +97,12 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     final prevStart = prevEnd.subtract(duration);
     int prevTotalSpent;
     if (budget.specificMode) {
-      final prevTxns = await txRepo.search(
-        startDate: prevStart,
-        endDate: prevEnd,
+      prevTotalSpent = await txRepo.totalByBudget(
+        budgetId: budget.id,
+        start: prevStart,
+        end: prevEnd,
         type: budget.isIncome ? 'income' : 'expense',
       );
-      prevTotalSpent = prevTxns
-          .where((t) {
-            if (t.budgetFks == null) return false;
-            final fks = t.budgetFks!
-                .split(',')
-                .map((s) => int.tryParse(s.trim()))
-                .where((n) => n != null)
-                .cast<int>()
-                .toList();
-            return fks.contains(budget.id);
-          })
-          .fold<int>(0, (sum, t) => sum + t.amountMinor);
     } else if (budget.isIncome) {
       final prevByCategory = await txRepo.incomeByCategory(prevStart, prevEnd);
       prevTotalSpent = prevByCategory.values.fold<int>(0, (s, v) => s + v);
@@ -147,7 +127,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Future<void> _addLimit() async {
-    final cats = await ref.read(categoryRepositoryProvider).watchActive().first;
+    final cats = await ref.read(categoryRepositoryProvider).getActive();
     if (!mounted) return;
     final cat = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -171,10 +151,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Future<void> _addMoneyToGoal(Budget budget) async {
-    final wallets = await ref
-        .read(walletRepositoryProvider)
-        .watchActive()
-        .first;
+    final wallets = await ref.read(walletRepositoryProvider).getActive();
     if (!mounted) return;
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -189,19 +166,17 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     final wallet = await ref.read(walletRepositoryProvider).getById(walletId);
     if (wallet == null || !mounted) return;
 
-    await ref
-        .read(transactionRepositoryProvider)
-        .insert(
-          TransactionsCompanion.insert(
-            type: 'income',
-            specialType: const Value('none'),
-            amountMinor: amount,
-            currencyCode: wallet.currencyCode,
-            date: date,
-            walletId: walletId,
-            budgetFks: Value(budget.id.toString()),
-          ),
-        );
+    await ref.read(transactionRepositoryProvider).insertWithBudgets(
+      TransactionsCompanion.insert(
+        type: 'income',
+        specialType: const Value('none'),
+        amountMinor: amount,
+        currencyCode: wallet.currencyCode,
+        date: date,
+        walletId: walletId,
+      ),
+      [budget.id],
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -226,9 +201,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     }
 
     final budget = _budget!;
-    final color = budget.color != null ? Color(budget.color!) : cs.primary;
+    final color = AppColors.fromStored(budget.color, cs.primary);
     final pct = _totalPlanned > 0
-        ? (_totalSpent / _totalPlanned).clamp(0.0, 2.0)
+        ? (_totalSpent / _totalPlanned).clamp(0.0, 1.0)
         : 0.0;
     final remaining = _totalPlanned - _totalSpent;
     final isOver = _totalSpent > _totalPlanned;
@@ -439,15 +414,11 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             Row(
               children: [
                 Icon(
-                  increased
-                      ? (isIncome ? Icons.arrow_upward : Icons.arrow_upward)
-                      : (isIncome
-                            ? Icons.arrow_downward
-                            : Icons.arrow_downward),
+                  increased ? Icons.arrow_upward : Icons.arrow_downward,
                   size: 20,
-                  color: isIncome
-                      ? (increased ? AppColors.income : AppColors.expense)
-                      : (increased ? AppColors.expense : AppColors.income),
+                  color: increased == isIncome
+                      ? AppColors.income
+                      : AppColors.expense,
                 ),
                 const SizedBox(width: 8),
                 Column(
@@ -643,9 +614,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       PieChartData(
                         sections: sorted.map((e) {
                           final cat = catMap[e.key];
-                          final c = cat?.color != null
-                              ? Color(cat!.color!)
-                              : cs.primary;
+                          final c = cat == null
+                              ? cs.primary
+                              : AppColors.fromStored(cat.color, cs.primary);
                           final pct = e.value / total;
                           return PieChartSectionData(
                             value: pct * 100,
@@ -671,9 +642,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: sorted.take(5).map((e) {
                         final cat = catMap[e.key];
-                        final c = cat?.color != null
-                            ? Color(cat!.color!)
-                            : cs.primary;
+                        final c = cat == null
+                            ? cs.primary
+                            : AppColors.fromStored(cat.color, cs.primary);
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Row(
@@ -710,72 +681,82 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Widget _buildTransactions(ThemeData theme, ColorScheme cs, Budget budget) {
+    Widget buildList(List<Transaction> txns) {
+      final categoriesById = {
+        for (final c
+            in ref.watch(activeCategoriesProvider).valueOrNull ?? <Category>[])
+          c.id: c,
+      };
+      final filtered = txns.where((t) {
+        if (_limits.isNotEmpty && t.type == 'expense' && t.categoryId != null) {
+          return _limits.any((l) => l.categoryId == t.categoryId);
+        }
+        return true;
+      }).toList()..sort((a, b) => b.date.compareTo(a.date));
+
+      if (filtered.isEmpty) return const SizedBox.shrink();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Transactions',
+            actionLabel: null,
+            onAction: null,
+          ),
+          ...filtered.take(10).map((t) {
+            final category = t.categoryId == null
+                ? null
+                : categoriesById[t.categoryId];
+            return TransactionTile(
+              id: t.id,
+              type: t.type,
+              amountMinor: t.amountMinor,
+              title: t.title,
+              date: t.date,
+              categoryName: category?.name,
+              categoryColor: category == null
+                  ? null
+                  : AppColors.fromStored(category.color, cs.primary),
+              categoryIcon: category?.icon,
+              currencyCode: t.currencyCode,
+              onTap: () => context.push('/transactions/${t.id}'),
+            );
+          }),
+        ],
+      );
+    }
+
+    if (budget.specificMode) {
+      return FutureBuilder<List<Transaction>>(
+        future: ref
+            .read(transactionRepositoryProvider)
+            .getByBudget(
+              budgetId: budget.id,
+              start: budget.periodStart,
+              end: budget.periodEnd,
+              type: budget.isIncome ? 'income' : 'expense',
+            ),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const SizedBox.shrink();
+          return buildList(snapshot.data ?? const <Transaction>[]);
+        },
+      );
+    }
+
     return ref
         .watch(allTransactionsProvider)
         .when(
           data: (txns) {
-            final categoriesById = {
-              for (final c
-                  in ref.watch(activeCategoriesProvider).valueOrNull ??
-                      <Category>[])
-                c.id: c,
-            };
             final filtered = txns.where((t) {
               final inDateRange =
                   !t.date.isBefore(budget.periodStart) &&
                   !t.date.isAfter(budget.periodEnd);
-              if (!inDateRange) return false;
-              if (budget.specificMode) {
-                if (t.budgetFks == null) return false;
-                final fks =
-                    (t.budgetFks!.isNotEmpty
-                            ? t.budgetFks!.split(',')
-                            : <String>[])
-                        .map((s) => int.tryParse(s))
-                        .where((n) => n != null)
-                        .cast<int>()
-                        .toList();
-                return fks.contains(budget.id);
-              }
-              if (_limits.isNotEmpty &&
-                  t.type == 'expense' &&
-                  t.categoryId != null) {
-                return _limits.any((l) => l.categoryId == t.categoryId);
-              }
-              return true;
-            }).toList()..sort((a, b) => b.date.compareTo(a.date));
-
-            if (filtered.isEmpty) return const SizedBox.shrink();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SectionHeader(
-                  title: 'Transactions',
-                  actionLabel: null,
-                  onAction: null,
-                ),
-                ...filtered.take(10).map((t) {
-                  final category = t.categoryId == null
-                      ? null
-                      : categoriesById[t.categoryId];
-                  return TransactionTile(
-                    id: t.id,
-                    type: t.type,
-                    amountMinor: t.amountMinor,
-                    title: t.title,
-                    date: t.date,
-                    categoryName: category?.name,
-                    categoryColor: category?.color == null
-                        ? null
-                        : Color(category!.color!),
-                    categoryIcon: category?.icon,
-                    currencyCode: t.currencyCode,
-                    onTap: () => context.push('/transactions/${t.id}'),
-                  );
-                }),
-              ],
-            );
+              final matchesType =
+                  t.type == (budget.isIncome ? 'income' : 'expense');
+              return inDateRange && matchesType;
+            }).toList();
+            return buildList(filtered);
           },
           error: (_, _) => const SizedBox.shrink(),
           loading: () => const SizedBox.shrink(),

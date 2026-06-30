@@ -11,7 +11,6 @@ class Wallets extends Table {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   IntColumn get color => integer().nullable()();
   TextColumn get icon => text().nullable()();
-  IntColumn get decimals => integer().withDefault(const Constant(2))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -49,8 +48,6 @@ class Transactions extends Table {
   TextColumn get note => text().nullable()();
   TextColumn get tags => text().nullable()();
   TextColumn get recurrenceRule => text().nullable()();
-  TextColumn get budgetFksExclude => text().nullable()();
-  TextColumn get budgetFks => text().nullable()();
   IntColumn get objectiveFk =>
       integer().references(Objectives, #id).nullable()();
   TextColumn get attachmentPath => text().nullable()();
@@ -87,6 +84,18 @@ class Budgets extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+@DataClassName('TransactionBudget')
+class TransactionBudgets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get transactionId => integer().references(Transactions, #id)();
+  IntColumn get budgetId => integer().references(Budgets, #id)();
+
+  @override
+  List<Set<Column<Object>>>? get uniqueKeys => [
+    {transactionId, budgetId},
+  ];
+}
+
 @DataClassName('BudgetCategoryLimit')
 class BudgetCategoryLimits extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -114,6 +123,7 @@ class RecurringTransactions extends Table {
   TextColumn get transactionType => text()();
   TextColumn get specialType => text().withDefault(const Constant('none'))();
   IntColumn get amountMinor => integer()();
+  TextColumn get currencyCode => text().withDefault(const Constant('USD'))();
   IntColumn get walletId => integer().references(Wallets, #id)();
   @ReferenceName('recurringTransferWallet')
   IntColumn get transferWalletId =>
