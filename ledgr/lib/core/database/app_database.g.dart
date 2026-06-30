@@ -713,7 +713,7 @@ class $CategoriesTable extends Categories
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _archivedMeta = const VerificationMeta(
@@ -1302,7 +1302,7 @@ class $ObjectivesTable extends Objectives
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
+      'REFERENCES wallets (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
@@ -2116,7 +2116,7 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
+      'REFERENCES wallets (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _transferWalletIdMeta = const VerificationMeta(
@@ -2130,7 +2130,7 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
+      'REFERENCES wallets (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _categoryIdMeta = const VerificationMeta(
@@ -2144,7 +2144,7 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
@@ -2196,7 +2196,7 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES objectives (id)',
+      'REFERENCES objectives (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _attachmentPathMeta = const VerificationMeta(
@@ -4192,7 +4192,7 @@ class $TransactionBudgetsTable extends TransactionBudgets
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES transactions (id)',
+      'REFERENCES transactions (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _budgetIdMeta = const VerificationMeta(
@@ -4206,7 +4206,7 @@ class $TransactionBudgetsTable extends TransactionBudgets
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES budgets (id)',
+      'REFERENCES budgets (id) ON DELETE CASCADE',
     ),
   );
   @override
@@ -4459,7 +4459,7 @@ class $BudgetCategoryLimitsTable extends BudgetCategoryLimits
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES budgets (id)',
+      'REFERENCES budgets (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _categoryIdMeta = const VerificationMeta(
@@ -4473,7 +4473,7 @@ class $BudgetCategoryLimitsTable extends BudgetCategoryLimits
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _walletIdMeta = const VerificationMeta(
@@ -4487,7 +4487,7 @@ class $BudgetCategoryLimitsTable extends BudgetCategoryLimits
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
+      'REFERENCES wallets (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _plannedAmountMinorMeta =
@@ -4561,6 +4561,10 @@ class $BudgetCategoryLimitsTable extends BudgetCategoryLimits
 
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {budgetId, categoryId, walletId},
+  ];
   @override
   BudgetCategoryLimit map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -4831,7 +4835,7 @@ class $BudgetWalletsTable extends BudgetWallets
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES budgets (id)',
+      'REFERENCES budgets (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _walletIdMeta = const VerificationMeta(
@@ -4845,7 +4849,7 @@ class $BudgetWalletsTable extends BudgetWallets
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
+      'REFERENCES wallets (id) ON DELETE CASCADE',
     ),
   );
   @override
@@ -5138,7 +5142,7 @@ class $RecurringTransactionsTable extends RecurringTransactions
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
+      'REFERENCES wallets (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _transferWalletIdMeta = const VerificationMeta(
@@ -5152,7 +5156,7 @@ class $RecurringTransactionsTable extends RecurringTransactions
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES wallets (id)',
+      'REFERENCES wallets (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _categoryIdMeta = const VerificationMeta(
@@ -5166,7 +5170,7 @@ class $RecurringTransactionsTable extends RecurringTransactions
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
@@ -6235,7 +6239,7 @@ class $AssociatedTitlesTable extends AssociatedTitles
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES categories (id)',
+      'REFERENCES categories (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _exactMatchMeta = const VerificationMeta(
@@ -6886,6 +6890,128 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     associatedTitles,
     deleteLogs,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('categories', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wallets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('objectives', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wallets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('transactions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wallets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('transactions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('transactions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'objectives',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('transactions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'transactions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('transaction_budgets', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budgets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('transaction_budgets', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budgets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_category_limits', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_category_limits', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wallets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_category_limits', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budgets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_wallets', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wallets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('budget_wallets', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wallets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('recurring_transactions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wallets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('recurring_transactions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('recurring_transactions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('associated_titles', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$WalletsTableCreateCompanionBuilder =
