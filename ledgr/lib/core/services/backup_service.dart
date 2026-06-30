@@ -119,7 +119,8 @@ class BackupService {
     };
     final tableData = data['tables'] as Map<String, dynamic>;
     for (final table in tables) {
-      final rows = await _db.customSelect('SELECT * FROM $table').get();
+      final quotedTable = _quoteTableName(table);
+      final rows = await _db.customSelect('SELECT * FROM $quotedTable').get();
       tableData[table] = rows.map((row) => _jsonSafeMap(row.data)).toList();
     }
     return data;
@@ -255,7 +256,8 @@ class BackupService {
     final decoded = jsonDecode(await sourceFile.readAsString());
     if (decoded is! Map<String, dynamic> ||
         decoded['app'] != 'budgetly' ||
-        decoded['tables'] is! Map<String, dynamic>) {
+        decoded['tables'] is! Map<String, dynamic> ||
+        decoded['version'] != backupVersion) {
       throw const FormatException(
         'This is not a valid Budgetly full backup file.',
       );
@@ -265,7 +267,7 @@ class BackupService {
     try {
       await _db.transaction(() async {
         for (final table in tables.reversed) {
-          await _db.customStatement('DELETE FROM $table');
+          await _db.customStatement('DELETE FROM ${_quoteTableName(table)}');
         }
         for (final table in tables) {
           final rows = tableData[table];
@@ -299,9 +301,17 @@ class BackupService {
   }
 
   String _insertSql(String table, Map<String, dynamic> row) {
+    final quotedTable = _quoteTableName(table);
     final columns = row.keys.map(_quoteIdentifier).join(', ');
     final values = row.values.map(_sqlLiteral).join(', ');
-    return 'INSERT OR REPLACE INTO ${_quoteIdentifier(table)} ($columns) VALUES ($values)';
+    return 'INSERT OR REPLACE INTO $quotedTable ($columns) VALUES ($values)';
+  }
+
+  String _quoteTableName(String table) {
+    if (!tables.contains(table)) {
+      throw FormatException('Unknown backup table: $table');
+    }
+    return _quoteIdentifier(table);
   }
 
   String _quoteIdentifier(String identifier) {

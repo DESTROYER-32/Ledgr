@@ -160,8 +160,19 @@ class ExchangeRateService {
   }
 
   Future<void> setCustomRate(String currency, double rate) async {
+    final normalizedCurrency = currency.trim().toLowerCase();
+    if (normalizedCurrency.isEmpty) {
+      throw ArgumentError.value(currency, 'currency', 'Currency is required.');
+    }
+    if (!rate.isFinite || rate <= 0) {
+      throw ArgumentError.value(
+        rate,
+        'rate',
+        'Rate must be a finite positive number.',
+      );
+    }
     final custom = await getCustomRates();
-    custom[currency.toLowerCase()] = rate;
+    custom[normalizedCurrency] = rate;
     await _settings.set(_customKey, json.encode(custom));
   }
 

@@ -205,6 +205,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       currencyCode: currencyCode,
     );
 
+    final transferWalletId = _type == 'transfer' ? _transferWalletId : null;
+
     final companion = TransactionsCompanion(
       type: Value(_type),
       specialType: Value(_specialType),
@@ -213,7 +215,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       currencyCode: Value(currencyCode),
       date: Value(_date),
       walletId: Value(_walletId!),
-      transferWalletId: Value(_transferWalletId),
+      transferWalletId: Value(transferWalletId),
       categoryId: Value(_categoryId),
       title: Value(
         _titleController.text.isEmpty ? null : _titleController.text,
@@ -241,7 +243,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           currencyCode: currencyCode,
           date: _date,
           walletId: _walletId!,
-          transferWalletId: Value(_transferWalletId),
+          transferWalletId: Value(transferWalletId),
           categoryId: Value(_categoryId),
           title: Value(
             _titleController.text.isEmpty ? null : _titleController.text,
@@ -318,7 +320,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               selected: {_type},
               onSelectionChanged: (v) => setState(() {
                 _type = v.first;
-                if (_type == 'transfer') _categoryId = null;
+                if (_type == 'transfer') {
+                  _categoryId = null;
+                } else {
+                  _transferWalletId = null;
+                }
               }),
             ),
             const SizedBox(height: 12),
