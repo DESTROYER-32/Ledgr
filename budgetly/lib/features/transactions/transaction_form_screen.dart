@@ -106,7 +106,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _titleController.text = t.title ?? '';
         _noteController.text = t.note ?? '';
         _tagsController.text = t.tags ?? '';
-        _amountController.text = (t.amountMinor / 100).toStringAsFixed(2);
+        _amountController.text = MoneyUtils.toMajorText(
+          t.amountMinor,
+          currencyCode: t.currencyCode,
+        );
       });
     }
   }
@@ -551,12 +554,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   if (amount > 0 && oldCurrency != v) {
                     final service = ref.read(exchangeRateServiceProvider);
                     final converted = await service.convert(
-                      (amount * 100).round(),
+                      MoneyUtils.toMinor(amount, currencyCode: oldCurrency),
                       oldCurrency,
                       v,
                     );
-                    _amountController.text = (converted / 100).toStringAsFixed(
-                      2,
+                    _amountController.text = MoneyUtils.toMajorText(
+                      converted,
+                      currencyCode: v,
                     );
                   }
                   setState(() => _currencyCode = v);

@@ -111,7 +111,7 @@ void main() {
     final jpy = await service.convert(10000, 'USD', 'JPY');
 
     expect(eur, 9100);
-    expect(jpy, 1500000);
+    expect(jpy, 15000);
     expect(calls, 1);
   });
 

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/money_utils.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -174,7 +175,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     : _walletNameController.text.trim(),
                 type: _walletType,
                 currencyCode: _selectedCurrency,
-                initialBalanceMinor: (balance * 100).round(),
+                initialBalanceMinor: MoneyUtils.toMinor(
+                  balance,
+                  currencyCode: _selectedCurrency,
+                ),
                 sortOrder: const Value(0),
               ),
             );

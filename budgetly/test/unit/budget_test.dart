@@ -124,6 +124,48 @@ void main() {
       );
     });
 
+    test('database rejects duplicate global budget category limits', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final budgetId = await db
+          .into(db.budgets)
+          .insert(
+            BudgetsCompanion.insert(
+              name: 'Groceries',
+              periodStart: DateTime(2024, 1),
+              periodEnd: DateTime(2024, 1, 31),
+              currencyCode: 'USD',
+            ),
+          );
+      final categoryId = await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: 'Food', kind: 'expense'));
+
+      await db
+          .into(db.budgetCategoryLimits)
+          .insert(
+            BudgetCategoryLimitsCompanion.insert(
+              budgetId: budgetId,
+              categoryId: categoryId,
+              plannedAmountMinor: 10000,
+            ),
+          );
+
+      await expectLater(
+        db
+            .into(db.budgetCategoryLimits)
+            .insert(
+              BudgetCategoryLimitsCompanion.insert(
+                budgetId: budgetId,
+                categoryId: categoryId,
+                plannedAmountMinor: 25000,
+              ),
+            ),
+        throwsA(anything),
+      );
+    });
+
     test(
       'spentForBudget includes income only when includeIncome is enabled',
       () async {

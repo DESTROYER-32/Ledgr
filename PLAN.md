@@ -1,6 +1,6 @@
 # Budgetly Verified Issue Plan
 
-> Updated on 2026-06-30. Critical and medium findings from the prior scan have been addressed or intentionally scoped below. The app is pre-release, so the Drift database was reset to schema version 1 with fresh `onCreate` schema generation rather than maintaining upgrade migrations.
+> Updated on 2026-06-30. Critical, medium, and fresh high-value scan findings have been addressed. The app is pre-release, so local schema downgrade from the short-lived schema v2 build is handled destructively for test databases while the canonical schema remains version 1.
 
 ## Status legend
 
@@ -16,11 +16,7 @@
 
 **File:** `budgetly/lib/core/database/tables.dart`
 
-Fixed:
-
-- Required child rows in join/dependent tables use `KeyAction.cascade`.
-- Nullable links use `KeyAction.setNull`.
-- Generated Drift schema emits the expected `ON DELETE` clauses.
+Fixed: required child rows cascade, nullable links set null, and generated Drift schema emits `ON DELETE` clauses.
 
 ### 2. `[fixed]` Raw SQL `whereClause` interpolation
 
@@ -36,103 +32,83 @@ Fixed: `main()` overrides `appDatabaseProvider` with provider-owned disposal, an
 
 ---
 
-## Medium
+## Medium and fresh scan issues
 
 ### 1. `[fixed]` `_sumByCategory` excluded uncategorized transactions
 
-**File:** `budgetly/lib/core/database/repositories/transaction_repository.dart`
-
-Fixed: category totals now include `NULL` category rows under `TransactionRepository.uncategorizedCategoryId`, and the dashboard chart labels them as `Uncategorized`.
+Fixed: category totals include `NULL` category rows under `TransactionRepository.uncategorizedCategoryId`, and the dashboard chart labels them `Uncategorized`.
 
 ### 2. `[fixed]` History card hidden when previous period is zero
 
-**File:** `budgetly/lib/features/budgets/budget_detail_screen.dart`
-
 Fixed: removed the early return so `0 → current` is displayed as a valid previous-period state.
 
-### 3. `[fixed]` `convertMinor` silently returned unconverted amount when rates were missing
+### 3. `[fixed]` Missing exchange rates silently faked converted values
 
-**File:** `budgetly/lib/core/utils/money_utils.dart`
+Fixed: `convertMinor` throws on missing rates, `tryConvertMinor` returns `null`, and UI paths hide converted values when rates are unavailable.
 
-Fixed: `convertMinor` now throws on missing rates, and `tryConvertMinor` returns `null` for UI paths that need a non-throwing check. Converted UI amounts are hidden when rates are unavailable instead of showing incorrect values.
+### 4. `[fixed]` Currency conversion ignored non-2-decimal currencies
 
-### 4. `[fixed]` App lock could flash app content before lock state resolved
+Fixed: `MoneyUtils.convertMinor`, `tryConvertMinor`, and `ExchangeRateService.convert` convert via source major units and target minor units. Added tests covering USD, JPY, and BHD.
 
-**Files:** `budgetly/lib/main.dart`, `budgetly/lib/core/security/app_lock_controller.dart`
+### 5. `[fixed]` Forms and exports hardcoded `* 100` and `/ 100`
+
+Fixed: transaction, recurring, wallet, budget, objective, onboarding, search, backup CSV, bill splitter, and balance correction paths now use `MoneyUtils.toMinor`, `toMajor`, or `toMajorText` where the value is money. Remaining `* 100` usages are percentages or timestamps.
+
+### 6. `[fixed]` App lock could flash app content before lock state resolved
 
 Fixed: the app builder renders a blank scaffold while lock state is loading.
 
-### 5. `[fixed]` App lock refresh had no re-entrancy guard
-
-**File:** `budgetly/lib/core/security/app_lock_controller.dart`
+### 7. `[fixed]` App lock refresh had no re-entrancy guard
 
 Fixed: `refresh()` is guarded by an in-flight future.
 
-### 6. `[fixed]` App lock failed-attempt rate limiting was in memory only
+### 8. `[fixed]` App lock failed-attempt rate limiting was in memory only
 
-**Files:** `budgetly/lib/core/security/app_lock_controller.dart`, `budgetly/lib/features/security/app_lock_screen.dart`
+Fixed: failed attempts and lockout expiry are persisted in `SettingsRepository` and cleared on successful PIN, biometric unlock, PIN reset, and disable.
 
-Fixed: failed attempts and lockout expiry are persisted in `SettingsRepository` and cleared on successful PIN or biometric unlock.
+### 9. `[fixed]` Recurring transaction processing was not transactional
 
-### 7. `[fixed]` Recurring transaction processing was not transactional
+Fixed: each generated transaction and recurring schedule update happen inside one database transaction.
 
-**File:** `budgetly/lib/core/services/recurring_service.dart`
-
-Fixed: each generated transaction and its recurring schedule update now happen inside one database transaction.
-
-### 8. `[fixed]` `updatedAt` columns were not maintained on updates
-
-**Files:** repository update methods for wallets, categories, transactions, budgets, and objectives.
+### 10. `[fixed]` `updatedAt` columns were not maintained on updates
 
 Fixed: update/archive/sort-order repository paths now set `updatedAt` where the table has that column.
 
-### 9. `[fixed]` `BudgetCategoryLimits` missing wallet-aware unique constraint
+### 11. `[fixed]` `BudgetCategoryLimits` missing wallet-aware uniqueness
 
-**File:** `budgetly/lib/core/database/tables.dart`
+Fixed: table-level unique key preserves wallet-specific limits and a SQLite expression unique index on `COALESCE(wallet_id, -1)` prevents duplicate global limits with `walletId = NULL`.
 
-Fixed: `uniqueKeys => [{budgetId, categoryId, walletId}]`, preserving wallet-specific limits.
-
-### 10. `[fixed]` Budget delete was not transactional
-
-**File:** `budgetly/lib/core/database/repositories/budget_repository.dart`
+### 12. `[fixed]` Budget delete was not transactional
 
 Fixed: child cleanup and budget deletion run inside `_db.transaction()`.
 
-### 11. `[fixed]` Dashboard pull-to-refresh was incomplete
-
-**File:** `budgetly/lib/features/dashboard/dashboard_screen.dart`
+### 13. `[fixed]` Dashboard pull-to-refresh was incomplete
 
 Fixed: refresh invalidates balance, transaction, budget, wallet, recurring, chart, monthly summary, exchange-rate, and insights providers.
 
-### 12. `[fixed]` Dashboard insights errors rendered empty UI
-
-**File:** `budgetly/lib/features/dashboard/dashboard_screen.dart`
+### 14. `[fixed]` Dashboard insights errors rendered empty UI
 
 Fixed: insights now render a visible error card with recovery guidance.
 
-### 13. `[fixed]` Dashboard insights went stale after transaction changes
+### 15. `[fixed]` Dashboard insights went stale after transaction changes
 
-**File:** `budgetly/lib/features/dashboard/dashboard_screen.dart`
+Fixed: insights provider watches `allTransactionsProvider` and is invalidated by pull-to-refresh.
 
-Fixed: insights provider now watches `allTransactionsProvider` and is invalidated by pull-to-refresh.
+### 16. `[fixed]` Pre-release schema downgrade risk
 
-### 14. `[fixed]` Migration strategy only handled `from < 2`
+Fixed: canonical schema is version 1 and `onUpgrade` handles `from > to` by destructively recreating the local pre-release database schema.
 
-**File:** `budgetly/lib/core/database/app_database.dart`
-
-Fixed for pre-release reset: schema version is back to `1`, `onUpgrade` was removed, and fresh installs use `onCreate/createAll` plus indexes.
-
-### 15. `[fixed]` Drift table list order did not put all parent tables first
-
-**File:** `budgetly/lib/core/database/app_database.dart`
+### 17. `[fixed]` Drift table list order did not put all parent tables first
 
 Fixed: `Budgets` and `Objectives` now appear before child tables that reference them.
 
-### 16. `[fixed]` `spentForBudget` applied redundant `includeIncome` filter
-
-**File:** `budgetly/lib/core/database/repositories/budget_repository.dart`
+### 18. `[fixed]` `spentForBudget` applied redundant `includeIncome` filter
 
 Fixed: removed the duplicate expense filter.
+
+### 19. `[fixed]` Drift multiple database warning in widget tests
+
+Fixed: transaction form widget tests now use the in-memory test provider scope, and shared test provider overrides own DB disposal.
 
 ---
 
@@ -151,6 +127,4 @@ Fixed: removed the duplicate expense filter.
 - `[todo]` `modern_selection_field.dart` combines `DraggableScrollableSheet` and modal sheet dragging.
 - `[todo]` `FormField.initialValue` can become stale in `modern_selection_field.dart`.
 - `[todo]` Date formatting is inconsistent across files.
-- `[todo]` Fragile compound key parsing in budget screens.
-- `[todo]` Hardcoded `* 100` and `/ 100` conversions remain in multiple screens and are wrong for non-2-decimal currencies.
 - `[todo]` Wallet balance conversion could batch conversions and skip same-currency conversions.

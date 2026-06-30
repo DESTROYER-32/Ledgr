@@ -323,6 +323,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showFilterSheet() {
     final wallets = ref.read(activeWalletsProvider).valueOrNull ?? [];
     final cats = ref.read(activeCategoriesProvider).valueOrNull ?? [];
+    final displayCurrency =
+        ref.read(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
 
     showModalBottomSheet(
       context: context,
@@ -334,14 +337,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         int? localCategoryId = _categoryId;
         int? localMinAmount;
         int? localMaxAmount;
+        String filterCurrency(int? walletId) =>
+            wallets.where((w) => w.id == walletId).firstOrNull?.currencyCode ??
+            displayCurrency;
         final minController = TextEditingController(
           text: _minAmountMinor != null
-              ? (_minAmountMinor! / 100).toStringAsFixed(0)
+              ? MoneyUtils.toMajorText(
+                  _minAmountMinor!,
+                  currencyCode: filterCurrency(localWalletId),
+                )
               : '',
         );
         final maxController = TextEditingController(
           text: _maxAmountMinor != null
-              ? (_maxAmountMinor! / 100).toStringAsFixed(0)
+              ? MoneyUtils.toMajorText(
+                  _maxAmountMinor!,
+                  currencyCode: filterCurrency(localWalletId),
+                )
               : '',
         );
 
@@ -439,7 +451,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             final parsed = double.tryParse(v);
                             setLocalState(
                               () => localMinAmount = parsed != null
-                                  ? (parsed * 100).round()
+                                  ? MoneyUtils.toMinor(
+                                      parsed,
+                                      currencyCode: filterCurrency(
+                                        localWalletId,
+                                      ),
+                                    )
                                   : null,
                             );
                           },
@@ -463,7 +480,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             final parsed = double.tryParse(v);
                             setLocalState(
                               () => localMaxAmount = parsed != null
-                                  ? (parsed * 100).round()
+                                  ? MoneyUtils.toMinor(
+                                      parsed,
+                                      currencyCode: filterCurrency(
+                                        localWalletId,
+                                      ),
+                                    )
                                   : null,
                             );
                           },

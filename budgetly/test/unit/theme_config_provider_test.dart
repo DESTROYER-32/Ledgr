@@ -12,9 +12,13 @@ void main() {
     'themeConfigProvider falls back when persisted theme seed is invalid',
     () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      addTearDown(db.close);
       final container = ProviderContainer(
-        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        overrides: [
+          appDatabaseProvider.overrideWith((ref) {
+            ref.onDispose(db.close);
+            return db;
+          }),
+        ],
       );
       addTearDown(container.dispose);
 

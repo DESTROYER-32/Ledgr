@@ -82,7 +82,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
         _startDate = r.startDate;
         _titleController.text = r.title ?? '';
         _noteController.text = r.note ?? '';
-        _amountController.text = (r.amountMinor / 100).toStringAsFixed(2);
+        _amountController.text = MoneyUtils.toMajorText(
+          r.amountMinor,
+          currencyCode: r.currencyCode,
+        );
       });
     }
   }
@@ -108,11 +111,14 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
 
     final repo = ref.read(recurringRepositoryProvider);
     final wallet = await ref.read(walletRepositoryProvider).getById(_walletId!);
-    final amount = (double.tryParse(_amountController.text) ?? 0) * 100;
+    final amount = MoneyUtils.toMinor(
+      double.tryParse(_amountController.text) ?? 0,
+      currencyCode: wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode,
+    );
 
     final companion = RecurringTransactionsCompanion(
       transactionType: Value(_type),
-      amountMinor: Value(amount.round()),
+      amountMinor: Value(amount),
       currencyCode: Value(
         wallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode,
       ),
