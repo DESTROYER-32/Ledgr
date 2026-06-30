@@ -752,7 +752,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
               final inDateRange =
                   !t.date.isBefore(budget.periodStart) &&
                   !t.date.isAfter(budget.periodEnd);
-              return inDateRange;
+              final matchesType =
+                  t.type == (budget.isIncome ? 'income' : 'expense');
+              return inDateRange && matchesType;
             }).toList();
             return buildList(filtered);
           },

@@ -238,7 +238,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                onPageChanged: (i) => setState(() => _currentPage = i),
+                onPageChanged: (i) {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  setState(() => _currentPage = i);
+                },
                 itemCount: _steps.length,
                 itemBuilder: (context, index) =>
                     _buildStep(theme, _steps[index]),
@@ -882,7 +885,7 @@ class _DemoDataSeeder {
           RecurringTransactionsCompanion.insert(
             transactionType: 'expense',
             amountMinor: 145000,
-            currencyCode: const Value('USD'),
+            currencyCode: Value(currency),
             walletId: checkingId,
             categoryId: Value(cat('Rent')),
             title: const Value('Rent'),
@@ -897,7 +900,7 @@ class _DemoDataSeeder {
           RecurringTransactionsCompanion.insert(
             transactionType: 'income',
             amountMinor: 420000,
-            currencyCode: const Value('USD'),
+            currencyCode: Value(currency),
             walletId: checkingId,
             categoryId: Value(cat('Salary')),
             title: const Value('Paycheck'),
