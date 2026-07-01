@@ -234,7 +234,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
                   child: Text(
                     'Archived',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: AppTextSizes.micro,
                       color: theme.colorScheme.onErrorContainer,
                     ),
                   ),
@@ -249,7 +249,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
             MoneyUtils.format(balance, currencyCode: wallet.currencyCode),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: AppTextSizes.subtitle,
               color: balance >= 0 ? AppColors.income : AppColors.expense,
             ),
           ),
@@ -284,7 +284,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
                   style: TextStyle(
                     color: cs.primary,
                     fontWeight: FontWeight.w500,
-                    fontSize: 15,
+                    fontSize: AppTextSizes.title,
                   ),
                 ),
               ],

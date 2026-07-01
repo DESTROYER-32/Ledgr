@@ -1131,7 +1131,7 @@ class _ActivityTile extends StatelessWidget {
             Text(
               '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: AppTextSizes.tiny,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),

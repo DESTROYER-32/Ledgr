@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
@@ -141,7 +142,7 @@ class _TransactionList extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: t.type == 'income'
-                    ? Colors.green
+                    ? AppColors.income
                     : theme.colorScheme.error,
               ),
             ),

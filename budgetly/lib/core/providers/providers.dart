@@ -19,7 +19,9 @@ import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
 import '../utils/app_logger.dart';
 import '../utils/currency_utils.dart';
+import '../utils/date_range_utils.dart';
 import '../utils/money_utils.dart';
+import '../utils/wallet_balance_utils.dart';
 
 class ThemeConfig {
   final ThemeMode themeMode;
@@ -260,13 +262,6 @@ final totalBalanceProvider = FutureProvider<int>((ref) async {
   return repo.totalBalance(currencyCode: displayCurrency);
 });
 
-Future<Map<int, int>> walletBalancesByWalletCurrency(
-  WalletRepository repo,
-) async {
-  final wallets = await repo.getAll();
-  return repo.balancesForWallets(wallets);
-}
-
 final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allTransactionsProvider);
@@ -280,7 +275,7 @@ final spentByCategoryProvider = FutureProvider.family<Map<int, int>, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final range = _dateRangeFromKey(key);
+  final range = dateRangeFromKey(key);
   if (range == null) return {};
   final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).spentByCategory(start, end);
@@ -291,7 +286,7 @@ final monthlyIncomeProvider = FutureProvider.family<int, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final range = _dateRangeFromKey(key);
+  final range = dateRangeFromKey(key);
   if (range == null) return 0;
   final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).totalIncome(start, end);
@@ -306,20 +301,11 @@ final monthlyExpensesProvider = FutureProvider.family<int, String>((
   key,
 ) async {
   ref.watch(allTransactionsProvider);
-  final range = _dateRangeFromKey(key);
+  final range = dateRangeFromKey(key);
   if (range == null) return 0;
   final (start, end) = range;
   return ref.watch(transactionRepositoryProvider).totalExpenses(start, end);
 });
-
-(DateTime, DateTime)? _dateRangeFromKey(String key) {
-  final parts = key.split(',');
-  if (parts.length != 2) return null;
-  final start = DateTime.tryParse(parts[0]);
-  final end = DateTime.tryParse(parts[1]);
-  if (start == null || end == null) return null;
-  return (start, end);
-}
 
 final deleteLogsProvider = StreamProvider<List<DeleteLog>>(
   (ref) => ref.watch(deleteLogRepositoryProvider).watchAll(),

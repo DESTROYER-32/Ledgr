@@ -208,7 +208,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 OutlinedButton.icon(
                   onPressed: _showFilterSheet,
                   icon: const Icon(Icons.tune, size: 16),
-                  label: const Text('Filters', style: TextStyle(fontSize: 13)),
+                  label: const Text(
+                    'Filters',
+                    style: TextStyle(fontSize: AppTextSizes.compact),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton.icon(
@@ -235,7 +238,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ? '${MoneyUtils.formatDateShort(_startDate!)} - ${MoneyUtils.formatDateShort(_endDate!)}'
                         : 'Date range',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: AppTextSizes.small,
                       color: _startDate != null ? null : cs.onSurfaceVariant,
                     ),
                   ),
@@ -277,7 +280,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: InputChip(
-        label: Text(label, style: const TextStyle(fontSize: 12)),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: AppTextSizes.small),
+        ),
         deleteIcon: const Icon(Icons.close, size: 14),
         onDeleted: onRemove,
         visualDensity: VisualDensity.compact,
@@ -544,7 +550,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               Expanded(
                 child: Text(
                   '${_results!.length} transaction${_results!.length == 1 ? '' : 's'}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
               if (totalExpenses > 0)
@@ -553,7 +562,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: Text(
                     'Exp: ${_formatAmount(totalExpenses)}',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: AppTextSizes.small,
                       color: AppColors.expense,
                     ),
                   ),
@@ -561,7 +570,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               if (totalIncome > 0)
                 Text(
                   'Inc: ${_formatAmount(totalIncome)}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.income),
+                  style: const TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: AppColors.income,
+                  ),
                 ),
             ],
           ),
@@ -587,7 +599,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: Text(
                       MoneyUtils.formatDateShort(date),
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         fontWeight: FontWeight.w600,
                         color: cs.onSurfaceVariant,
                       ),
@@ -615,7 +627,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                       title: Text(
                         t.title ?? t.type,
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: AppTextSizes.body),
                       ),
                       trailing: Text(
                         '${_transactionSign(t.type)}${_formatAmount(t.amountMinor)}',

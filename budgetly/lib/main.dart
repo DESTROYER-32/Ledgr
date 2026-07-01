@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/database/app_database.dart';
 import 'core/database/repositories/settings_repository.dart';
+import 'l10n/app_localizations.dart';
 import 'core/providers/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
@@ -89,6 +90,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     return themeAsync.when(
       data: (config) => MaterialApp.router(
         title: 'Budgetly',
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light(seedOverride: config.seedColor),
         darkTheme: config.amoled
             ? AppTheme.amoled(seedOverride: config.seedColor)
@@ -107,6 +111,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
       ),
       error: (_, _) => MaterialApp.router(
         title: 'Budgetly',
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,
@@ -115,6 +122,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
       ),
       loading: () => MaterialApp.router(
         title: 'Budgetly',
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,

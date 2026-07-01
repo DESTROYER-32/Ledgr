@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_logger.dart';
 import '../../core/utils/currency_utils.dart';
 
@@ -313,7 +314,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                                     ? symbol
                                     : code.substring(0, 2),
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: AppTextSizes.small,
                                   fontWeight: FontWeight.bold,
                                   color: hasOverride || isCustomCurrency
                                       ? theme.colorScheme.onSecondaryContainer

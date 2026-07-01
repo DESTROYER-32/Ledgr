@@ -126,5 +126,7 @@ Fixed: transaction form widget tests now use the in-memory test provider scope, 
 - `[fixed]` `mainCategoryPk` renamed to `parentCategoryId`; generated Drift code was regenerated. This is safe because the app is pre-release schema v1.
 - `[fixed]` Direct `DateFormat` use was removed from UI code; month labels now go through `AppDateUtils`.
 - `[fixed]` Repeated display-currency conversions now use `MinorConversionCache`, which skips same-currency conversions and caches repeated conversions.
-- `[defer]` Full localization/i18n extraction for hardcoded UI strings needs product translation files and locale policy.
-- `[defer]` Full design-token pass for every hardcoded font size/semantic color needs a design-system decision; existing cleanup avoids adding new hardcoded style patterns.
+- `[fixed]` Remaining provider utility helpers were moved out of `providers.dart`: wallet-balance helper to `core/utils/wallet_balance_utils.dart` and date-range parsing to `core/utils/date_range_utils.dart`.
+- `[fixed]` Flutter localization infrastructure is wired with `flutter_localizations`, `l10n.yaml`, generated `AppLocalizations`, and an English ARB template.
+- `[fixed]` Raw `fontSize:` values in app source were migrated to `AppTextSizes` tokens.
+- `[fixed]` Remaining semantic red/green color usages were migrated to `AppColors.expense` and `AppColors.income`.

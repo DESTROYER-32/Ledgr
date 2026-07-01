@@ -158,7 +158,9 @@ class ObjectiveDetailScreen extends ConsumerWidget {
                       t.type == 'income'
                           ? Icons.arrow_downward
                           : Icons.arrow_upward,
-                      color: t.type == 'income' ? Colors.green : Colors.red,
+                      color: t.type == 'income'
+                          ? AppColors.income
+                          : AppColors.expense,
                     ),
                     title: Text(t.title ?? ''),
                     subtitle: Text(MoneyUtils.formatDate(t.date)),

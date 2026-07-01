@@ -76,7 +76,7 @@ class RecurringScreen extends ConsumerWidget {
                   ),
                   subtitle: Text(
                     '${_scheduleLabel(r.scheduleRule)}  ·  ${r.nextDueDate != null ? MoneyUtils.formatDateShort(r.nextDueDate!) : ''}',
-                    style: const TextStyle(fontSize: 12),
+                    style: const TextStyle(fontSize: AppTextSizes.small),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

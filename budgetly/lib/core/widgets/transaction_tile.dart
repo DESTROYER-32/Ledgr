@@ -87,7 +87,7 @@ class TransactionTile extends StatelessWidget {
                       title ?? type[0].toUpperCase() + type.substring(1),
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: AppTextSizes.body,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -98,7 +98,7 @@ class TransactionTile extends StatelessWidget {
                         Text(
                           MoneyUtils.formatDateShort(date),
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -117,7 +117,7 @@ class TransactionTile extends StatelessWidget {
                           Text(
                             categoryName!,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppTextSizes.small,
                               color:
                                   categoryColor ??
                                   theme.colorScheme.onSurfaceVariant,
@@ -137,7 +137,7 @@ class TransactionTile extends StatelessWidget {
                     '$sign${MoneyUtils.format(amountMinor, currencyCode: transactionCurrency)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: AppTextSizes.title,
                       color: amountColor,
                     ),
                   ),
@@ -146,7 +146,7 @@ class TransactionTile extends StatelessWidget {
                     Text(
                       '$sign${MoneyUtils.format(defaultAmount, currencyCode: defaultCurrency)}',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: AppTextSizes.tiny,
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),

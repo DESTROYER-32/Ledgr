@@ -195,13 +195,13 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                           budget.name,
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            fontSize: 15,
+                            fontSize: AppTextSizes.title,
                           ),
                         ),
                         Text(
                           isGoal ? 'Goal' : 'Budget',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: AppTextSizes.tiny,
                             color: cs.onSurfaceVariant,
                           ),
                         ),
@@ -266,7 +266,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                   const SizedBox(width: 4),
                   Text(
                     '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.tiny,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -321,7 +324,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             const SizedBox(height: 4),
             Text(
               '${MoneyUtils.formatCompact(total, currencyCode: budget.currencyCode)} / ${MoneyUtils.formatCompact(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
-              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: AppTextSizes.tiny,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ],
         );
@@ -353,7 +359,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                   style: TextStyle(
                     color: cs.primary,
                     fontWeight: FontWeight.w500,
-                    fontSize: 15,
+                    fontSize: AppTextSizes.title,
                   ),
                 ),
               ],
