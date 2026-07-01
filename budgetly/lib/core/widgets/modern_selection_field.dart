@@ -48,6 +48,7 @@ class ModernSelectionField<T> extends StatelessWidget {
     final theme = Theme.of(context);
 
     return FormField<T>(
+      key: ValueKey<Object?>(value),
       initialValue: value,
       validator: validator,
       builder: (state) {
@@ -60,6 +61,7 @@ class ModernSelectionField<T> extends StatelessWidget {
                         context: context,
                         useSafeArea: true,
                         showDragHandle: true,
+                        enableDrag: false,
                         isScrollControlled: true,
                         builder: (_) => _ModernSelectionSheet<T>(
                           title: label,

@@ -451,7 +451,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             const SizedBox(height: 20),
             AmountField(
               controller: _amountController,
-              currencySymbol: displayCurrency,
+              currencyCode: displayCurrency,
             ),
             const SizedBox(height: 16),
             TextFormField(

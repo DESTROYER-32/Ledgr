@@ -114,17 +114,17 @@ Fixed: transaction form widget tests now use the in-memory test provider scope, 
 
 ## Low priority remaining cleanup
 
+- `[fixed]` Operational silent `catch (_) {}` blocks now log warnings through `AppLogger`; remaining `catch (_)` cases are intentional MoneyUtils parse fallbacks.
+- `[fixed]` `Debouncer` moved from `search_screen.dart` into reusable `core/utils/debouncer.dart`.
+- `[fixed]` `_QuickEntrySheet` no longer stores a `BuildContext`; it receives a navigation callback.
+- `[fixed]` `ShimmerLoading` now clamps unbounded/zero fallback width to avoid rendering at zero width.
+- `[fixed]` `amount_field.dart` exposes `currencyCode`; deprecated `currencySymbol` remains as a compatibility alias.
+- `[fixed]` `modern_selection_field.dart` disables modal-sheet drag while the inner `DraggableScrollableSheet` owns dragging.
+- `[fixed]` `ModernSelectionField` keys its `FormField` by value so external value changes do not leave stale `initialValue` state.
 - `[todo]` No localization/i18n for hardcoded UI strings.
-- `[todo]` Silent `catch (_) {}` blocks and weak structured logging.
 - `[todo]` Hardcoded font sizes and semantic colors in selected widgets.
 - `[todo]` Nested ternaries in multiple UI files.
-- `[todo]` `Debouncer` is defined inside `search_screen.dart` instead of a reusable utility.
 - `[todo]` Provider file mixes provider definitions and utility helpers.
 - `[todo]` `mainCategoryPk` should be renamed to `parentCategoryId` with a schema reset or migration.
-- `[todo]` `_QuickEntrySheet` stores a `BuildContext` field.
-- `[todo]` `ShimmerLoading` can render with zero width.
-- `[todo]` `amount_field.dart` parameter name says `currencySymbol` but expects a code.
-- `[todo]` `modern_selection_field.dart` combines `DraggableScrollableSheet` and modal sheet dragging.
-- `[todo]` `FormField.initialValue` can become stale in `modern_selection_field.dart`.
 - `[todo]` Date formatting is inconsistent across files.
 - `[todo]` Wallet balance conversion could batch conversions and skip same-currency conversions.

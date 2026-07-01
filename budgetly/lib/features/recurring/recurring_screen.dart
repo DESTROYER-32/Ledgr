@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/utils/recurring_utils.dart';
 import '../../core/widgets/empty_state.dart';
@@ -100,7 +101,12 @@ class RecurringScreen extends ConsumerWidget {
                                     active: Value(v),
                                   ),
                                 );
-                          } catch (_) {
+                          } catch (error, stackTrace) {
+                            AppLogger.warning(
+                              'Failed to update recurring item active state',
+                              error: error,
+                              stackTrace: stackTrace,
+                            );
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
