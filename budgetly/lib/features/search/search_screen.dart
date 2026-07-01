@@ -618,7 +618,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         style: const TextStyle(fontSize: 14),
                       ),
                       trailing: Text(
-                        '${isExpense ? '-' : (isIncome ? '+' : '')}${_formatAmount(t.amountMinor)}',
+                        '${_transactionSign(t.type)}${_formatAmount(t.amountMinor)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: color,
@@ -639,4 +639,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ],
     );
   }
+}
+
+String _transactionSign(String type) {
+  return switch (type) {
+    'expense' => '-',
+    'income' => '+',
+    _ => '',
+  };
 }

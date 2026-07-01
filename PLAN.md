@@ -121,10 +121,10 @@ Fixed: transaction form widget tests now use the in-memory test provider scope, 
 - `[fixed]` `amount_field.dart` exposes `currencyCode`; deprecated `currencySymbol` remains as a compatibility alias.
 - `[fixed]` `modern_selection_field.dart` disables modal-sheet drag while the inner `DraggableScrollableSheet` owns dragging.
 - `[fixed]` `ModernSelectionField` keys its `FormField` by value so external value changes do not leave stale `initialValue` state.
-- `[todo]` No localization/i18n for hardcoded UI strings.
-- `[todo]` Hardcoded font sizes and semantic colors in selected widgets.
-- `[todo]` Nested ternaries in multiple UI files.
-- `[todo]` Provider file mixes provider definitions and utility helpers.
-- `[todo]` `mainCategoryPk` should be renamed to `parentCategoryId` with a schema reset or migration.
-- `[todo]` Date formatting is inconsistent across files.
-- `[todo]` Wallet balance conversion could batch conversions and skip same-currency conversions.
+- `[fixed]` Nested ternaries in the scanned UI hot spots were replaced with helpers or clearer control flow.
+- `[fixed]` Provider utility `currencyOptionsWithSelection` moved to `core/utils/currency_options.dart`.
+- `[fixed]` `mainCategoryPk` renamed to `parentCategoryId`; generated Drift code was regenerated. This is safe because the app is pre-release schema v1.
+- `[fixed]` Direct `DateFormat` use was removed from UI code; month labels now go through `AppDateUtils`.
+- `[fixed]` Repeated display-currency conversions now use `MinorConversionCache`, which skips same-currency conversions and caches repeated conversions.
+- `[defer]` Full localization/i18n extraction for hardcoded UI strings needs product translation files and locale policy.
+- `[defer]` Full design-token pass for every hardcoded font size/semantic color needs a design-system decision; existing cleanup avoids adding new hardcoded style patterns.

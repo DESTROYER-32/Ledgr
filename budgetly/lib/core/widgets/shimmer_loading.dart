@@ -87,14 +87,17 @@ class ShimmerCard extends StatelessWidget {
             lines,
             (i) => Padding(
               padding: EdgeInsets.only(bottom: i < lines - 1 ? 12 : 0),
-              child: ShimmerLoading(
-                height: 14,
-                width: i == 0 ? 120 : (i == lines - 1 ? 200 : double.infinity),
-              ),
+              child: ShimmerLoading(height: 14, width: _lineWidth(i)),
             ),
           ),
         ),
       ),
     );
+  }
+
+  double _lineWidth(int index) {
+    if (index == 0) return 120;
+    if (index == lines - 1) return 200;
+    return double.infinity;
   }
 }

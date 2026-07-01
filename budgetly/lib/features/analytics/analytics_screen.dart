@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
@@ -634,7 +633,7 @@ List<_AnalyticsEntry> _topEntries(Map<String, int> values) {
   return entries.take(6).toList();
 }
 
-String _monthKey(DateTime date) => DateFormat('MMM').format(date);
+String _monthKey(DateTime date) => AppDateUtils.formatMonthAbbreviation(date);
 
 Color _chartColor(int index, ColorScheme cs) {
   final colors = [

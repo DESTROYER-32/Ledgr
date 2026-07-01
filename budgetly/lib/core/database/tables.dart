@@ -22,7 +22,7 @@ class Categories extends Table {
   TextColumn get icon => text().nullable()();
   IntColumn get color => integer().nullable()();
   TextColumn get kind => text()();
-  IntColumn get mainCategoryPk => integer()
+  IntColumn get parentCategoryId => integer()
       .references(Categories, #id, onDelete: KeyAction.setNull)
       .nullable()();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();

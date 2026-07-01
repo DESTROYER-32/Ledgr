@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/app_logger.dart';
+import '../../core/utils/currency_options.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';

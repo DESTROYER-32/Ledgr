@@ -743,7 +743,7 @@ class _DateTransactionRow extends StatelessWidget {
         : isIncome
         ? AppColors.income
         : AppColors.transfer;
-    final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final sign = _transactionSign(entry.type);
     final isPlanned = entry.transaction == null;
     final originalCurrency =
         entry.currencyCode ?? MoneyUtils.defaultCurrencyCode;
@@ -945,7 +945,7 @@ class _PlannedTransactionTile extends StatelessWidget {
         ? AppColors.expense
         : (isIncome ? AppColors.income : AppColors.transfer);
     final iconColor = categoryColor ?? amountColor;
-    final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final sign = _transactionSign(entry.type);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 3),
       child: InkWell(
@@ -1185,6 +1185,14 @@ int _convertAmountMinor(
     return amountMinor;
   }
   return (amountMinor * toRate * (1 / fromRate)).round();
+}
+
+String _transactionSign(String type) {
+  return switch (type) {
+    'expense' => '-',
+    'income' => '+',
+    _ => '',
+  };
 }
 
 class _DaySummary {
