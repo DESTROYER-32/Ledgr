@@ -8,6 +8,7 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/category_icon_utils.dart';
+import '../../core/utils/minor_conversion_cache.dart';
 import '../../core/utils/money_utils.dart';
 
 final _walletDetailFilterProvider = StateProvider.autoDispose
@@ -1077,23 +1078,22 @@ class _ActivityTile extends StatelessWidget {
     final color = itemCategory == null
         ? fallbackColor
         : AppColors.fromStored(itemCategory.color, fallbackColor);
-    final amountColor =
-        overrideColor ??
-        (isExpense
-            ? AppColors.expense
-            : (isIncome ? AppColors.income : AppColors.transfer));
+    final fallbackAmountColor = isExpense
+        ? AppColors.expense
+        : isIncome
+        ? AppColors.income
+        : AppColors.transfer;
+    final amountColor = overrideColor ?? fallbackAmountColor;
     final sign =
         isExpense ||
             (transaction.type == 'transfer' && transaction.walletId == walletId)
         ? '-'
         : '+';
     final originalCurrency = transaction.currencyCode;
-    final convertedAmount = MoneyUtils.tryConvertMinor(
-      transaction.amountMinor,
-      fromCurrency: originalCurrency,
+    final convertedAmount = MinorConversionCache(
       toCurrency: displayCurrency,
       rates: exchangeRates,
-    );
+    ).convert(transaction.amountMinor, fromCurrency: originalCurrency);
     final showConverted =
         showDefaultCurrency &&
         convertedAmount != null &&

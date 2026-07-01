@@ -437,7 +437,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       ),
                     ),
                     Text(
-                      '${increased ? '+' : ''}$pctChange% ${isIncome ? (increased ? 'more saved' : 'less saved') : (increased ? 'more spent' : 'less spent')}',
+                      '${increased ? '+' : ''}$pctChange% ${_historyChangeLabel(isIncome: isIncome, increased: increased)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: cs.onSurfaceVariant,
@@ -767,6 +767,11 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
           loading: () => const SizedBox.shrink(),
         );
   }
+}
+
+String _historyChangeLabel({required bool isIncome, required bool increased}) {
+  if (isIncome) return increased ? 'more saved' : 'less saved';
+  return increased ? 'more spent' : 'less spent';
 }
 
 class _CategoryLimitRow extends StatelessWidget {

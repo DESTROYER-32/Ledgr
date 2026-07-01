@@ -323,9 +323,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                             ),
                             title: Text(code),
                             subtitle: Text(
-                              rate != null
-                                  ? '1 USD = $rate $code${hasOverride ? ' • custom override' : ''}'
-                                  : 'No rate available',
+                              _rateSubtitle(code, rate, hasOverride),
                             ),
                             trailing: hasOverride
                                 ? IconButton(
@@ -414,4 +412,10 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
       ),
     ).whenComplete(controller.dispose);
   }
+}
+
+String _rateSubtitle(String code, double? rate, bool hasOverride) {
+  if (rate == null) return 'No rate available';
+  final overrideLabel = hasOverride ? ' • custom override' : '';
+  return '1 USD = $rate $code$overrideLabel';
 }

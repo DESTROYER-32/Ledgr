@@ -139,6 +139,10 @@ class AppDateUtils {
     return DateFormat.MMMd().format(date);
   }
 
+  static String formatMonthAbbreviation(DateTime date) {
+    return DateFormat.MMM().format(date);
+  }
+
   static DateTime monthStart(DateTime date) {
     return DateTime(date.year, date.month, 1);
   }

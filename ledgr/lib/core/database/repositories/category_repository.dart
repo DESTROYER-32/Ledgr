@@ -22,7 +22,9 @@ class CategoryRepository {
 
   Stream<List<Category>> watchParents() =>
       (_db.categories.select()
-            ..where((c) => c.archived.equals(false) & c.mainCategoryPk.isNull())
+            ..where(
+              (c) => c.archived.equals(false) & c.parentCategoryId.isNull(),
+            )
             ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
           .watch();
 
@@ -30,7 +32,8 @@ class CategoryRepository {
       (_db.categories.select()
             ..where(
               (c) =>
-                  c.archived.equals(false) & c.mainCategoryPk.equals(parentId),
+                  c.archived.equals(false) &
+                  c.parentCategoryId.equals(parentId),
             )
             ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
           .watch();
@@ -74,7 +77,7 @@ class CategoryRepository {
   Future<bool> _hasReferences(int id) async {
     final child =
         await (_db.categories.select()
-              ..where((c) => c.mainCategoryPk.equals(id))
+              ..where((c) => c.parentCategoryId.equals(id))
               ..limit(1))
             .getSingleOrNull();
     if (child != null) return true;

@@ -702,12 +702,12 @@ class $CategoriesTable extends Categories
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _mainCategoryPkMeta = const VerificationMeta(
-    'mainCategoryPk',
+  static const VerificationMeta _parentCategoryIdMeta = const VerificationMeta(
+    'parentCategoryId',
   );
   @override
-  late final GeneratedColumn<int> mainCategoryPk = GeneratedColumn<int>(
-    'main_category_pk',
+  late final GeneratedColumn<int> parentCategoryId = GeneratedColumn<int>(
+    'parent_category_id',
     aliasedName,
     true,
     type: DriftSqlType.int,
@@ -774,7 +774,7 @@ class $CategoriesTable extends Categories
     icon,
     color,
     kind,
-    mainCategoryPk,
+    parentCategoryId,
     archived,
     sortOrder,
     createdAt,
@@ -823,12 +823,12 @@ class $CategoriesTable extends Categories
     } else if (isInserting) {
       context.missing(_kindMeta);
     }
-    if (data.containsKey('main_category_pk')) {
+    if (data.containsKey('parent_category_id')) {
       context.handle(
-        _mainCategoryPkMeta,
-        mainCategoryPk.isAcceptableOrUnknown(
-          data['main_category_pk']!,
-          _mainCategoryPkMeta,
+        _parentCategoryIdMeta,
+        parentCategoryId.isAcceptableOrUnknown(
+          data['parent_category_id']!,
+          _parentCategoryIdMeta,
         ),
       );
     }
@@ -885,9 +885,9 @@ class $CategoriesTable extends Categories
         DriftSqlType.string,
         data['${effectivePrefix}kind'],
       )!,
-      mainCategoryPk: attachedDatabase.typeMapping.read(
+      parentCategoryId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}main_category_pk'],
+        data['${effectivePrefix}parent_category_id'],
       ),
       archived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -920,7 +920,7 @@ class Category extends DataClass implements Insertable<Category> {
   final String? icon;
   final int? color;
   final String kind;
-  final int? mainCategoryPk;
+  final int? parentCategoryId;
   final bool archived;
   final int sortOrder;
   final DateTime createdAt;
@@ -931,7 +931,7 @@ class Category extends DataClass implements Insertable<Category> {
     this.icon,
     this.color,
     required this.kind,
-    this.mainCategoryPk,
+    this.parentCategoryId,
     required this.archived,
     required this.sortOrder,
     required this.createdAt,
@@ -949,8 +949,8 @@ class Category extends DataClass implements Insertable<Category> {
       map['color'] = Variable<int>(color);
     }
     map['kind'] = Variable<String>(kind);
-    if (!nullToAbsent || mainCategoryPk != null) {
-      map['main_category_pk'] = Variable<int>(mainCategoryPk);
+    if (!nullToAbsent || parentCategoryId != null) {
+      map['parent_category_id'] = Variable<int>(parentCategoryId);
     }
     map['archived'] = Variable<bool>(archived);
     map['sort_order'] = Variable<int>(sortOrder);
@@ -968,9 +968,9 @@ class Category extends DataClass implements Insertable<Category> {
           ? const Value.absent()
           : Value(color),
       kind: Value(kind),
-      mainCategoryPk: mainCategoryPk == null && nullToAbsent
+      parentCategoryId: parentCategoryId == null && nullToAbsent
           ? const Value.absent()
-          : Value(mainCategoryPk),
+          : Value(parentCategoryId),
       archived: Value(archived),
       sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
@@ -989,7 +989,7 @@ class Category extends DataClass implements Insertable<Category> {
       icon: serializer.fromJson<String?>(json['icon']),
       color: serializer.fromJson<int?>(json['color']),
       kind: serializer.fromJson<String>(json['kind']),
-      mainCategoryPk: serializer.fromJson<int?>(json['mainCategoryPk']),
+      parentCategoryId: serializer.fromJson<int?>(json['parentCategoryId']),
       archived: serializer.fromJson<bool>(json['archived']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -1005,7 +1005,7 @@ class Category extends DataClass implements Insertable<Category> {
       'icon': serializer.toJson<String?>(icon),
       'color': serializer.toJson<int?>(color),
       'kind': serializer.toJson<String>(kind),
-      'mainCategoryPk': serializer.toJson<int?>(mainCategoryPk),
+      'parentCategoryId': serializer.toJson<int?>(parentCategoryId),
       'archived': serializer.toJson<bool>(archived),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -1019,7 +1019,7 @@ class Category extends DataClass implements Insertable<Category> {
     Value<String?> icon = const Value.absent(),
     Value<int?> color = const Value.absent(),
     String? kind,
-    Value<int?> mainCategoryPk = const Value.absent(),
+    Value<int?> parentCategoryId = const Value.absent(),
     bool? archived,
     int? sortOrder,
     DateTime? createdAt,
@@ -1030,9 +1030,9 @@ class Category extends DataClass implements Insertable<Category> {
     icon: icon.present ? icon.value : this.icon,
     color: color.present ? color.value : this.color,
     kind: kind ?? this.kind,
-    mainCategoryPk: mainCategoryPk.present
-        ? mainCategoryPk.value
-        : this.mainCategoryPk,
+    parentCategoryId: parentCategoryId.present
+        ? parentCategoryId.value
+        : this.parentCategoryId,
     archived: archived ?? this.archived,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
@@ -1045,9 +1045,9 @@ class Category extends DataClass implements Insertable<Category> {
       icon: data.icon.present ? data.icon.value : this.icon,
       color: data.color.present ? data.color.value : this.color,
       kind: data.kind.present ? data.kind.value : this.kind,
-      mainCategoryPk: data.mainCategoryPk.present
-          ? data.mainCategoryPk.value
-          : this.mainCategoryPk,
+      parentCategoryId: data.parentCategoryId.present
+          ? data.parentCategoryId.value
+          : this.parentCategoryId,
       archived: data.archived.present ? data.archived.value : this.archived,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -1063,7 +1063,7 @@ class Category extends DataClass implements Insertable<Category> {
           ..write('icon: $icon, ')
           ..write('color: $color, ')
           ..write('kind: $kind, ')
-          ..write('mainCategoryPk: $mainCategoryPk, ')
+          ..write('parentCategoryId: $parentCategoryId, ')
           ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -1079,7 +1079,7 @@ class Category extends DataClass implements Insertable<Category> {
     icon,
     color,
     kind,
-    mainCategoryPk,
+    parentCategoryId,
     archived,
     sortOrder,
     createdAt,
@@ -1094,7 +1094,7 @@ class Category extends DataClass implements Insertable<Category> {
           other.icon == this.icon &&
           other.color == this.color &&
           other.kind == this.kind &&
-          other.mainCategoryPk == this.mainCategoryPk &&
+          other.parentCategoryId == this.parentCategoryId &&
           other.archived == this.archived &&
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
@@ -1107,7 +1107,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<String?> icon;
   final Value<int?> color;
   final Value<String> kind;
-  final Value<int?> mainCategoryPk;
+  final Value<int?> parentCategoryId;
   final Value<bool> archived;
   final Value<int> sortOrder;
   final Value<DateTime> createdAt;
@@ -1118,7 +1118,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     this.icon = const Value.absent(),
     this.color = const Value.absent(),
     this.kind = const Value.absent(),
-    this.mainCategoryPk = const Value.absent(),
+    this.parentCategoryId = const Value.absent(),
     this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1130,7 +1130,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     this.icon = const Value.absent(),
     this.color = const Value.absent(),
     required String kind,
-    this.mainCategoryPk = const Value.absent(),
+    this.parentCategoryId = const Value.absent(),
     this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1143,7 +1143,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     Expression<String>? icon,
     Expression<int>? color,
     Expression<String>? kind,
-    Expression<int>? mainCategoryPk,
+    Expression<int>? parentCategoryId,
     Expression<bool>? archived,
     Expression<int>? sortOrder,
     Expression<DateTime>? createdAt,
@@ -1155,7 +1155,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
       if (icon != null) 'icon': icon,
       if (color != null) 'color': color,
       if (kind != null) 'kind': kind,
-      if (mainCategoryPk != null) 'main_category_pk': mainCategoryPk,
+      if (parentCategoryId != null) 'parent_category_id': parentCategoryId,
       if (archived != null) 'archived': archived,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
@@ -1169,7 +1169,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     Value<String?>? icon,
     Value<int?>? color,
     Value<String>? kind,
-    Value<int?>? mainCategoryPk,
+    Value<int?>? parentCategoryId,
     Value<bool>? archived,
     Value<int>? sortOrder,
     Value<DateTime>? createdAt,
@@ -1181,7 +1181,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
       icon: icon ?? this.icon,
       color: color ?? this.color,
       kind: kind ?? this.kind,
-      mainCategoryPk: mainCategoryPk ?? this.mainCategoryPk,
+      parentCategoryId: parentCategoryId ?? this.parentCategoryId,
       archived: archived ?? this.archived,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
@@ -1207,8 +1207,8 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     if (kind.present) {
       map['kind'] = Variable<String>(kind.value);
     }
-    if (mainCategoryPk.present) {
-      map['main_category_pk'] = Variable<int>(mainCategoryPk.value);
+    if (parentCategoryId.present) {
+      map['parent_category_id'] = Variable<int>(parentCategoryId.value);
     }
     if (archived.present) {
       map['archived'] = Variable<bool>(archived.value);
@@ -1233,7 +1233,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
           ..write('icon: $icon, ')
           ..write('color: $color, ')
           ..write('kind: $kind, ')
-          ..write('mainCategoryPk: $mainCategoryPk, ')
+          ..write('parentCategoryId: $parentCategoryId, ')
           ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
@@ -8044,7 +8044,7 @@ typedef $$CategoriesTableCreateCompanionBuilder =
       Value<String?> icon,
       Value<int?> color,
       required String kind,
-      Value<int?> mainCategoryPk,
+      Value<int?> parentCategoryId,
       Value<bool> archived,
       Value<int> sortOrder,
       Value<DateTime> createdAt,
@@ -8057,7 +8057,7 @@ typedef $$CategoriesTableUpdateCompanionBuilder =
       Value<String?> icon,
       Value<int?> color,
       Value<String> kind,
-      Value<int?> mainCategoryPk,
+      Value<int?> parentCategoryId,
       Value<bool> archived,
       Value<int> sortOrder,
       Value<DateTime> createdAt,
@@ -8068,19 +8068,19 @@ final class $$CategoriesTableReferences
     extends BaseReferences<_$AppDatabase, $CategoriesTable, Category> {
   $$CategoriesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $CategoriesTable _mainCategoryPkTable(_$AppDatabase db) =>
+  static $CategoriesTable _parentCategoryIdTable(_$AppDatabase db) =>
       db.categories.createAlias(
-        $_aliasNameGenerator(db.categories.mainCategoryPk, db.categories.id),
+        $_aliasNameGenerator(db.categories.parentCategoryId, db.categories.id),
       );
 
-  $$CategoriesTableProcessedTableManager? get mainCategoryPk {
-    final $_column = $_itemColumn<int>('main_category_pk');
+  $$CategoriesTableProcessedTableManager? get parentCategoryId {
+    final $_column = $_itemColumn<int>('parent_category_id');
     if ($_column == null) return null;
     final manager = $$CategoriesTableTableManager(
       $_db,
       $_db.categories,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_mainCategoryPkTable($_db));
+    final item = $_typedResult.readTableOrNull(_parentCategoryIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -8242,10 +8242,10 @@ class $$CategoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  $$CategoriesTableFilterComposer get mainCategoryPk {
+  $$CategoriesTableFilterComposer get parentCategoryId {
     final $$CategoriesTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.mainCategoryPk,
+      getCurrentColumn: (t) => t.parentCategoryId,
       referencedTable: $db.categories,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -8421,10 +8421,10 @@ class $$CategoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  $$CategoriesTableOrderingComposer get mainCategoryPk {
+  $$CategoriesTableOrderingComposer get parentCategoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.mainCategoryPk,
+      getCurrentColumn: (t) => t.parentCategoryId,
       referencedTable: $db.categories,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -8481,10 +8481,10 @@ class $$CategoriesTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  $$CategoriesTableAnnotationComposer get mainCategoryPk {
+  $$CategoriesTableAnnotationComposer get parentCategoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.mainCategoryPk,
+      getCurrentColumn: (t) => t.parentCategoryId,
       referencedTable: $db.categories,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -8621,7 +8621,7 @@ class $$CategoriesTableTableManager
           (Category, $$CategoriesTableReferences),
           Category,
           PrefetchHooks Function({
-            bool mainCategoryPk,
+            bool parentCategoryId,
             bool transactionsRefs,
             bool budgetCategoryLimitsRefs,
             bool recurringTransactionsRefs,
@@ -8646,7 +8646,7 @@ class $$CategoriesTableTableManager
                 Value<String?> icon = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 Value<String> kind = const Value.absent(),
-                Value<int?> mainCategoryPk = const Value.absent(),
+                Value<int?> parentCategoryId = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -8657,7 +8657,7 @@ class $$CategoriesTableTableManager
                 icon: icon,
                 color: color,
                 kind: kind,
-                mainCategoryPk: mainCategoryPk,
+                parentCategoryId: parentCategoryId,
                 archived: archived,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -8670,7 +8670,7 @@ class $$CategoriesTableTableManager
                 Value<String?> icon = const Value.absent(),
                 Value<int?> color = const Value.absent(),
                 required String kind,
-                Value<int?> mainCategoryPk = const Value.absent(),
+                Value<int?> parentCategoryId = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -8681,7 +8681,7 @@ class $$CategoriesTableTableManager
                 icon: icon,
                 color: color,
                 kind: kind,
-                mainCategoryPk: mainCategoryPk,
+                parentCategoryId: parentCategoryId,
                 archived: archived,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
@@ -8697,7 +8697,7 @@ class $$CategoriesTableTableManager
               .toList(),
           prefetchHooksCallback:
               ({
-                mainCategoryPk = false,
+                parentCategoryId = false,
                 transactionsRefs = false,
                 budgetCategoryLimitsRefs = false,
                 recurringTransactionsRefs = false,
@@ -8727,16 +8727,16 @@ class $$CategoriesTableTableManager
                           dynamic
                         >
                       >(state) {
-                        if (mainCategoryPk) {
+                        if (parentCategoryId) {
                           state =
                               state.withJoin(
                                     currentTable: table,
-                                    currentColumn: table.mainCategoryPk,
+                                    currentColumn: table.parentCategoryId,
                                     referencedTable: $$CategoriesTableReferences
-                                        ._mainCategoryPkTable(db),
+                                        ._parentCategoryIdTable(db),
                                     referencedColumn:
                                         $$CategoriesTableReferences
-                                            ._mainCategoryPkTable(db)
+                                            ._parentCategoryIdTable(db)
                                             .id,
                                   )
                                   as T;
@@ -8851,7 +8851,7 @@ typedef $$CategoriesTableProcessedTableManager =
       (Category, $$CategoriesTableReferences),
       Category,
       PrefetchHooks Function({
-        bool mainCategoryPk,
+        bool parentCategoryId,
         bool transactionsRefs,
         bool budgetCategoryLimitsRefs,
         bool recurringTransactionsRefs,

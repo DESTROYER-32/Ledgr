@@ -449,7 +449,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(width: 8),
           FilledButton.icon(
-            onPressed: _busy ? null : (isLast ? _completeOnboarding : _next),
+            onPressed: _nextAction(isLast),
             icon: _busy
                 ? const SizedBox(
                     width: 16,
@@ -457,13 +457,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(isLast ? Icons.check : Icons.arrow_forward),
-            label: Text(
-              isLast ? (_demoMode ? 'Open demo' : 'Get started') : 'Next',
-            ),
+            label: Text(_nextLabel(isLast)),
           ),
         ],
       ),
     );
+  }
+
+  VoidCallback? _nextAction(bool isLast) {
+    if (_busy) return null;
+    return isLast ? _completeOnboarding : _next;
+  }
+
+  String _nextLabel(bool isLast) {
+    if (!isLast) return 'Next';
+    return _demoMode ? 'Open demo' : 'Get started';
   }
 }
 

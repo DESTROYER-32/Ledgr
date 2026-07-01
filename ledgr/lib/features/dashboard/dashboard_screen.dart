@@ -7,6 +7,7 @@ import '../../core/database/app_database.dart';
 import '../../core/database/repositories/transaction_repository.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/minor_conversion_cache.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/balance_card.dart';
 import '../../core/widgets/section_header.dart';
@@ -719,16 +720,18 @@ class DashboardScreen extends ConsumerWidget {
 
     return transactionsAsync.when(
       data: (transactions) {
+        final conversionCache = MinorConversionCache(
+          toCurrency: currencyCode,
+          rates: exchangeRates,
+        );
         var income = 0;
         var expenses = 0;
         for (final t in transactions) {
           if (t.date.isBefore(start) || t.date.isAfter(end)) continue;
           if (t.date.isAfter(todayEnd)) continue;
-          final converted = MoneyUtils.tryConvertMinor(
+          final converted = conversionCache.convert(
             t.amountMinor,
             fromCurrency: t.currencyCode,
-            toCurrency: currencyCode,
-            rates: exchangeRates,
           );
           if (converted == null) continue;
           if (t.type == 'income') income += converted;
@@ -1372,39 +1375,43 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  ...txns.take(10).map((t) {
-                    final category = t.categoryId == null
-                        ? null
-                        : categoriesById[t.categoryId];
-                    final converted = MoneyUtils.tryConvertMinor(
-                      t.amountMinor,
-                      fromCurrency: t.currencyCode,
+                  ...() {
+                    final conversionCache = MinorConversionCache(
                       toCurrency: displayCurrency,
                       rates: exchangeRates,
                     );
-                    final showConverted =
-                        showDefaultCurrency && converted != null;
-                    return TransactionTile(
-                      id: t.id,
-                      type: t.type,
-                      amountMinor: t.amountMinor,
-                      title: t.title,
-                      date: t.date,
-                      currencyCode: t.currencyCode,
-                      displayAmountMinor: converted ?? t.amountMinor,
-                      displayCurrencyCode: displayCurrency,
-                      showDisplayCurrency: showConverted,
-                      categoryName: category?.name,
-                      categoryColor: category == null
+                    return txns.take(10).map((t) {
+                      final category = t.categoryId == null
                           ? null
-                          : AppColors.fromStored(
-                              category.color,
-                              AppColors.transfer,
-                            ),
-                      categoryIcon: category?.icon,
-                      onTap: () => context.push('/transactions/${t.id}'),
-                    );
-                  }),
+                          : categoriesById[t.categoryId];
+                      final converted = conversionCache.convert(
+                        t.amountMinor,
+                        fromCurrency: t.currencyCode,
+                      );
+                      final showConverted =
+                          showDefaultCurrency && converted != null;
+                      return TransactionTile(
+                        id: t.id,
+                        type: t.type,
+                        amountMinor: t.amountMinor,
+                        title: t.title,
+                        date: t.date,
+                        currencyCode: t.currencyCode,
+                        displayAmountMinor: converted ?? t.amountMinor,
+                        displayCurrencyCode: displayCurrency,
+                        showDisplayCurrency: showConverted,
+                        categoryName: category?.name,
+                        categoryColor: category == null
+                            ? null
+                            : AppColors.fromStored(
+                                category.color,
+                                AppColors.transfer,
+                              ),
+                        categoryIcon: category?.icon,
+                        onTap: () => context.push('/transactions/${t.id}'),
+                      );
+                    });
+                  }(),
                 ];
               }).toList(),
             );
