@@ -139,13 +139,13 @@ class ObjectivesListScreen extends ConsumerWidget {
                           objective.name,
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            fontSize: 15,
+                            fontSize: AppTextSizes.title,
                           ),
                         ),
                         Text(
                           '${isGoal ? 'Goal' : 'Loan'} • ${objective.currencyCode}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -215,7 +215,7 @@ class ObjectivesListScreen extends ConsumerWidget {
         Text(
           '${MoneyUtils.formatCompact(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.formatCompact(objective.amountMinor, currencyCode: objective.currencyCode)}',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: AppTextSizes.tiny,
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),

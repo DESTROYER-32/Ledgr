@@ -260,17 +260,26 @@ class DashboardScreen extends ConsumerWidget {
                   size: 14,
                   color: cs.primary,
                 ),
-                label: const Text('Accounts', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Accounts',
+                  style: TextStyle(fontSize: AppTextSizes.small),
+                ),
                 onPressed: () => context.push('/wallets'),
               ),
               ActionChip(
                 avatar: Icon(Icons.track_changes, size: 14, color: cs.primary),
-                label: const Text('Budgets', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Budgets',
+                  style: TextStyle(fontSize: AppTextSizes.small),
+                ),
                 onPressed: () => context.push('/budgets'),
               ),
               ActionChip(
                 avatar: Icon(Icons.category, size: 14, color: cs.primary),
-                label: const Text('Categories', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Categories',
+                  style: TextStyle(fontSize: AppTextSizes.small),
+                ),
                 onPressed: () => context.push('/categories'),
               ),
             ],
@@ -314,7 +323,10 @@ class DashboardScreen extends ConsumerWidget {
                 const Spacer(),
                 TextButton(
                   onPressed: () => context.push('/wallets'),
-                  child: const Text('View All', style: TextStyle(fontSize: 12)),
+                  child: const Text(
+                    'View All',
+                    style: TextStyle(fontSize: AppTextSizes.small),
+                  ),
                 ),
               ],
             ),
@@ -371,7 +383,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Text(
                       w.name,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: AppTextSizes.subtitle,
                         fontWeight: FontWeight.w700,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -379,7 +391,10 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   Text(
                     w.currencyCode,
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -388,14 +403,17 @@ class DashboardScreen extends ConsumerWidget {
                 MoneyUtils.format(balance, currencyCode: w.currencyCode),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  fontSize: AppTextSizes.headline,
                   color: cs.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 w.type.replaceAll('_', ' '),
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: AppTextSizes.small,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -431,7 +449,10 @@ class DashboardScreen extends ConsumerWidget {
                 const Spacer(),
                 TextButton(
                   onPressed: () => context.push('/objectives'),
-                  child: const Text('View All', style: TextStyle(fontSize: 12)),
+                  child: const Text(
+                    'View All',
+                    style: TextStyle(fontSize: AppTextSizes.small),
+                  ),
                 ),
               ],
             ),
@@ -492,14 +513,17 @@ class DashboardScreen extends ConsumerWidget {
                           objective.name,
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                            fontSize: AppTextSizes.title,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
                         objective.type == 'loan' ? 'Loan' : 'Goal',
-                        style: TextStyle(fontSize: 12, color: color),
+                        style: TextStyle(
+                          fontSize: AppTextSizes.small,
+                          color: color,
+                        ),
                       ),
                     ],
                   ),
@@ -508,7 +532,7 @@ class DashboardScreen extends ConsumerWidget {
                     Text(
                       '${MoneyUtils.format(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.format(objective.amountMinor, currencyCode: objective.currencyCode)}',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         color: cs.onSurfaceVariant,
                       ),
                     ),
@@ -556,7 +580,10 @@ class DashboardScreen extends ConsumerWidget {
             const Spacer(),
             TextButton(
               onPressed: () => context.push('/budgets'),
-              child: const Text('View All', style: TextStyle(fontSize: 12)),
+              child: const Text(
+                'View All',
+                style: TextStyle(fontSize: AppTextSizes.small),
+              ),
             ),
           ],
         ),
@@ -614,7 +641,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Text(
                       budget.name,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: AppTextSizes.title,
                         fontWeight: FontWeight.w700,
                         color: color,
                       ),
@@ -623,7 +650,10 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   Text(
                     isGoal ? 'Goal' : 'Budget',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -646,7 +676,7 @@ class DashboardScreen extends ConsumerWidget {
                         Text(
                           '${MoneyUtils.format(total, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: cs.onSurfaceVariant,
                           ),
                         ),
@@ -665,7 +695,10 @@ class DashboardScreen extends ConsumerWidget {
                   }
                   return Text(
                     '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   );
                 },
               ),
@@ -694,7 +727,10 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 'Add Budget',
-                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: AppTextSizes.compact,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -1021,7 +1057,7 @@ class DashboardScreen extends ConsumerWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: AppTextSizes.tiny,
                   fontWeight: FontWeight.w600,
                   color: color,
                 ),
@@ -1093,7 +1129,7 @@ class DashboardScreen extends ConsumerWidget {
                                     radius: 28,
                                     title: '${(pct * 100).toStringAsFixed(0)}%',
                                     titleStyle: const TextStyle(
-                                      fontSize: 10,
+                                      fontSize: AppTextSizes.micro,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
@@ -1139,7 +1175,9 @@ class DashboardScreen extends ConsumerWidget {
                                                       .uncategorizedCategoryId
                                               ? 'Uncategorized'
                                               : cat?.name ?? 'Cat ${e.key}',
-                                          style: const TextStyle(fontSize: 11),
+                                          style: const TextStyle(
+                                            fontSize: AppTextSizes.tiny,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -1199,7 +1237,7 @@ class DashboardScreen extends ConsumerWidget {
                       onPressed: () => context.push('/recurring'),
                       child: const Text(
                         'Manage',
-                        style: TextStyle(fontSize: 12),
+                        style: TextStyle(fontSize: AppTextSizes.small),
                       ),
                     ),
                   ],
@@ -1235,14 +1273,16 @@ class DashboardScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             r.title ?? '',
-                            style: const TextStyle(fontSize: 13),
+                            style: const TextStyle(
+                              fontSize: AppTextSizes.compact,
+                            ),
                           ),
                         ),
                         if (r.nextDueDate != null)
                           Text(
                             MoneyUtils.formatDateShort(r.nextDueDate!),
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: AppTextSizes.tiny,
                               color: cs.onSurfaceVariant,
                             ),
                           ),
@@ -1251,7 +1291,7 @@ class DashboardScreen extends ConsumerWidget {
                           MoneyUtils.format(r.amountMinor),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                            fontSize: AppTextSizes.compact,
                             color: color,
                           ),
                         ),
@@ -1369,7 +1409,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Text(
                       '${monthNames[month]} $year',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: AppTextSizes.compact,
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -1478,7 +1518,12 @@ class _InsightRow extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: cs.primary),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: AppTextSizes.compact),
+            ),
+          ),
         ],
       ),
     );

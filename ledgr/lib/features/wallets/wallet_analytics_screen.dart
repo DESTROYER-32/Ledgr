@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
@@ -97,7 +98,7 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
           _BreakdownCard(
             title: 'Outgoing',
             icon: Icons.arrow_upward_rounded,
-            color: Colors.red,
+            color: AppColors.expense,
             entries: report.outgoingBreakdown,
             currencyCode: wallet.currencyCode,
           ),
@@ -105,7 +106,7 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
           _BreakdownCard(
             title: 'Incoming',
             icon: Icons.arrow_downward_rounded,
-            color: Colors.green,
+            color: AppColors.income,
             entries: report.incomingBreakdown,
             currencyCode: wallet.currencyCode,
           ),
@@ -251,14 +252,14 @@ class _SummaryGrid extends StatelessWidget {
         _MetricCard(
           'Incoming',
           report.totalIncoming,
-          Colors.green,
+          AppColors.income,
           Icons.arrow_downward_rounded,
           report.currencyCode,
         ),
         _MetricCard(
           'Outgoing',
           report.totalOutgoing,
-          Colors.red,
+          AppColors.expense,
           Icons.arrow_upward_rounded,
           report.currencyCode,
         ),
@@ -266,7 +267,7 @@ class _SummaryGrid extends StatelessWidget {
           'Net',
           report.totalIncoming - report.totalOutgoing,
           report.totalIncoming >= report.totalOutgoing
-              ? Colors.green
+              ? AppColors.income
               : Colors.orange,
           Icons.ssid_chart_rounded,
           report.currencyCode,
@@ -409,12 +410,12 @@ class _CashflowCard extends StatelessWidget {
                         barRods: [
                           BarChartRodData(
                             toY: (report.incoming[labels[i]] ?? 0).toDouble(),
-                            color: Colors.green,
+                            color: AppColors.income,
                             width: 8,
                           ),
                           BarChartRodData(
                             toY: (report.outgoing[labels[i]] ?? 0).toDouble(),
-                            color: Colors.red,
+                            color: AppColors.expense,
                             width: 8,
                           ),
                         ],

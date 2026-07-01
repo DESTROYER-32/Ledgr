@@ -367,7 +367,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                     Text(
                       budget.isIncome ? 'Goal' : 'Budget',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         color: cs.onSurfaceVariant,
                       ),
                     ),
@@ -385,7 +385,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 const SizedBox(width: 6),
                 Text(
                   '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -433,13 +436,13 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       '${MoneyUtils.format(_prevTotalSpent, currencyCode: budget.currencyCode)} \u2192 ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: AppTextSizes.body,
                       ),
                     ),
                     Text(
                       '${increased ? '+' : ''}$pctChange% ${_historyChangeLabel(isIncome: isIncome, increased: increased)}',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         color: cs.onSurfaceVariant,
                       ),
                     ),
@@ -482,7 +485,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                     '${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(_totalPlanned, currencyCode: budget.currencyCode)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      fontSize: AppTextSizes.compact,
                     ),
                   ),
               ],
@@ -508,7 +511,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                         ? '${MoneyUtils.format(-remaining, currencyCode: budget.currencyCode)} over'
                         : '${MoneyUtils.format(remaining, currencyCode: budget.currencyCode)} ${budget.isIncome ? 'left to save' : 'remaining'}',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: AppTextSizes.small,
                       color: isOver ? AppColors.expense : cs.onSurfaceVariant,
                       fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
                     ),
@@ -516,7 +519,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   const Spacer(),
                   Text(
                     '${(pct * 100).toStringAsFixed(0)}%',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -528,7 +534,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   budget.isIncome
                       ? 'Saved ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} (no goal set)'
                       : 'Spent ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} (no limit set)',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
           ],
@@ -579,7 +588,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             OutlinedButton.icon(
               onPressed: _addLimit,
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add Limit', style: TextStyle(fontSize: 13)),
+              label: const Text(
+                'Add Limit',
+                style: TextStyle(fontSize: AppTextSizes.compact),
+              ),
             ),
           ],
         ),
@@ -629,7 +641,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                             radius: 28,
                             title: '${(pct * 100).toStringAsFixed(0)}%',
                             titleStyle: const TextStyle(
-                              fontSize: 10,
+                              fontSize: AppTextSizes.micro,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -666,7 +678,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                               Expanded(
                                 child: Text(
                                   cat?.name ?? 'Cat ${e.key}',
-                                  style: const TextStyle(fontSize: 11),
+                                  style: const TextStyle(
+                                    fontSize: AppTextSizes.tiny,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -814,14 +828,17 @@ class _CategoryLimitRow extends StatelessWidget {
                           .firstOrNull;
                       return Text(
                         cat?.name ?? 'Category ${limit.categoryId}',
-                        style: const TextStyle(fontSize: 13),
+                        style: const TextStyle(fontSize: AppTextSizes.compact),
                       );
                     },
                   ),
                   const Spacer(),
                   Text(
                     '${spent > 0 ? MoneyUtils.format(spent, currencyCode: currencyCode) : ''} / ${MoneyUtils.format(limit.plannedAmountMinor, currencyCode: currencyCode)}',
-                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.tiny,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

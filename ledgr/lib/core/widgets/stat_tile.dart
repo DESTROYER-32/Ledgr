@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class StatTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -29,18 +31,22 @@ class StatTile extends StatelessWidget {
           child: Icon(icon, size: 16, color: color),
         ),
         const SizedBox(height: 6),
-        Text(label,
-            style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w500,
-        )),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: color,
-            )),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: AppTextSizes.body,
+            color: color,
+          ),
+        ),
       ],
     );
   }

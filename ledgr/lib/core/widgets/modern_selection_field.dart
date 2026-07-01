@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class ModernSelectionItem<T> {
   final T value;
   final String title;
@@ -333,7 +335,7 @@ class _Badge extends StatelessWidget {
         style: TextStyle(
           color: cs.onSecondaryContainer,
           fontWeight: FontWeight.w700,
-          fontSize: 12,
+          fontSize: AppTextSizes.small,
         ),
       ),
     );

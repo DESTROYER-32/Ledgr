@@ -237,7 +237,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 _specificMode
                     ? 'Only transactions you assign to this budget'
                     : 'All transactions in date range',
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: AppTextSizes.small,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               value: _specificMode,
               onChanged: (v) => setState(() => _specificMode = v),
@@ -295,7 +298,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                     },
                     child: Text(
                       'Start: ${MoneyUtils.formatDateShort(_startDate)}',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: AppTextSizes.small),
                     ),
                   ),
                 ),
@@ -318,7 +321,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                     },
                     child: Text(
                       'End: ${MoneyUtils.formatDateShort(_endDate)}',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: AppTextSizes.small),
                     ),
                   ),
                 ),
@@ -361,7 +364,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               _specificMode
                   ? 'Select categories. Only transactions matching these will be available.'
                   : 'Select categories to track in this budget. Leave empty to track all.',
-              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: AppTextSizes.small,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             catsAsync.when(
@@ -381,7 +387,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       label: Text(
                         c.name,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: AppTextSizes.body,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

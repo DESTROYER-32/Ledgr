@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.8
 
@@ -69,4 +71,5 @@ dev_dependencies:
   mocktail: ^1.0.4
 
 flutter:
+  generate: true
   uses-material-design: true

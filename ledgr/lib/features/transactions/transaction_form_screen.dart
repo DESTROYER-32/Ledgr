@@ -7,6 +7,7 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/category_icon_utils.dart';
 import '../../core/utils/currency_options.dart';
 import '../../core/utils/currency_utils.dart';
@@ -668,7 +669,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         Text(
                           'Select budgets in tracking mode',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -681,7 +682,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             return FilterChip(
                               label: Text(
                                 b.name,
-                                style: const TextStyle(fontSize: 12),
+                                style: const TextStyle(
+                                  fontSize: AppTextSizes.small,
+                                ),
                               ),
                               selected: selected,
                               onSelected: (v) {
@@ -745,7 +748,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: FilterChip(
-        label: Text(label, style: const TextStyle(fontSize: 12)),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: AppTextSizes.small),
+        ),
         selected: selected,
         onSelected: (_) => setState(() {
           _specialType = value;

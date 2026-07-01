@@ -615,7 +615,7 @@ class _CalendarDayCell extends StatelessWidget {
                     maxLines: 1,
                     style: TextStyle(
                       color: netColor,
-                      fontSize: 10,
+                      fontSize: AppTextSizes.micro,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -698,7 +698,7 @@ class _InlineDateTransactions extends StatelessWidget {
                   '${net >= 0 ? '+' : '-'}${MoneyUtils.format(net.abs())}',
                   style: TextStyle(
                     color: netColor,
-                    fontSize: 16,
+                    fontSize: AppTextSizes.subtitle,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -800,7 +800,7 @@ class _DateTransactionRow extends StatelessWidget {
                 '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
                 style: TextStyle(
                   color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: AppTextSizes.tiny,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -978,7 +978,7 @@ class _PlannedTransactionTile extends StatelessWidget {
                       entry.title ?? entry.type,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: AppTextSizes.body,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -991,7 +991,7 @@ class _PlannedTransactionTile extends StatelessWidget {
                         Text(
                           'Planned · ${MoneyUtils.formatDateShort(entry.date)}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -999,7 +999,7 @@ class _PlannedTransactionTile extends StatelessWidget {
                           Text(
                             categoryName!,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppTextSizes.small,
                               color:
                                   categoryColor ??
                                   theme.colorScheme.onSurfaceVariant,
@@ -1015,7 +1015,7 @@ class _PlannedTransactionTile extends StatelessWidget {
                 '$sign${MoneyUtils.format(entry.amountMinor, currencyCode: entry.currencyCode)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontSize: AppTextSizes.title,
                   color: amountColor,
                 ),
               ),
@@ -1096,7 +1096,7 @@ class _SummaryCard extends StatelessWidget {
                           ? AppColors.income
                           : AppColors.expense,
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
+                      fontSize: AppTextSizes.subtitle,
                     ),
                   ),
                 ],

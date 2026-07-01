@@ -250,3 +250,16 @@ class AppColors {
     Color(0xFF455A64),
   ];
 }
+
+class AppTextSizes {
+  AppTextSizes._();
+
+  static const micro = 10.0;
+  static const tiny = 11.0;
+  static const small = 12.0;
+  static const compact = 13.0;
+  static const body = 14.0;
+  static const title = 15.0;
+  static const subtitle = 16.0;
+  static const headline = 24.0;
+}
