@@ -7,25 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/debouncer.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
-
-class Debouncer {
-  final Duration delay;
-  Timer? _timer;
-  Debouncer({this.delay = const Duration(milliseconds: 500)});
-
-  void run(VoidCallback action) {
-    _timer?.cancel();
-    _timer = Timer(delay, action);
-  }
-
-  void cancel() => _timer?.cancel();
-
-  void dispose() {
-    _timer?.cancel();
-  }
-}
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});

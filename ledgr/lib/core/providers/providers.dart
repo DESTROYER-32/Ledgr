@@ -17,6 +17,7 @@ import '../services/recurring_service.dart';
 import '../database/repositories/settings_repository.dart';
 import '../database/repositories/transaction_repository.dart';
 import '../database/repositories/wallet_repository.dart';
+import '../utils/app_logger.dart';
 import '../utils/currency_utils.dart';
 import '../utils/money_utils.dart';
 
@@ -143,8 +144,13 @@ final favoriteCurrenciesProvider = FutureProvider<List<String>>((ref) async {
           .toList();
       return favorites.isEmpty ? CurrencyUtils.codes : favorites;
     }
-  } catch (_) {
+  } catch (error, stackTrace) {
     // Fall back to every currency if stored settings are invalid.
+    AppLogger.warning(
+      'Failed to parse favorite currencies provider setting',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   return CurrencyUtils.codes;

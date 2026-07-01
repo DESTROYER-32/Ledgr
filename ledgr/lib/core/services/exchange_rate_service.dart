@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../database/repositories/settings_repository.dart';
+import '../utils/app_logger.dart';
 import '../utils/money_utils.dart';
 
 class ExchangeRateException implements Exception {
@@ -130,7 +131,12 @@ class ExchangeRateService {
     try {
       final decoded = json.decode(raw) as Map<String, dynamic>;
       return _normalizeRates(decoded);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to parse dated exchange-rate cache',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return {};
     }
   }
@@ -144,7 +150,12 @@ class ExchangeRateService {
     try {
       final decoded = json.decode(raw) as Map<String, dynamic>;
       return _normalizeRates(decoded);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to parse exchange-rate cache',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return {};
     }
   }
@@ -155,7 +166,12 @@ class ExchangeRateService {
     try {
       final decoded = json.decode(raw) as Map<String, dynamic>;
       return _normalizeRates(decoded);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to parse custom exchange rates',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return {};
     }
   }
@@ -203,10 +219,15 @@ class ExchangeRateService {
         if (!cached.containsKey(key)) {
           try {
             cached = await fetchRates();
-          } catch (_) {
+          } catch (error, stackTrace) {
             // Preserve the final missing-rate error below with the requested
             // currency code. Historical precision is best-effort because old
             // local caches may be absent after restore or device migration.
+            AppLogger.warning(
+              'Failed to refresh exchange rates for historical conversion fallback',
+              error: error,
+              stackTrace: stackTrace,
+            );
           }
         }
       } else {

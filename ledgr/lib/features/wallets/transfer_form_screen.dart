@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/amount_field.dart';
 import '../../core/widgets/modern_selection_field.dart';
@@ -86,7 +87,12 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
             ),
           );
       if (mounted) context.pop();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to save transfer',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (mounted) _snack('Could not save transfer.');
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -138,7 +144,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
               const SizedBox(height: 20),
               AmountField(
                 controller: _amountController,
-                currencySymbol:
+                currencyCode:
                     fromWallet?.currencyCode ?? MoneyUtils.defaultCurrencyCode,
                 autofocus: true,
                 validator: (value) {

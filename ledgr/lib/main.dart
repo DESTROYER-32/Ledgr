@@ -7,6 +7,7 @@ import 'core/providers/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/app_logger.dart';
 import 'features/security/app_lock_screen.dart';
 
 void main() async {
@@ -14,9 +15,14 @@ void main() async {
 
   try {
     await NotificationService.init();
-  } catch (_) {
+  } catch (error, stackTrace) {
     // Notifications are optional; startup should continue if the platform
     // plugin is unavailable or initialization fails.
+    AppLogger.warning(
+      'Notification initialization failed; continuing without notifications',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   final db = AppDatabase();

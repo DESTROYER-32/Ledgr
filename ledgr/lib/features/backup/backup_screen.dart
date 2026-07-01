@@ -11,6 +11,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/backup_service.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
@@ -499,7 +500,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             ),
           );
           count++;
-        } catch (_) {}
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Skipped invalid CSV transaction row during import',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
       }
       if (context.mounted) {
         ScaffoldMessenger.of(

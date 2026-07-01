@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../database/repositories/settings_repository.dart';
+import '../utils/app_logger.dart';
 
 class AppLockState {
   final bool isEnabled;
@@ -220,7 +221,12 @@ class AppLockController extends ChangeNotifier {
         notifyListeners();
       }
       return ok;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Biometric unlock failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }
@@ -249,7 +255,12 @@ class AppLockController extends ChangeNotifier {
       return await _localAuth.canCheckBiometrics &&
           await _localAuth.isDeviceSupported() &&
           (await _localAuth.getAvailableBiometrics()).isNotEmpty;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to check biometric availability',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }

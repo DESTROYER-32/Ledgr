@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/currency_utils.dart';
 
 sealed class _RateDialogAction {
@@ -45,7 +46,13 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
       try {
         final list = raw.split(',').where((s) => s.isNotEmpty).toList();
         setState(() => _customCurrencies = list);
-      } catch (_) {}
+      } catch (error, stackTrace) {
+        AppLogger.warning(
+          'Failed to load custom currencies',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
   }
 
@@ -155,7 +162,12 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                       duration: Duration(seconds: 2),
                     ),
                   );
-                } catch (_) {
+                } catch (error, stackTrace) {
+                  AppLogger.warning(
+                    'Failed to refresh exchange rates',
+                    error: error,
+                    stackTrace: stackTrace,
+                  );
                   messenger.showSnackBar(
                     const SnackBar(
                       content: Text('Failed to refresh rates'),
