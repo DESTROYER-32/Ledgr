@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:budgetly/features/dashboard/dashboard_screen.dart';
+import 'package:ledgr/features/dashboard/dashboard_screen.dart';
 
 void main() {
   group('dashboardGreeting', () {
     test('falls back to app name without a saved name', () {
-      expect(dashboardGreeting(name: null), 'Budgetly');
-      expect(dashboardGreeting(name: '   '), 'Budgetly');
+      expect(dashboardGreeting(name: null), 'Ledgr');
+      expect(dashboardGreeting(name: '   '), 'Ledgr');
     });
 
     test('greets by morning, afternoon, and evening', () {

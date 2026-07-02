@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:budgetly/features/budgets/budgets_screen.dart';
+import 'package:ledgr/features/budgets/budgets_screen.dart';
 
 void main() {
   testWidgets('Budget screen renders month navigation',

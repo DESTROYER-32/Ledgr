@@ -2,11 +2,11 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:budgetly/core/database/app_database.dart';
-import 'package:budgetly/core/database/repositories/settings_repository.dart';
-import 'package:budgetly/core/database/repositories/transaction_repository.dart';
-import 'package:budgetly/core/database/repositories/wallet_repository.dart';
-import 'package:budgetly/core/services/exchange_rate_service.dart';
+import 'package:ledgr/core/database/app_database.dart';
+import 'package:ledgr/core/database/repositories/settings_repository.dart';
+import 'package:ledgr/core/database/repositories/transaction_repository.dart';
+import 'package:ledgr/core/database/repositories/wallet_repository.dart';
+import 'package:ledgr/core/services/exchange_rate_service.dart';
 
 void main() {
   test('balanceForWallet excludes future scheduled transactions', () async {

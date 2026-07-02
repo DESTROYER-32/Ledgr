@@ -39,21 +39,21 @@ void main() async {
         }),
         initialRouteProvider.overrideWithValue(onboarded ? '/' : '/onboarding'),
       ],
-      child: BudgetlyApp(initialRoute: onboarded ? '/' : '/onboarding'),
+      child: LedgrApp(initialRoute: onboarded ? '/' : '/onboarding'),
     ),
   );
 }
 
-class BudgetlyApp extends ConsumerStatefulWidget {
+class LedgrApp extends ConsumerStatefulWidget {
   final String initialRoute;
 
-  const BudgetlyApp({super.key, required this.initialRoute});
+  const LedgrApp({super.key, required this.initialRoute});
 
   @override
-  ConsumerState<BudgetlyApp> createState() => _BudgetlyAppState();
+  ConsumerState<LedgrApp> createState() => _LedgrAppState();
 }
 
-class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
+class _LedgrAppState extends ConsumerState<LedgrApp>
     with WidgetsBindingObserver {
   @override
   void initState() {
@@ -89,7 +89,7 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     final themeAsync = ref.watch(themeConfigProvider);
     return themeAsync.when(
       data: (config) => MaterialApp.router(
-        title: 'Budgetly',
+        title: 'Ledgr',
         onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -110,7 +110,7 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
         },
       ),
       error: (_, _) => MaterialApp.router(
-        title: 'Budgetly',
+        title: 'Ledgr',
         onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -121,7 +121,7 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
         debugShowCheckedModeBanner: false,
       ),
       loading: () => MaterialApp.router(
-        title: 'Budgetly',
+        title: 'Ledgr',
         onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

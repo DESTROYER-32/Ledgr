@@ -70,8 +70,8 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: userNameAsync.when(
           data: (name) => Text(dashboardGreeting(name: name)),
-          loading: () => const Text('Budgetly'),
-          error: (_, _) => const Text('Budgetly'),
+          loading: () => const Text('Ledgr'),
+          error: (_, _) => const Text('Ledgr'),
         ),
         actions: [
           IconButton(
@@ -190,7 +190,7 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Welcome to Budgetly!',
+                        'Welcome to Ledgr!',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: cs.onPrimaryContainer,
@@ -1467,7 +1467,7 @@ class DashboardScreen extends ConsumerWidget {
 @visibleForTesting
 String dashboardGreeting({String? name, DateTime? now}) {
   final trimmedName = name?.trim();
-  if (trimmedName == null || trimmedName.isEmpty) return 'Budgetly';
+  if (trimmedName == null || trimmedName.isEmpty) return 'Ledgr';
 
   final hour = (now ?? DateTime.now()).hour;
   final period = switch (hour) {

@@ -113,7 +113,7 @@ class BackupService {
 
   Future<Map<String, dynamic>> buildBackupData() async {
     final data = <String, dynamic>{
-      'app': 'budgetly',
+      'app': 'ledgr',
       'version': backupVersion,
       'exportedAt': DateTime.now().toIso8601String(),
       'tables': <String, dynamic>{},
@@ -137,19 +137,19 @@ class BackupService {
     final dir = await getTemporaryDirectory();
     final stamp = DateTime.now().toIso8601String().replaceAll(':', '-');
     return writeBackupFile(
-      File('${dir.path}/budgetly_full_backup_$stamp.json'),
+      File('${dir.path}/ledgr_full_backup_$stamp.json'),
     );
   }
 
   Future<Directory> slotsDirectory() async {
     final dir = await getApplicationDocumentsDirectory();
-    return Directory(p.join(dir.path, 'budgetly_backups'));
+    return Directory(p.join(dir.path, 'ledgr_backups'));
   }
 
   Future<File> slotFile(int index) async {
     final dir = await slotsDirectory();
     return File(
-      p.join(dir.path, 'budgetly_auto_backup_slot_${index + 1}.json'),
+      p.join(dir.path, 'ledgr_auto_backup_slot_${index + 1}.json'),
     );
   }
 
@@ -262,11 +262,11 @@ class BackupService {
   Future<void> restoreFromFile(File sourceFile) async {
     final decoded = jsonDecode(await sourceFile.readAsString());
     if (decoded is! Map<String, dynamic> ||
-        decoded['app'] != 'budgetly' ||
+        decoded['app'] != 'ledgr' ||
         decoded['tables'] is! Map<String, dynamic> ||
         decoded['version'] != backupVersion) {
       throw const FormatException(
-        'This is not a valid Budgetly full backup file.',
+        'This is not a valid Ledgr full backup file.',
       );
     }
     final tableData = decoded['tables'] as Map<String, dynamic>;

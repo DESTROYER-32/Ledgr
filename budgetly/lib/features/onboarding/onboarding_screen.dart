@@ -49,7 +49,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   List<_OnboardingStep> get _steps => const [
     _OnboardingStep(
       icon: Icons.account_balance_wallet,
-      title: 'Welcome to Budgetly',
+      title: 'Welcome to Ledgr',
       subtitle:
           'A calmer way to understand money, plan ahead, and keep every account in sync.',
       bullets: [
@@ -103,7 +103,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       icon: Icons.currency_exchange,
       title: 'Pick your currency',
       subtitle:
-          'Choose the display currency Budgetly should use first. You can add more later.',
+          'Choose the display currency Ledgr should use first. You can add more later.',
       accent: Color(0xFF00897B),
       custom: _StepCustom.currency,
     ),
@@ -131,7 +131,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       icon: Icons.rocket_launch,
       title: 'You are ready',
       subtitle:
-          'Budgetly will seed helpful categories and open your dashboard. You can change everything later.',
+          'Ledgr will seed helpful categories and open your dashboard. You can change everything later.',
       bullets: ['Local data', 'Editable setup', 'No account required'],
       accent: Color(0xFF2E7D32),
     ),
@@ -163,7 +163,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await _DemoDataSeeder(
           ref.read(appDatabaseProvider),
         ).seed(_selectedCurrency);
-        await settings.set('budgetly_demo_mode', 'true');
+        await settings.set('ledgr_demo_mode', 'true');
       } else if (_createWallet) {
         final balance = double.tryParse(_balanceController.text.trim()) ?? 0;
         final walletId = await ref
@@ -183,10 +183,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             );
         await settings.set('default_wallet_id', walletId.toString());
-        await settings.set('budgetly_demo_mode', 'false');
+        await settings.set('ledgr_demo_mode', 'false');
       } else {
         await settings.remove('default_wallet_id');
-        await settings.set('budgetly_demo_mode', 'false');
+        await settings.set('ledgr_demo_mode', 'false');
       }
       await settings.set('display_currency', _selectedCurrency);
       await settings.completeOnboarding();
@@ -360,7 +360,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            'No problem. Budgetly will still save your currency and open the dashboard.',
+            'No problem. Ledgr will still save your currency and open the dashboard.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -421,7 +421,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         icon: Icons.auto_awesome,
         title: 'Use test mode with dummy data',
         subtitle:
-            'Explore Budgetly instantly with sample accounts, budgets, goals, and transactions.',
+            'Explore Ledgr instantly with sample accounts, budgets, goals, and transactions.',
         onTap: () => setState(() => _demoMode = true),
       ),
     ],

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:budgetly/core/utils/money_utils.dart';
+import 'package:ledgr/core/utils/money_utils.dart';
 
 void main() {
   group('MoneyUtils', () {

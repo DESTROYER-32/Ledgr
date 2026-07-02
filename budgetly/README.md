@@ -1,4 +1,4 @@
-# budgetly
+# ledgr
 
 A new Flutter project.
 

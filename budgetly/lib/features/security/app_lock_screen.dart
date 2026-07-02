@@ -108,7 +108,7 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Budgetly is locked',
+                    'Ledgr is locked',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),

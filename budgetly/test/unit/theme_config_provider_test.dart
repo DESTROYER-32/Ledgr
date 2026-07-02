@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:budgetly/core/database/app_database.dart';
-import 'package:budgetly/core/database/repositories/settings_repository.dart';
-import 'package:budgetly/core/providers/providers.dart';
+import 'package:ledgr/core/database/app_database.dart';
+import 'package:ledgr/core/database/repositories/settings_repository.dart';
+import 'package:ledgr/core/providers/providers.dart';
 
 void main() {
   test(

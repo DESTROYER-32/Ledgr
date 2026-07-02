@@ -24,7 +24,7 @@ class NotificationService {
     required String body,
   }) async {
     const androidDetails = AndroidNotificationDetails(
-      'budgetly_reminders',
+      'ledgr_reminders',
       'Budget Reminders',
       channelDescription: 'Recurring transaction reminders',
       importance: Importance.high,

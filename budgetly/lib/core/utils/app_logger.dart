@@ -10,7 +10,7 @@ class AppLogger {
   static void warning(String message, {Object? error, StackTrace? stackTrace}) {
     developer.log(
       message,
-      name: 'Budgetly',
+      name: 'Ledgr',
       level: 900,
       error: error,
       stackTrace: stackTrace,

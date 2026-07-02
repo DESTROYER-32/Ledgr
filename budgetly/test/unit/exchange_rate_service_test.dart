@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-import 'package:budgetly/core/database/app_database.dart';
-import 'package:budgetly/core/database/repositories/settings_repository.dart';
-import 'package:budgetly/core/services/exchange_rate_service.dart';
+import 'package:ledgr/core/database/app_database.dart';
+import 'package:ledgr/core/database/repositories/settings_repository.dart';
+import 'package:ledgr/core/services/exchange_rate_service.dart';
 
 void main() {
   const rateUrl = 'https://example.test/usd.json';

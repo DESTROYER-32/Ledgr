@@ -1,6 +1,6 @@
 {
-    "name": "budgetly",
-    "short_name": "budgetly",
+    "name": "ledgr",
+    "short_name": "ledgr",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
