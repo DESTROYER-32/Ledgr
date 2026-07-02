@@ -82,7 +82,10 @@ class RecurringScreen extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        MoneyUtils.format(r.amountMinor),
+                        MoneyUtils.format(
+                          r.amountMinor,
+                          currencyCode: r.currencyCode,
+                        ),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: color,

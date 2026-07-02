@@ -1,6 +1,6 @@
 {
-    "name": "ledgr",
-    "short_name": "ledgr",
+    "name": "Ledgr",
+    "short_name": "Ledgr",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
