@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:budgetly/core/database/app_database.dart';
-import 'package:budgetly/core/database/repositories/wallet_repository.dart';
-import 'package:budgetly/core/utils/wallet_balance_utils.dart';
+import 'package:ledgr/core/database/app_database.dart';
+import 'package:ledgr/core/database/repositories/wallet_repository.dart';
+import 'package:ledgr/core/utils/wallet_balance_utils.dart';
 
 class FakeWalletRepository implements WalletRepository {
   FakeWalletRepository(this.wallet, this.balance);

@@ -209,7 +209,7 @@ class AppLockController extends ChangeNotifier {
     if (!_state.biometricsEnabled) return false;
     try {
       final ok = await _localAuth.authenticate(
-        localizedReason: 'Unlock Budgetly',
+        localizedReason: 'Unlock Ledgr',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
@@ -236,7 +236,7 @@ class AppLockController extends ChangeNotifier {
       final available = await _canUseBiometrics();
       if (!available) return false;
       final ok = await _localAuth.authenticate(
-        localizedReason: 'Enable biometric unlock for Budgetly',
+        localizedReason: 'Enable biometric unlock for Ledgr',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,

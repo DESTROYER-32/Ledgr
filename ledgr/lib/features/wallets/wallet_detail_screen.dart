@@ -234,7 +234,7 @@ class WalletDetailScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Enter the actual balance for ${wallet.name}. Budgetly will add one adjustment transaction for the difference.',
+                'Enter the actual balance for ${wallet.name}. Ledgr will add one adjustment transaction for the difference.',
               ),
               const SizedBox(height: 16),
               TextField(

@@ -77,7 +77,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         ListTile(
           leading: const Icon(Icons.download),
           title: const Text('Restore Full Backup'),
-          subtitle: const Text('Restore all data from a Budgetly backup file'),
+          subtitle: const Text('Restore all data from a Ledgr backup file'),
           onTap: () => _importBackup(context),
         ),
         const Divider(height: 1),
@@ -244,7 +244,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           .writeTemporaryShareBackup();
       await Share.shareXFiles([
         XFile(backupFile.path),
-      ], text: 'Budgetly Full Backup');
+      ], text: 'Ledgr Full Backup');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -296,7 +296,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<void> _shareSlot(BuildContext context, BackupSlot slot) async {
     await Share.shareXFiles([
       XFile(slot.file.path),
-    ], text: 'Budgetly Backup Slot ${slot.index + 1}');
+    ], text: 'Ledgr Backup Slot ${slot.index + 1}');
   }
 
   Future<void> _restoreFile(
@@ -309,7 +309,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       builder: (ctx) => AlertDialog(
         title: Text('Restore $label?'),
         content: const Text(
-          'This will replace all current Budgetly data with the backup contents. This action cannot be undone from inside the app.',
+          'This will replace all current Ledgr data with the backup contents. This action cannot be undone from inside the app.',
         ),
         actions: [
           TextButton(
@@ -363,11 +363,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       ];
       final csv = const ListToCsvConverter().convert(rows);
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/budgetly_transactions.csv');
+      final file = File('${dir.path}/ledgr_transactions.csv');
       await file.writeAsString(csv);
       await Share.shareXFiles([
         XFile(file.path),
-      ], text: 'Budgetly Transactions');
+      ], text: 'Ledgr Transactions');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(

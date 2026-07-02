@@ -1,4 +1,4 @@
-package com.budgetly.budgetly
+package com.ledgr.ledgr
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:budgetly/features/onboarding/onboarding_screen.dart';
+import 'package:ledgr/features/onboarding/onboarding_screen.dart';
 
 void main() {
   testWidgets('Onboarding shows richer welcome step', (
@@ -13,7 +13,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome to Budgetly'), findsOneWidget);
+    expect(find.text('Welcome to Ledgr'), findsOneWidget);
     expect(find.text('Private by default'), findsOneWidget);
     expect(find.text('1/10'), findsOneWidget);
   });

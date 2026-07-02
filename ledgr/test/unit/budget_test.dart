@@ -2,10 +2,10 @@ import 'package:drift/native.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:budgetly/core/database/app_database.dart';
-import 'package:budgetly/core/database/repositories/budget_repository.dart';
-import 'package:budgetly/core/database/repositories/settings_repository.dart';
-import 'package:budgetly/core/services/exchange_rate_service.dart';
+import 'package:ledgr/core/database/app_database.dart';
+import 'package:ledgr/core/database/repositories/budget_repository.dart';
+import 'package:ledgr/core/database/repositories/settings_repository.dart';
+import 'package:ledgr/core/services/exchange_rate_service.dart';
 
 /// Tests for budget calculation logic
 /// Note: These test the calculation math, not the database layer.

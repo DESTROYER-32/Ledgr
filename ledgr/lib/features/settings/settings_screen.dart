@@ -55,7 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ModernSelectionItem(
       value: 0,
       title: 'Immediately after leaving',
-      subtitle: 'Lock as soon as you return to Budgetly',
+      subtitle: 'Lock as soon as you return to Ledgr',
       icon: Icons.lock_clock_outlined,
     ),
     ModernSelectionItem(
@@ -87,7 +87,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final displayCurrency = await repo.get('display_currency');
     final showDefaultCurrency = await repo.get('show_default_currency');
     final favoriteCurrencies = await repo.get('favorite_currencies');
-    final demoMode = await repo.get('budgetly_demo_mode');
+    final demoMode = await repo.get('ledgr_demo_mode');
     final userName = await repo.get('user_name');
     if (mounted) {
       setState(() {
@@ -141,7 +141,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Type RESET to permanently erase all Budgetly data.'),
+            const Text('Type RESET to permanently erase all Ledgr data.'),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
@@ -216,7 +216,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _demoMode = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All Budgetly data has been reset.')),
+      const SnackBar(content: Text('All Ledgr data has been reset.')),
     );
     context.go('/onboarding');
   }
@@ -268,7 +268,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           textInputAction: TextInputAction.done,
           decoration: const InputDecoration(
             labelText: 'Name',
-            hintText: 'What should Budgetly call you?',
+            hintText: 'What should Ledgr call you?',
           ),
           onSubmitted: (_) => Navigator.pop(context, controller.text),
         ),
@@ -665,7 +665,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Disable app lock?'),
-        content: const Text('Budgetly will open without a PIN or biometrics.'),
+        content: const Text('Ledgr will open without a PIN or biometrics.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -769,8 +769,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: const Text('PIN Lock'),
               subtitle: Text(
                 lockState.isEnabled
-                    ? 'Require a PIN when opening Budgetly'
-                    : 'Protect Budgetly with a PIN',
+                    ? 'Require a PIN when opening Ledgr'
+                    : 'Protect Ledgr with a PIN',
               ),
               value: lockState.isEnabled,
               onChanged: _securityBusy
@@ -782,7 +782,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.pin_outlined),
                 title: const Text('Change PIN'),
-                subtitle: const Text('Update your Budgetly unlock PIN'),
+                subtitle: const Text('Update your Ledgr unlock PIN'),
                 onTap: _securityBusy ? null : () => _setPin(changing: true),
               ),
               const Divider(height: 1),
@@ -1127,7 +1127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               title: const Text('Reset Everything'),
               subtitle: const Text(
-                'Erase all Budgetly data and settings after double confirmation',
+                'Erase all Ledgr data and settings after double confirmation',
               ),
               trailing: _resetBusy
                   ? const SizedBox(
