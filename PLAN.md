@@ -1,4 +1,4 @@
-# Budgetly Verified Issue Plan
+# Ledgr Verified Issue Plan
 
 > Updated on 2026-06-30. Critical, medium, and fresh high-value scan findings have been addressed. The app is pre-release, so local schema downgrade from the short-lived schema v2 build is handled destructively for test databases while the canonical schema remains version 1.
 
@@ -14,21 +14,21 @@
 
 ### 1. `[fixed]` Foreign keys missing delete actions
 
-**File:** `budgetly/lib/core/database/tables.dart`
+**File:** `ledgr/lib/core/database/tables.dart`
 
 Fixed: required child rows cascade, nullable links set null, and generated Drift schema emits `ON DELETE` clauses.
 
 ### 2. `[fixed]` Raw SQL `whereClause` interpolation
 
-**File:** `budgetly/lib/core/database/repositories/transaction_repository.dart`
+**File:** `ledgr/lib/core/database/repositories/transaction_repository.dart`
 
 Fixed: raw condition strings were replaced with typed `type` and optional `specialType` parameters passed as Drift SQL variables.
 
 ### 3. `[fixed]` Database close ownership ambiguity
 
-**Files:** `budgetly/lib/core/providers/providers.dart`, `budgetly/lib/main.dart`
+**Files:** `ledgr/lib/core/providers/providers.dart`, `ledgr/lib/main.dart`
 
-Fixed: `main()` overrides `appDatabaseProvider` with provider-owned disposal, and `BudgetlyApp` no longer manually closes the DB.
+Fixed: `main()` overrides `appDatabaseProvider` with provider-owned disposal, and `LedgrApp` no longer manually closes the DB.
 
 ---
 
