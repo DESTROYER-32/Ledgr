@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/providers.dart';
@@ -27,23 +28,22 @@ class ActivityScreen extends ConsumerWidget {
                 builder: (ctx) => AlertDialog(
                   title: const Text('Clear Activity Log?'),
                   content: const Text(
-                      'This will permanently remove all activity entries.'),
+                    'This will permanently remove all activity entries.',
+                  ),
                   actions: [
                     TextButton(
-                        onPressed: () =>
-                            Navigator.pop(ctx, false),
-                        child: const Text('Cancel')),
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
                     TextButton(
-                        onPressed: () =>
-                            Navigator.pop(ctx, true),
-                        child: const Text('Clear')),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Clear'),
+                    ),
                   ],
                 ),
               );
               if (confirm == true) {
-                await ref
-                    .read(deleteLogRepositoryProvider)
-                    .clearAll();
+                await ref.read(deleteLogRepositoryProvider).clearAll();
               }
             },
           ),
@@ -68,16 +68,16 @@ class ActivityScreen extends ConsumerWidget {
               return Card(
                 margin: const EdgeInsets.only(bottom: 4),
                 child: ListTile(
-                  leading: const Icon(Icons.delete_outline,
-                      color: Colors.red),
-                  title: Text(
-                      '${data['title'] ?? 'Untitled'}'),
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.expense,
+                  ),
+                  title: Text('${data['title'] ?? 'Untitled'}'),
                   subtitle: Text(
                     '${data['type'] ?? ''} ${data['specialType'] != null && data['specialType'] != 'none' ? '(${data['specialType']})' : ''} \u2022 ${MoneyUtils.formatDateShort(log.deletedAt)}',
                   ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.restore,
-                        color: Colors.green),
+                    icon: const Icon(Icons.restore, color: AppColors.income),
                     tooltip: 'Restore',
                     onPressed: () async {
                       await ref
@@ -91,8 +91,7 @@ class ActivityScreen extends ConsumerWidget {
           );
         },
         error: (e, _) => Center(child: Text('$e')),
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
   }

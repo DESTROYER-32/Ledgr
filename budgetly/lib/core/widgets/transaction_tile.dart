@@ -43,11 +43,9 @@ class TransactionTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isExpense = type == 'expense';
     final isIncome = type == 'income';
-    final amountColor = isExpense
-        ? AppColors.expense
-        : (isIncome ? AppColors.income : AppColors.transfer);
+    final amountColor = _transactionColor(type);
     final iconColor = categoryColor ?? amountColor;
-    final sign = isExpense ? '-' : (isIncome ? '+' : '');
+    final sign = _transactionSign(type);
     final transactionCurrency = currencyCode ?? MoneyUtils.defaultCurrencyCode;
     final defaultCurrency = displayCurrencyCode ?? transactionCurrency;
     final defaultAmount = displayAmountMinor ?? amountMinor;
@@ -89,7 +87,7 @@ class TransactionTile extends StatelessWidget {
                       title ?? type[0].toUpperCase() + type.substring(1),
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: AppTextSizes.body,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -100,7 +98,7 @@ class TransactionTile extends StatelessWidget {
                         Text(
                           MoneyUtils.formatDateShort(date),
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -119,7 +117,7 @@ class TransactionTile extends StatelessWidget {
                           Text(
                             categoryName!,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppTextSizes.small,
                               color:
                                   categoryColor ??
                                   theme.colorScheme.onSurfaceVariant,
@@ -139,7 +137,7 @@ class TransactionTile extends StatelessWidget {
                     '$sign${MoneyUtils.format(amountMinor, currencyCode: transactionCurrency)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: AppTextSizes.title,
                       color: amountColor,
                     ),
                   ),
@@ -148,7 +146,7 @@ class TransactionTile extends StatelessWidget {
                     Text(
                       '$sign${MoneyUtils.format(defaultAmount, currencyCode: defaultCurrency)}',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: AppTextSizes.tiny,
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
@@ -175,4 +173,20 @@ class TransactionTile extends StatelessWidget {
       ),
     );
   }
+}
+
+Color _transactionColor(String type) {
+  return switch (type) {
+    'expense' => AppColors.expense,
+    'income' => AppColors.income,
+    _ => AppColors.transfer,
+  };
+}
+
+String _transactionSign(String type) {
+  return switch (type) {
+    'expense' => '-',
+    'income' => '+',
+    _ => '',
+  };
 }

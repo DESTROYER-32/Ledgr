@@ -1,9 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/empty_state.dart';
 
@@ -186,7 +186,7 @@ class _SummaryGrid extends StatelessWidget {
             currencyCode: report.displayCurrency,
           ),
           icon: Icons.arrow_downward_rounded,
-          color: Colors.green,
+          color: AppColors.income,
         ),
         _MetricCard(
           title: 'Expenses',
@@ -195,7 +195,7 @@ class _SummaryGrid extends StatelessWidget {
             currencyCode: report.displayCurrency,
           ),
           icon: Icons.arrow_upward_rounded,
-          color: Colors.red,
+          color: AppColors.expense,
         ),
         _MetricCard(
           title: 'Net',
@@ -204,7 +204,7 @@ class _SummaryGrid extends StatelessWidget {
             currencyCode: report.displayCurrency,
           ),
           icon: Icons.ssid_chart_rounded,
-          color: report.netCashflow >= 0 ? Colors.green : Colors.orange,
+          color: report.netCashflow >= 0 ? AppColors.income : Colors.orange,
         ),
         _MetricCard(
           title: 'Transactions',
@@ -355,11 +355,11 @@ class _TrendCard extends StatelessWidget {
                   lineBarsData: [
                     _lineData(
                       report.monthlyIncome.values.toList(),
-                      Colors.green,
+                      AppColors.income,
                     ),
                     _lineData(
                       report.monthlyExpense.values.toList(),
-                      Colors.red,
+                      AppColors.expense,
                     ),
                   ],
                 ),
@@ -368,9 +368,9 @@ class _TrendCard extends StatelessWidget {
             const SizedBox(height: 8),
             const Row(
               children: [
-                _LegendDot(color: Colors.green, label: 'Income'),
+                _LegendDot(color: AppColors.income, label: 'Income'),
                 SizedBox(width: 16),
-                _LegendDot(color: Colors.red, label: 'Expenses'),
+                _LegendDot(color: AppColors.expense, label: 'Expenses'),
               ],
             ),
           ],
@@ -448,7 +448,7 @@ class _CategoryCard extends StatelessWidget {
                           titleStyle: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                           ),
                         ),
                     ],
@@ -634,7 +634,7 @@ List<_AnalyticsEntry> _topEntries(Map<String, int> values) {
   return entries.take(6).toList();
 }
 
-String _monthKey(DateTime date) => DateFormat('MMM').format(date);
+String _monthKey(DateTime date) => AppDateUtils.formatMonthAbbreviation(date);
 
 Color _chartColor(int index, ColorScheme cs) {
   final colors = [

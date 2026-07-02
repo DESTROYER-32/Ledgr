@@ -5,7 +5,9 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/currency_options.dart';
 import '../../core/utils/currency_utils.dart';
+import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
 class WalletFormScreen extends ConsumerStatefulWidget {
@@ -57,8 +59,10 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
       _nameController.text = wallet.name;
       _type = wallet.type;
       _currencyCode = wallet.currencyCode;
-      _balanceController.text = (wallet.initialBalanceMinor / 100)
-          .toStringAsFixed(2);
+      _balanceController.text = MoneyUtils.toMajorText(
+        wallet.initialBalanceMinor,
+        currencyCode: wallet.currencyCode,
+      );
     }
   }
 
@@ -74,7 +78,10 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     setState(() => _isLoading = true);
 
     final repo = ref.read(walletRepositoryProvider);
-    final balance = (double.tryParse(_balanceController.text) ?? 0) * 100;
+    final balance = MoneyUtils.toMinor(
+      double.tryParse(_balanceController.text) ?? 0,
+      currencyCode: _currencyCode,
+    );
 
     if (widget.walletId != null) {
       await repo.update(
@@ -83,7 +90,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
           name: Value(_nameController.text),
           type: Value(_type),
           currencyCode: Value(_currencyCode),
-          initialBalanceMinor: Value(balance.round()),
+          initialBalanceMinor: Value(balance),
         ),
       );
     } else {
@@ -92,7 +99,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
           name: _nameController.text,
           type: _type,
           currencyCode: _currencyCode,
-          initialBalanceMinor: balance.round(),
+          initialBalanceMinor: balance,
         ),
       );
     }

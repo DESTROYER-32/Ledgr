@@ -41,22 +41,30 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Container(
-          height: widget.height,
-          width: widget.width,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            gradient: LinearGradient(
-              begin: Alignment(-1 + _controller.value * 2, 0),
-              end: Alignment(1 + _controller.value * 2, 0),
-              colors: [
-                theme.colorScheme.surfaceContainerHighest,
-                theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.5),
-                theme.colorScheme.surfaceContainerHighest,
-              ],
-            ),
-          ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final fallbackWidth = constraints.hasBoundedWidth
+                ? constraints.maxWidth.clamp(1.0, double.infinity)
+                : 1.0;
+            return Container(
+              height: widget.height,
+              width: widget.width ?? fallbackWidth,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(widget.borderRadius),
+                gradient: LinearGradient(
+                  begin: Alignment(-1 + _controller.value * 2, 0),
+                  end: Alignment(1 + _controller.value * 2, 0),
+                  colors: [
+                    theme.colorScheme.surfaceContainerHighest,
+                    theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    theme.colorScheme.surfaceContainerHighest,
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -75,15 +83,21 @@ class ShimmerCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(lines, (i) => Padding(
-            padding: EdgeInsets.only(bottom: i < lines - 1 ? 12 : 0),
-            child: ShimmerLoading(
-              height: 14,
-              width: i == 0 ? 120 : (i == lines - 1 ? 200 : double.infinity),
+          children: List.generate(
+            lines,
+            (i) => Padding(
+              padding: EdgeInsets.only(bottom: i < lines - 1 ? 12 : 0),
+              child: ShimmerLoading(height: 14, width: _lineWidth(i)),
             ),
-          )),
+          ),
         ),
       ),
     );
+  }
+
+  double _lineWidth(int index) {
+    if (index == 0) return 120;
+    if (index == lines - 1) return 200;
+    return double.infinity;
   }
 }

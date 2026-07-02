@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../database/app_database.dart';
+import '../utils/app_logger.dart';
 import '../database/repositories/settings_repository.dart';
 
 class BackupSlot {
@@ -164,7 +165,13 @@ class BackupService {
           if (decoded is Map && decoded['exportedAt'] is String) {
             createdAt = DateTime.tryParse(decoded['exportedAt'] as String);
           }
-        } catch (_) {}
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Failed to read auto-backup slot metadata',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
         final stat = await file.stat();
         result.add(
           BackupSlot(

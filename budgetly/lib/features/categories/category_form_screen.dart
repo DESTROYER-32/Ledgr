@@ -69,7 +69,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
         _kind = c.kind;
         _icon = c.icon ?? 'category';
         _color = c.color ?? AppColors.categoryColors[0].toARGB32();
-        _parentCategoryId = c.mainCategoryPk;
+        _parentCategoryId = c.parentCategoryId;
       });
     }
   }
@@ -88,7 +88,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
       kind: Value(_kind),
       icon: Value(_icon),
       color: Value(_color),
-      mainCategoryPk: _parentCategoryId != null
+      parentCategoryId: _parentCategoryId != null
           ? Value(_parentCategoryId!)
           : const Value(null),
     );
@@ -102,7 +102,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
           kind: _kind,
           icon: Value(_icon),
           color: Value(_color),
-          mainCategoryPk: _parentCategoryId != null
+          parentCategoryId: _parentCategoryId != null
               ? Value(_parentCategoryId!)
               : const Value(null),
         ),

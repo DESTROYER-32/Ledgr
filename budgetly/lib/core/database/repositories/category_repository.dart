@@ -22,7 +22,9 @@ class CategoryRepository {
 
   Stream<List<Category>> watchParents() =>
       (_db.categories.select()
-            ..where((c) => c.archived.equals(false) & c.mainCategoryPk.isNull())
+            ..where(
+              (c) => c.archived.equals(false) & c.parentCategoryId.isNull(),
+            )
             ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
           .watch();
 
@@ -30,7 +32,8 @@ class CategoryRepository {
       (_db.categories.select()
             ..where(
               (c) =>
-                  c.archived.equals(false) & c.mainCategoryPk.equals(parentId),
+                  c.archived.equals(false) &
+                  c.parentCategoryId.equals(parentId),
             )
             ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
           .watch();
@@ -51,11 +54,16 @@ class CategoryRepository {
       _db.into(_db.categories).insert(entry);
 
   Future<void> update(int id, CategoriesCompanion entry) =>
-      (_db.categories.update()..where((c) => c.id.equals(id))).write(entry);
+      (_db.categories.update()..where((c) => c.id.equals(id))).write(
+        entry.copyWith(updatedAt: Value(DateTime.now())),
+      );
 
   Future<void> archive(int id) =>
       (_db.categories.update()..where((c) => c.id.equals(id))).write(
-        const CategoriesCompanion(archived: Value(true)),
+        CategoriesCompanion(
+          archived: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ),
       );
 
   Future<void> delete(int id) async {
@@ -69,7 +77,7 @@ class CategoryRepository {
   Future<bool> _hasReferences(int id) async {
     final child =
         await (_db.categories.select()
-              ..where((c) => c.mainCategoryPk.equals(id))
+              ..where((c) => c.parentCategoryId.equals(id))
               ..limit(1))
             .getSingleOrNull();
     if (child != null) return true;

@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/database/app_database.dart';
 import 'core/database/repositories/settings_repository.dart';
+import 'l10n/app_localizations.dart';
 import 'core/providers/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/app_logger.dart';
 import 'features/security/app_lock_screen.dart';
 
 void main() async {
@@ -14,9 +16,14 @@ void main() async {
 
   try {
     await NotificationService.init();
-  } catch (_) {
+  } catch (error, stackTrace) {
     // Notifications are optional; startup should continue if the platform
     // plugin is unavailable or initialization fails.
+    AppLogger.warning(
+      'Notification initialization failed; continuing without notifications',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   final db = AppDatabase();
@@ -26,26 +33,21 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [
-        appDatabaseProvider.overrideWithValue(db),
+        appDatabaseProvider.overrideWith((ref) {
+          ref.onDispose(db.close);
+          return db;
+        }),
         initialRouteProvider.overrideWithValue(onboarded ? '/' : '/onboarding'),
       ],
-      child: BudgetlyApp(
-        initialRoute: onboarded ? '/' : '/onboarding',
-        database: db,
-      ),
+      child: BudgetlyApp(initialRoute: onboarded ? '/' : '/onboarding'),
     ),
   );
 }
 
 class BudgetlyApp extends ConsumerStatefulWidget {
   final String initialRoute;
-  final AppDatabase database;
 
-  const BudgetlyApp({
-    super.key,
-    required this.initialRoute,
-    required this.database,
-  });
+  const BudgetlyApp({super.key, required this.initialRoute});
 
   @override
   ConsumerState<BudgetlyApp> createState() => _BudgetlyAppState();
@@ -78,7 +80,6 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    widget.database.close();
     super.dispose();
   }
 
@@ -89,6 +90,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
     return themeAsync.when(
       data: (config) => MaterialApp.router(
         title: 'Budgetly',
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light(seedOverride: config.seedColor),
         darkTheme: config.amoled
             ? AppTheme.amoled(seedOverride: config.seedColor)
@@ -98,12 +102,18 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
         debugShowCheckedModeBanner: false,
         builder: (context, child) {
           final lockState = ref.watch(appLockStateProvider);
+          if (lockState.isLoading) {
+            return const Scaffold(body: SizedBox.shrink());
+          }
           if (lockState.isLocked) return const AppLockScreen();
           return child ?? const SizedBox.shrink();
         },
       ),
       error: (_, _) => MaterialApp.router(
         title: 'Budgetly',
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,
@@ -112,6 +122,9 @@ class _BudgetlyAppState extends ConsumerState<BudgetlyApp>
       ),
       loading: () => MaterialApp.router(
         title: 'Budgetly',
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,

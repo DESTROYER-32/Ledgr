@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/utils/app_logger.dart';
+import '../../core/utils/currency_options.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/amount_field.dart';
@@ -49,7 +51,10 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
     final obj = await repo.getById(widget.objectiveId!);
     if (obj != null && mounted) {
       _nameController.text = obj.name;
-      _amountController.text = (obj.amountMinor / 100).toStringAsFixed(2);
+      _amountController.text = MoneyUtils.toMajorText(
+        obj.amountMinor,
+        currencyCode: obj.currencyCode,
+      );
       _type = obj.type;
       _currencyCode = obj.currencyCode;
       _deadline = obj.deadline;
@@ -105,7 +110,7 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
             AmountField(
               controller: _amountController,
               label: _type == 'loan' ? 'Total Amount' : 'Target Amount',
-              currencySymbol: _currencyCode,
+              currencyCode: _currencyCode,
             ),
             const SizedBox(height: 16),
             ModernSelectionField<String>(
@@ -233,7 +238,12 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
         await repo.insert(entry);
       }
       if (mounted) context.pop();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to save objective',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not save objective.')),

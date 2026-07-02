@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/currency_options.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
@@ -82,8 +83,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         _startDate = budget.periodStart;
         _endDate = budget.periodEnd;
         _periodDays = days > 0 ? days : 30;
-        _amountController.text = (budget.plannedAmountMinor / 100)
-            .toStringAsFixed(2);
+        _amountController.text = MoneyUtils.toMajorText(
+          budget.plannedAmountMinor,
+          currencyCode: budget.currencyCode,
+        );
       });
       _currencyCode = budget.currencyCode;
       final limits = await repo.watchLimits(budget.id).first;
@@ -97,8 +100,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(budgetRepositoryProvider);
     final currencyCode = _currencyCode;
-    final plannedAmountMinor =
-        ((double.tryParse(_amountController.text) ?? 0) * 100).round();
+    final plannedAmountMinor = MoneyUtils.toMinor(
+      double.tryParse(_amountController.text) ?? 0,
+      currencyCode: currencyCode,
+    );
 
     final companion = BudgetsCompanion(
       name: Value(_nameController.text.trim()),
@@ -232,7 +237,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 _specificMode
                     ? 'Only transactions you assign to this budget'
                     : 'All transactions in date range',
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: AppTextSizes.small,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               value: _specificMode,
               onChanged: (v) => setState(() => _specificMode = v),
@@ -290,7 +298,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                     },
                     child: Text(
                       'Start: ${MoneyUtils.formatDateShort(_startDate)}',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: AppTextSizes.small),
                     ),
                   ),
                 ),
@@ -313,7 +321,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                     },
                     child: Text(
                       'End: ${MoneyUtils.formatDateShort(_endDate)}',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: AppTextSizes.small),
                     ),
                   ),
                 ),
@@ -356,7 +364,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               _specificMode
                   ? 'Select categories. Only transactions matching these will be available.'
                   : 'Select categories to track in this budget. Leave empty to track all.',
-              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: AppTextSizes.small,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             catsAsync.when(
@@ -376,7 +387,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       label: Text(
                         c.name,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: AppTextSizes.body,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

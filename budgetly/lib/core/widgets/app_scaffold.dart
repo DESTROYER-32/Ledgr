@@ -92,18 +92,26 @@ class AppScaffold extends StatelessWidget {
   }
 
   void _showQuickEntry(BuildContext context) {
+    final router = GoRouter.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (c) => _QuickEntrySheet(rootNavigator: context),
+      builder: (_) => _QuickEntrySheet(
+        onContinue: (type) {
+          router.push(
+            '/transactions/new',
+            extra: <String, dynamic>{'type': type},
+          );
+        },
+      ),
     );
   }
 }
 
 class _QuickEntrySheet extends StatefulWidget {
-  final BuildContext rootNavigator;
-  const _QuickEntrySheet({required this.rootNavigator});
+  final ValueChanged<String> onContinue;
+  const _QuickEntrySheet({required this.onContinue});
 
   @override
   State<_QuickEntrySheet> createState() => _QuickEntrySheetState();
@@ -114,10 +122,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
 
   void _navigateToForm() {
     Navigator.pop(context);
-    widget.rootNavigator.push(
-      '/transactions/new',
-      extra: <String, dynamic>{'type': _type},
-    );
+    widget.onContinue(_type);
   }
 
   @override

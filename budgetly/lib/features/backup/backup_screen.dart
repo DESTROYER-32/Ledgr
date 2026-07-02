@@ -11,6 +11,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/backup_service.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
 
@@ -217,13 +218,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               title: Text(
                 slot.exists ? _formatDate(slot.createdAt!) : 'Empty slot',
               ),
-              subtitle: Text(
-                slot.exists
-                    ? '${_formatBytes(slot.sizeBytes)}${slot.index == config.nextSlotIndex ? ' • next overwrite' : ''}'
-                    : slot.index == config.nextSlotIndex
-                    ? 'Next backup will be saved here'
-                    : 'No backup yet',
-              ),
+              subtitle: Text(_slotSubtitle(slot, config.nextSlotIndex)),
               trailing: slot.exists
                   ? PopupMenuButton<String>(
                       onSelected: (value) {
@@ -358,7 +353,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           [
             t.date.toIso8601String(),
             t.type,
-            (t.amountMinor / 100).toStringAsFixed(2),
+            MoneyUtils.toMajorText(t.amountMinor, currencyCode: t.currencyCode),
             t.currencyCode,
             t.walletId,
             t.categoryId ?? '',
@@ -499,7 +494,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             ),
           );
           count++;
-        } catch (_) {}
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Skipped invalid CSV transaction row during import',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
       }
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -540,6 +541,17 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final kb = bytes / 1024;
     if (kb < 1024) return '${kb.toStringAsFixed(1)} KB';
     return '${(kb / 1024).toStringAsFixed(1)} MB';
+  }
+
+  String _slotSubtitle(BackupSlot slot, int nextSlotIndex) {
+    if (slot.exists) {
+      final overwriteLabel = slot.index == nextSlotIndex
+          ? ' • next overwrite'
+          : '';
+      return '${_formatBytes(slot.sizeBytes)}$overwriteLabel';
+    }
+    if (slot.index == nextSlotIndex) return 'Next backup will be saved here';
+    return 'No backup yet';
   }
 
   void _invalidateDataProviders(WidgetRef ref) {

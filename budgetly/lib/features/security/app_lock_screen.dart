@@ -14,13 +14,15 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
   final _controller = TextEditingController();
   String? _error;
   bool _verifying = false;
-  int _failedAttempts = 0;
   DateTime? _lockedUntil;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _tryBiometrics());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadAttemptState();
+      await _tryBiometrics();
+    });
   }
 
   @override
@@ -31,6 +33,16 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
 
   Future<void> _tryBiometrics() async {
     await ref.read(appLockControllerProvider).authenticateWithBiometrics();
+  }
+
+  Future<void> _loadAttemptState() async {
+    final attemptState = await ref
+        .read(appLockControllerProvider)
+        .loadAttemptState();
+    if (!mounted) return;
+    setState(() {
+      _lockedUntil = attemptState.lockedUntil;
+    });
   }
 
   Future<void> _verify() async {
@@ -53,20 +65,18 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
         .verifyPin(_controller.text);
     if (!mounted) return;
     if (ok) {
+      await ref.read(appLockControllerProvider).clearAttemptState();
       setState(() {
         _verifying = false;
-        _failedAttempts = 0;
         _lockedUntil = null;
       });
       return;
     }
 
-    _failedAttempts++;
-    if (_failedAttempts >= 5) {
-      final delaySeconds = (_failedAttempts - 4).clamp(1, 6) * 5;
-      _lockedUntil = DateTime.now().add(Duration(seconds: delaySeconds));
-    }
-
+    final attemptState = await ref
+        .read(appLockControllerProvider)
+        .recordFailedAttempt();
+    _lockedUntil = attemptState.lockedUntil;
     final until = _lockedUntil;
     setState(() {
       _verifying = false;

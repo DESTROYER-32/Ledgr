@@ -7,6 +7,7 @@ import '../../core/database/app_database.dart';
 import '../../core/database/repositories/transaction_repository.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/minor_conversion_cache.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/balance_card.dart';
 import '../../core/widgets/section_header.dart';
@@ -31,6 +32,7 @@ final _dashboardBudgetPreviewProvider = FutureProvider.autoDispose
 
 final _dashboardInsightsProvider =
     FutureProvider.autoDispose<_DashboardInsights>((ref) async {
+      ref.watch(allTransactionsProvider);
       final budgets = await ref.watch(allBudgetsProvider.future);
       final now = DateTime.now();
       final activeBudgets = budgets
@@ -88,7 +90,13 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(allTransactionsProvider);
           ref.invalidate(allBudgetsProvider);
           ref.invalidate(activeWalletsProvider);
+          ref.invalidate(walletBalancesProvider);
           ref.invalidate(activeRecurringProvider);
+          ref.invalidate(spentByCategoryProvider);
+          ref.invalidate(monthlyIncomeProvider);
+          ref.invalidate(monthlyExpensesProvider);
+          ref.invalidate(exchangeRatesProvider);
+          ref.invalidate(_dashboardInsightsProvider);
           await Future<void>.delayed(const Duration(milliseconds: 100));
         },
         child: ListView(
@@ -252,17 +260,26 @@ class DashboardScreen extends ConsumerWidget {
                   size: 14,
                   color: cs.primary,
                 ),
-                label: const Text('Accounts', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Accounts',
+                  style: TextStyle(fontSize: AppTextSizes.small),
+                ),
                 onPressed: () => context.push('/wallets'),
               ),
               ActionChip(
                 avatar: Icon(Icons.track_changes, size: 14, color: cs.primary),
-                label: const Text('Budgets', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Budgets',
+                  style: TextStyle(fontSize: AppTextSizes.small),
+                ),
                 onPressed: () => context.push('/budgets'),
               ),
               ActionChip(
                 avatar: Icon(Icons.category, size: 14, color: cs.primary),
-                label: const Text('Categories', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Categories',
+                  style: TextStyle(fontSize: AppTextSizes.small),
+                ),
                 onPressed: () => context.push('/categories'),
               ),
             ],
@@ -306,7 +323,10 @@ class DashboardScreen extends ConsumerWidget {
                 const Spacer(),
                 TextButton(
                   onPressed: () => context.push('/wallets'),
-                  child: const Text('View All', style: TextStyle(fontSize: 12)),
+                  child: const Text(
+                    'View All',
+                    style: TextStyle(fontSize: AppTextSizes.small),
+                  ),
                 ),
               ],
             ),
@@ -363,7 +383,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Text(
                       w.name,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: AppTextSizes.subtitle,
                         fontWeight: FontWeight.w700,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -371,7 +391,10 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   Text(
                     w.currencyCode,
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -380,14 +403,17 @@ class DashboardScreen extends ConsumerWidget {
                 MoneyUtils.format(balance, currencyCode: w.currencyCode),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  fontSize: AppTextSizes.headline,
                   color: cs.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 w.type.replaceAll('_', ' '),
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: AppTextSizes.small,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -423,7 +449,10 @@ class DashboardScreen extends ConsumerWidget {
                 const Spacer(),
                 TextButton(
                   onPressed: () => context.push('/objectives'),
-                  child: const Text('View All', style: TextStyle(fontSize: 12)),
+                  child: const Text(
+                    'View All',
+                    style: TextStyle(fontSize: AppTextSizes.small),
+                  ),
                 ),
               ],
             ),
@@ -484,14 +513,17 @@ class DashboardScreen extends ConsumerWidget {
                           objective.name,
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                            fontSize: AppTextSizes.title,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
                         objective.type == 'loan' ? 'Loan' : 'Goal',
-                        style: TextStyle(fontSize: 12, color: color),
+                        style: TextStyle(
+                          fontSize: AppTextSizes.small,
+                          color: color,
+                        ),
                       ),
                     ],
                   ),
@@ -500,7 +532,7 @@ class DashboardScreen extends ConsumerWidget {
                     Text(
                       '${MoneyUtils.format(total, currencyCode: objective.currencyCode)} / ${MoneyUtils.format(objective.amountMinor, currencyCode: objective.currencyCode)}',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         color: cs.onSurfaceVariant,
                       ),
                     ),
@@ -548,7 +580,10 @@ class DashboardScreen extends ConsumerWidget {
             const Spacer(),
             TextButton(
               onPressed: () => context.push('/budgets'),
-              child: const Text('View All', style: TextStyle(fontSize: 12)),
+              child: const Text(
+                'View All',
+                style: TextStyle(fontSize: AppTextSizes.small),
+              ),
             ),
           ],
         ),
@@ -606,7 +641,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Text(
                       budget.name,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: AppTextSizes.title,
                         fontWeight: FontWeight.w700,
                         color: color,
                       ),
@@ -615,7 +650,10 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   Text(
                     isGoal ? 'Goal' : 'Budget',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -638,7 +676,7 @@ class DashboardScreen extends ConsumerWidget {
                         Text(
                           '${MoneyUtils.format(total, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(budget.plannedAmountMinor, currencyCode: budget.currencyCode)}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: cs.onSurfaceVariant,
                           ),
                         ),
@@ -657,7 +695,10 @@ class DashboardScreen extends ConsumerWidget {
                   }
                   return Text(
                     '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   );
                 },
               ),
@@ -686,7 +727,10 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 'Add Budget',
-                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: AppTextSizes.compact,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -712,17 +756,20 @@ class DashboardScreen extends ConsumerWidget {
 
     return transactionsAsync.when(
       data: (transactions) {
+        final conversionCache = MinorConversionCache(
+          toCurrency: currencyCode,
+          rates: exchangeRates,
+        );
         var income = 0;
         var expenses = 0;
         for (final t in transactions) {
           if (t.date.isBefore(start) || t.date.isAfter(end)) continue;
           if (t.date.isAfter(todayEnd)) continue;
-          final converted = MoneyUtils.convertMinor(
+          final converted = conversionCache.convert(
             t.amountMinor,
             fromCurrency: t.currencyCode,
-            toCurrency: currencyCode,
-            rates: exchangeRates,
           );
+          if (converted == null) continue;
           if (t.type == 'income') income += converted;
           if (t.type == 'expense') expenses += converted;
         }
@@ -876,56 +923,77 @@ class DashboardScreen extends ConsumerWidget {
   ) {
     final currencyCode =
         displayCurrencyAsync.valueOrNull ?? MoneyUtils.defaultCurrencyCode;
-    final insights = ref.watch(_dashboardInsightsProvider).valueOrNull;
-    if (insights == null) return _loadingCard;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.insights, color: cs.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Insights',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+    final insightsAsync = ref.watch(_dashboardInsightsProvider);
+    return insightsAsync.when(
+      loading: () => _loadingCard,
+      error: (error, _) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Icon(Icons.error_outline, color: cs.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Insights are temporarily unavailable. Pull to refresh and try again.',
+                  style: theme.textTheme.bodyMedium,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (!insights.hasData)
-              const _InsightRow(
-                icon: Icons.emoji_objects_outlined,
-                text:
-                    'No spending insights yet. Add transactions and budgets to see trends here.',
               ),
-            if (insights.previousExpenses > 0)
-              _InsightRow(
-                icon: insights.expenseDelta >= 0
-                    ? Icons.trending_up
-                    : Icons.trending_down,
-                text:
-                    'Expenses are ${insights.expenseDelta.abs().toStringAsFixed(0)}% ${insights.expenseDelta >= 0 ? 'higher' : 'lower'} than last month.',
-              ),
-            if (insights.largestExpense != null)
-              _InsightRow(
-                icon: Icons.receipt_long,
-                text:
-                    'Largest expense: ${insights.largestExpense!.title ?? 'Untitled'} at ${MoneyUtils.format(insights.largestExpense!.amountMinor, currencyCode: insights.largestExpense!.currencyCode)}.',
-              ),
-            if (insights.rolloverPreview != 0)
-              _InsightRow(
-                icon: Icons.sync_alt,
-                text:
-                    'Budget rollover preview: ${MoneyUtils.format(insights.rolloverPreview, currencyCode: currencyCode)} ${insights.rolloverPreview >= 0 ? 'available' : 'overspent'} across active budgets.',
-              ),
-          ],
+            ],
+          ),
         ),
       ),
+      data: (insights) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.insights, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Insights',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (!insights.hasData)
+                  const _InsightRow(
+                    icon: Icons.emoji_objects_outlined,
+                    text:
+                        'No spending insights yet. Add transactions and budgets to see trends here.',
+                  ),
+                if (insights.previousExpenses > 0)
+                  _InsightRow(
+                    icon: insights.expenseDelta >= 0
+                        ? Icons.trending_up
+                        : Icons.trending_down,
+                    text:
+                        'Expenses are ${insights.expenseDelta.abs().toStringAsFixed(0)}% ${insights.expenseDelta >= 0 ? 'higher' : 'lower'} than last month.',
+                  ),
+                if (insights.largestExpense != null)
+                  _InsightRow(
+                    icon: Icons.receipt_long,
+                    text:
+                        'Largest expense: ${insights.largestExpense!.title ?? 'Untitled'} at ${MoneyUtils.format(insights.largestExpense!.amountMinor, currencyCode: insights.largestExpense!.currencyCode)}.',
+                  ),
+                if (insights.rolloverPreview != 0)
+                  _InsightRow(
+                    icon: Icons.sync_alt,
+                    text:
+                        'Budget rollover preview: ${MoneyUtils.format(insights.rolloverPreview, currencyCode: currencyCode)} ${insights.rolloverPreview >= 0 ? 'available' : 'overspent'} across active budgets.',
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -989,7 +1057,7 @@ class DashboardScreen extends ConsumerWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: AppTextSizes.tiny,
                   fontWeight: FontWeight.w600,
                   color: color,
                 ),
@@ -1061,7 +1129,7 @@ class DashboardScreen extends ConsumerWidget {
                                     radius: 28,
                                     title: '${(pct * 100).toStringAsFixed(0)}%',
                                     titleStyle: const TextStyle(
-                                      fontSize: 10,
+                                      fontSize: AppTextSizes.micro,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
@@ -1102,8 +1170,14 @@ class DashboardScreen extends ConsumerWidget {
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          cat?.name ?? 'Cat ${e.key}',
-                                          style: const TextStyle(fontSize: 11),
+                                          e.key ==
+                                                  TransactionRepository
+                                                      .uncategorizedCategoryId
+                                              ? 'Uncategorized'
+                                              : cat?.name ?? 'Cat ${e.key}',
+                                          style: const TextStyle(
+                                            fontSize: AppTextSizes.tiny,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -1163,7 +1237,7 @@ class DashboardScreen extends ConsumerWidget {
                       onPressed: () => context.push('/recurring'),
                       child: const Text(
                         'Manage',
-                        style: TextStyle(fontSize: 12),
+                        style: TextStyle(fontSize: AppTextSizes.small),
                       ),
                     ),
                   ],
@@ -1199,14 +1273,16 @@ class DashboardScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             r.title ?? '',
-                            style: const TextStyle(fontSize: 13),
+                            style: const TextStyle(
+                              fontSize: AppTextSizes.compact,
+                            ),
                           ),
                         ),
                         if (r.nextDueDate != null)
                           Text(
                             MoneyUtils.formatDateShort(r.nextDueDate!),
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: AppTextSizes.tiny,
                               color: cs.onSurfaceVariant,
                             ),
                           ),
@@ -1215,7 +1291,7 @@ class DashboardScreen extends ConsumerWidget {
                           MoneyUtils.format(r.amountMinor),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                            fontSize: AppTextSizes.compact,
                             color: color,
                           ),
                         ),
@@ -1333,43 +1409,49 @@ class DashboardScreen extends ConsumerWidget {
                     child: Text(
                       '${monthNames[month]} $year',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: AppTextSizes.compact,
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
-                  ...txns.take(10).map((t) {
-                    final category = t.categoryId == null
-                        ? null
-                        : categoriesById[t.categoryId];
-                    final converted = MoneyUtils.convertMinor(
-                      t.amountMinor,
-                      fromCurrency: t.currencyCode,
+                  ...() {
+                    final conversionCache = MinorConversionCache(
                       toCurrency: displayCurrency,
                       rates: exchangeRates,
                     );
-                    return TransactionTile(
-                      id: t.id,
-                      type: t.type,
-                      amountMinor: t.amountMinor,
-                      title: t.title,
-                      date: t.date,
-                      currencyCode: t.currencyCode,
-                      displayAmountMinor: converted,
-                      displayCurrencyCode: displayCurrency,
-                      showDisplayCurrency: showDefaultCurrency,
-                      categoryName: category?.name,
-                      categoryColor: category == null
+                    return txns.take(10).map((t) {
+                      final category = t.categoryId == null
                           ? null
-                          : AppColors.fromStored(
-                              category.color,
-                              AppColors.transfer,
-                            ),
-                      categoryIcon: category?.icon,
-                      onTap: () => context.push('/transactions/${t.id}'),
-                    );
-                  }),
+                          : categoriesById[t.categoryId];
+                      final converted = conversionCache.convert(
+                        t.amountMinor,
+                        fromCurrency: t.currencyCode,
+                      );
+                      final showConverted =
+                          showDefaultCurrency && converted != null;
+                      return TransactionTile(
+                        id: t.id,
+                        type: t.type,
+                        amountMinor: t.amountMinor,
+                        title: t.title,
+                        date: t.date,
+                        currencyCode: t.currencyCode,
+                        displayAmountMinor: converted ?? t.amountMinor,
+                        displayCurrencyCode: displayCurrency,
+                        showDisplayCurrency: showConverted,
+                        categoryName: category?.name,
+                        categoryColor: category == null
+                            ? null
+                            : AppColors.fromStored(
+                                category.color,
+                                AppColors.transfer,
+                              ),
+                        categoryIcon: category?.icon,
+                        onTap: () => context.push('/transactions/${t.id}'),
+                      );
+                    });
+                  }(),
                 ];
               }).toList(),
             );
@@ -1436,7 +1518,12 @@ class _InsightRow extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: cs.primary),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: AppTextSizes.compact),
+            ),
+          ),
         ],
       ),
     );

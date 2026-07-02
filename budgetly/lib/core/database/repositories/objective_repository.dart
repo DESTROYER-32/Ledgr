@@ -6,36 +6,42 @@ class ObjectiveRepository {
   final AppDatabase _db;
   ObjectiveRepository(this._db);
 
-  Stream<List<Objective>> watchAll() => (_db.objectives.select()
-        ..where((o) => o.archived.equals(false))
-        ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
-      .watch();
-
-  Stream<List<Objective>> watchPinned() => (_db.objectives.select()
-        ..where((o) => o.pinned.equals(true) & o.archived.equals(false))
-        ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
-      .watch();
-
-  Stream<List<Objective>> watchByType(String type) =>
+  Stream<List<Objective>> watchAll() =>
       (_db.objectives.select()
-            ..where((o) =>
-                o.type.equals(type) & o.archived.equals(false))
+            ..where((o) => o.archived.equals(false))
             ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
           .watch();
 
-  Future<Objective?> getById(int id) => (_db.objectives.select()
-        ..where((o) => o.id.equals(id)))
-      .getSingleOrNull();
+  Stream<List<Objective>> watchPinned() =>
+      (_db.objectives.select()
+            ..where((o) => o.pinned.equals(true) & o.archived.equals(false))
+            ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
+          .watch();
+
+  Stream<List<Objective>> watchByType(String type) =>
+      (_db.objectives.select()
+            ..where((o) => o.type.equals(type) & o.archived.equals(false))
+            ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
+          .watch();
+
+  Future<Objective?> getById(int id) =>
+      (_db.objectives.select()..where((o) => o.id.equals(id)))
+          .getSingleOrNull();
 
   Future<int> insert(ObjectivesCompanion entry) =>
       _db.into(_db.objectives).insert(entry);
 
   Future<void> update(int id, ObjectivesCompanion entry) =>
-      (_db.objectives.update()..where((o) => o.id.equals(id))).write(entry);
+      (_db.objectives.update()..where((o) => o.id.equals(id))).write(
+        entry.copyWith(updatedAt: Value(DateTime.now())),
+      );
 
   Future<void> archive(int id) =>
       (_db.objectives.update()..where((o) => o.id.equals(id))).write(
-        const ObjectivesCompanion(archived: Value(true)),
+        ObjectivesCompanion(
+          archived: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ),
       );
 
   Future<void> delete(int id) =>

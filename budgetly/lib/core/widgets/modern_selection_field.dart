@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class ModernSelectionItem<T> {
   final T value;
   final String title;
@@ -48,6 +50,7 @@ class ModernSelectionField<T> extends StatelessWidget {
     final theme = Theme.of(context);
 
     return FormField<T>(
+      key: ValueKey<Object?>(value),
       initialValue: value,
       validator: validator,
       builder: (state) {
@@ -60,6 +63,7 @@ class ModernSelectionField<T> extends StatelessWidget {
                         context: context,
                         useSafeArea: true,
                         showDragHandle: true,
+                        enableDrag: false,
                         isScrollControlled: true,
                         builder: (_) => _ModernSelectionSheet<T>(
                           title: label,
@@ -331,7 +335,7 @@ class _Badge extends StatelessWidget {
         style: TextStyle(
           color: cs.onSecondaryContainer,
           fontWeight: FontWeight.w700,
-          fontSize: 12,
+          fontSize: AppTextSizes.small,
         ),
       ),
     );

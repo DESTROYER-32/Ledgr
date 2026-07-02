@@ -55,6 +55,26 @@ class MoneyUtils {
     required String toCurrency,
     required Map<String, double> rates,
   }) {
+    final converted = tryConvertMinor(
+      amountMinor,
+      fromCurrency: fromCurrency,
+      toCurrency: toCurrency,
+      rates: rates,
+    );
+    if (converted == null) {
+      throw StateError(
+        'Missing exchange rate for $fromCurrency to $toCurrency',
+      );
+    }
+    return converted;
+  }
+
+  static int? tryConvertMinor(
+    int amountMinor, {
+    required String fromCurrency,
+    required String toCurrency,
+    required Map<String, double> rates,
+  }) {
     if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
       return amountMinor;
     }
@@ -65,9 +85,13 @@ class MoneyUtils {
         rates[toCurrency.toLowerCase()] ??
         (toCurrency.toLowerCase() == 'usd' ? 1.0 : null);
     if (fromRate == null || toRate == null || fromRate == 0) {
-      return amountMinor;
+      return null;
     }
-    return (amountMinor * toRate * (1 / fromRate)).round();
+    final convertedMajor =
+        toMajor(amountMinor, currencyCode: fromCurrency) *
+        toRate *
+        (1 / fromRate);
+    return toMinor(convertedMajor, currencyCode: toCurrency);
   }
 
   static int toMinor(double amount, {String? currencyCode}) {
@@ -90,6 +114,14 @@ class MoneyUtils {
     return minor / math.pow(10, digits);
   }
 
+  static String toMajorText(int minor, {String? currencyCode}) {
+    final code = currencyCode ?? defaultCurrencyCode;
+    return toMajor(
+      minor,
+      currencyCode: code,
+    ).toStringAsFixed(decimalDigitsFor(code));
+  }
+
   static String formatDate(DateTime date) => AppDateUtils.formatDate(date);
 
   static String formatDateShort(DateTime date) =>
@@ -105,6 +137,10 @@ class AppDateUtils {
 
   static String formatDateShort(DateTime date) {
     return DateFormat.MMMd().format(date);
+  }
+
+  static String formatMonthAbbreviation(DateTime date) {
+    return DateFormat.MMM().format(date);
   }
 
   static DateTime monthStart(DateTime date) {

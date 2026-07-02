@@ -8,6 +8,7 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/category_icon_utils.dart';
+import '../../core/utils/minor_conversion_cache.dart';
 import '../../core/utils/money_utils.dart';
 
 final _walletDetailFilterProvider = StateProvider.autoDispose
@@ -218,7 +219,10 @@ class WalletDetailScreen extends ConsumerWidget {
     int currentBalance,
   ) async {
     final controller = TextEditingController(
-      text: (currentBalance / 100).toStringAsFixed(2),
+      text: MoneyUtils.toMajorText(
+        currentBalance,
+        currencyCode: wallet.currencyCode,
+      ),
     );
     final noteController = TextEditingController();
     try {
@@ -262,9 +266,10 @@ class WalletDetailScreen extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () async {
-                final target =
-                    ((double.tryParse(controller.text.trim()) ?? 0) * 100)
-                        .round();
+                final target = MoneyUtils.toMinor(
+                  double.tryParse(controller.text.trim()) ?? 0,
+                  currencyCode: wallet.currencyCode,
+                );
                 final diff = target - currentBalance;
                 if (diff == 0) {
                   Navigator.pop(dialogContext, true);
@@ -1073,25 +1078,25 @@ class _ActivityTile extends StatelessWidget {
     final color = itemCategory == null
         ? fallbackColor
         : AppColors.fromStored(itemCategory.color, fallbackColor);
-    final amountColor =
-        overrideColor ??
-        (isExpense
-            ? AppColors.expense
-            : (isIncome ? AppColors.income : AppColors.transfer));
+    final fallbackAmountColor = isExpense
+        ? AppColors.expense
+        : isIncome
+        ? AppColors.income
+        : AppColors.transfer;
+    final amountColor = overrideColor ?? fallbackAmountColor;
     final sign =
         isExpense ||
             (transaction.type == 'transfer' && transaction.walletId == walletId)
         ? '-'
         : '+';
     final originalCurrency = transaction.currencyCode;
-    final convertedAmount = MoneyUtils.convertMinor(
-      transaction.amountMinor,
-      fromCurrency: originalCurrency,
+    final convertedAmount = MinorConversionCache(
       toCurrency: displayCurrency,
       rates: exchangeRates,
-    );
+    ).convert(transaction.amountMinor, fromCurrency: originalCurrency);
     final showConverted =
         showDefaultCurrency &&
+        convertedAmount != null &&
         originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -1126,7 +1131,7 @@ class _ActivityTile extends StatelessWidget {
             Text(
               '$sign${MoneyUtils.format(convertedAmount, currencyCode: displayCurrency)}',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: AppTextSizes.tiny,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),

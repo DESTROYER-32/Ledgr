@@ -7,9 +7,11 @@ import 'package:drift/drift.dart' show Value;
 
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/category_icon_utils.dart';
-import '../../core/utils/money_utils.dart';
+import '../../core/utils/currency_options.dart';
 import '../../core/utils/currency_utils.dart';
+import '../../core/utils/money_utils.dart';
 import '../../core/utils/recurring_utils.dart';
 import '../../core/widgets/amount_field.dart';
 import '../../core/widgets/modern_selection_field.dart';
@@ -106,7 +108,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _titleController.text = t.title ?? '';
         _noteController.text = t.note ?? '';
         _tagsController.text = t.tags ?? '';
-        _amountController.text = (t.amountMinor / 100).toStringAsFixed(2);
+        _amountController.text = MoneyUtils.toMajorText(
+          t.amountMinor,
+          currencyCode: t.currencyCode,
+        );
       });
     }
   }
@@ -448,7 +453,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             const SizedBox(height: 20),
             AmountField(
               controller: _amountController,
-              currencySymbol: displayCurrency,
+              currencyCode: displayCurrency,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -551,12 +556,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   if (amount > 0 && oldCurrency != v) {
                     final service = ref.read(exchangeRateServiceProvider);
                     final converted = await service.convert(
-                      (amount * 100).round(),
+                      MoneyUtils.toMinor(amount, currencyCode: oldCurrency),
                       oldCurrency,
                       v,
                     );
-                    _amountController.text = (converted / 100).toStringAsFixed(
-                      2,
+                    _amountController.text = MoneyUtils.toMajorText(
+                      converted,
+                      currencyCode: v,
                     );
                   }
                   setState(() => _currencyCode = v);
@@ -663,7 +669,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         Text(
                           'Select budgets in tracking mode',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppTextSizes.small,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
@@ -676,7 +682,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             return FilterChip(
                               label: Text(
                                 b.name,
-                                style: const TextStyle(fontSize: 12),
+                                style: const TextStyle(
+                                  fontSize: AppTextSizes.small,
+                                ),
                               ),
                               selected: selected,
                               onSelected: (v) {
@@ -740,7 +748,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: FilterChip(
-        label: Text(label, style: const TextStyle(fontSize: 12)),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: AppTextSizes.small),
+        ),
         selected: selected,
         onSelected: (_) => setState(() {
           _specialType = value;

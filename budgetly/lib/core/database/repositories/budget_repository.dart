@@ -27,18 +27,22 @@ class BudgetRepository {
       _db.into(_db.budgets).insert(entry);
 
   Future<void> update(int id, BudgetsCompanion entry) =>
-      (_db.budgets.update()..where((b) => b.id.equals(id))).write(entry);
+      (_db.budgets.update()..where((b) => b.id.equals(id))).write(
+        entry.copyWith(updatedAt: Value(DateTime.now())),
+      );
 
   Future<void> delete(int id) async {
-    await (_db.transactionBudgets.delete()
-          ..where((tb) => tb.budgetId.equals(id)))
-        .go();
-    await (_db.budgetCategoryLimits.delete()
-          ..where((l) => l.budgetId.equals(id)))
-        .go();
-    await (_db.budgetWallets.delete()..where((w) => w.budgetId.equals(id)))
-        .go();
-    await (_db.budgets.delete()..where((b) => b.id.equals(id))).go();
+    await _db.transaction(() async {
+      await (_db.transactionBudgets.delete()
+            ..where((tb) => tb.budgetId.equals(id)))
+          .go();
+      await (_db.budgetCategoryLimits.delete()
+            ..where((l) => l.budgetId.equals(id)))
+          .go();
+      await (_db.budgetWallets.delete()..where((w) => w.budgetId.equals(id)))
+          .go();
+      await (_db.budgets.delete()..where((b) => b.id.equals(id))).go();
+    });
   }
 
   Stream<List<BudgetCategoryLimit>> watchLimits(int budgetId) =>
@@ -156,9 +160,6 @@ class BudgetRepository {
       q.where((t) => t.walletId.isIn(walletIds));
     }
 
-    if (!budget.includeIncome) {
-      q.where((t) => t.type.equals('expense'));
-    }
     if (!budget.includeDebtCredit) {
       q.where((t) => t.specialType.equals('none') | t.specialType.isNull());
     }

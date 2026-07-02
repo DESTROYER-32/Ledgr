@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/providers.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/currency_utils.dart';
 
 sealed class _RateDialogAction {
@@ -45,7 +47,13 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
       try {
         final list = raw.split(',').where((s) => s.isNotEmpty).toList();
         setState(() => _customCurrencies = list);
-      } catch (_) {}
+      } catch (error, stackTrace) {
+        AppLogger.warning(
+          'Failed to load custom currencies',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
   }
 
@@ -155,7 +163,12 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                       duration: Duration(seconds: 2),
                     ),
                   );
-                } catch (_) {
+                } catch (error, stackTrace) {
+                  AppLogger.warning(
+                    'Failed to refresh exchange rates',
+                    error: error,
+                    stackTrace: stackTrace,
+                  );
                   messenger.showSnackBar(
                     const SnackBar(
                       content: Text('Failed to refresh rates'),
@@ -301,7 +314,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                                     ? symbol
                                     : code.substring(0, 2),
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: AppTextSizes.small,
                                   fontWeight: FontWeight.bold,
                                   color: hasOverride || isCustomCurrency
                                       ? theme.colorScheme.onSecondaryContainer
@@ -311,9 +324,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                             ),
                             title: Text(code),
                             subtitle: Text(
-                              rate != null
-                                  ? '1 USD = $rate $code${hasOverride ? ' • custom override' : ''}'
-                                  : 'No rate available',
+                              _rateSubtitle(code, rate, hasOverride),
                             ),
                             trailing: hasOverride
                                 ? IconButton(
@@ -402,4 +413,10 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
       ),
     ).whenComplete(controller.dispose);
   }
+}
+
+String _rateSubtitle(String code, double? rate, bool hasOverride) {
+  if (rate == null) return 'No rate available';
+  final overrideLabel = hasOverride ? ' • custom override' : '';
+  return '1 USD = $rate $code$overrideLabel';
 }

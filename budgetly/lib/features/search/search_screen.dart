@@ -7,25 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/debouncer.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
-
-class Debouncer {
-  final Duration delay;
-  Timer? _timer;
-  Debouncer({this.delay = const Duration(milliseconds: 500)});
-
-  void run(VoidCallback action) {
-    _timer?.cancel();
-    _timer = Timer(delay, action);
-  }
-
-  void cancel() => _timer?.cancel();
-
-  void dispose() {
-    _timer?.cancel();
-  }
-}
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -224,7 +208,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 OutlinedButton.icon(
                   onPressed: _showFilterSheet,
                   icon: const Icon(Icons.tune, size: 16),
-                  label: const Text('Filters', style: TextStyle(fontSize: 13)),
+                  label: const Text(
+                    'Filters',
+                    style: TextStyle(fontSize: AppTextSizes.compact),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton.icon(
@@ -251,7 +238,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ? '${MoneyUtils.formatDateShort(_startDate!)} - ${MoneyUtils.formatDateShort(_endDate!)}'
                         : 'Date range',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: AppTextSizes.small,
                       color: _startDate != null ? null : cs.onSurfaceVariant,
                     ),
                   ),
@@ -293,7 +280,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: InputChip(
-        label: Text(label, style: const TextStyle(fontSize: 12)),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: AppTextSizes.small),
+        ),
         deleteIcon: const Icon(Icons.close, size: 14),
         onDeleted: onRemove,
         visualDensity: VisualDensity.compact,
@@ -323,6 +313,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showFilterSheet() {
     final wallets = ref.read(activeWalletsProvider).valueOrNull ?? [];
     final cats = ref.read(activeCategoriesProvider).valueOrNull ?? [];
+    final displayCurrency =
+        ref.read(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
 
     showModalBottomSheet(
       context: context,
@@ -334,14 +327,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         int? localCategoryId = _categoryId;
         int? localMinAmount;
         int? localMaxAmount;
+        String filterCurrency(int? walletId) =>
+            wallets.where((w) => w.id == walletId).firstOrNull?.currencyCode ??
+            displayCurrency;
         final minController = TextEditingController(
           text: _minAmountMinor != null
-              ? (_minAmountMinor! / 100).toStringAsFixed(0)
+              ? MoneyUtils.toMajorText(
+                  _minAmountMinor!,
+                  currencyCode: filterCurrency(localWalletId),
+                )
               : '',
         );
         final maxController = TextEditingController(
           text: _maxAmountMinor != null
-              ? (_maxAmountMinor! / 100).toStringAsFixed(0)
+              ? MoneyUtils.toMajorText(
+                  _maxAmountMinor!,
+                  currencyCode: filterCurrency(localWalletId),
+                )
               : '',
         );
 
@@ -439,7 +441,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             final parsed = double.tryParse(v);
                             setLocalState(
                               () => localMinAmount = parsed != null
-                                  ? (parsed * 100).round()
+                                  ? MoneyUtils.toMinor(
+                                      parsed,
+                                      currencyCode: filterCurrency(
+                                        localWalletId,
+                                      ),
+                                    )
                                   : null,
                             );
                           },
@@ -463,7 +470,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             final parsed = double.tryParse(v);
                             setLocalState(
                               () => localMaxAmount = parsed != null
-                                  ? (parsed * 100).round()
+                                  ? MoneyUtils.toMinor(
+                                      parsed,
+                                      currencyCode: filterCurrency(
+                                        localWalletId,
+                                      ),
+                                    )
                                   : null,
                             );
                           },
@@ -538,7 +550,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               Expanded(
                 child: Text(
                   '${_results!.length} transaction${_results!.length == 1 ? '' : 's'}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
               if (totalExpenses > 0)
@@ -547,7 +562,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: Text(
                     'Exp: ${_formatAmount(totalExpenses)}',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: AppTextSizes.small,
                       color: AppColors.expense,
                     ),
                   ),
@@ -555,7 +570,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               if (totalIncome > 0)
                 Text(
                   'Inc: ${_formatAmount(totalIncome)}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.income),
+                  style: const TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: AppColors.income,
+                  ),
                 ),
             ],
           ),
@@ -581,7 +599,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: Text(
                       MoneyUtils.formatDateShort(date),
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         fontWeight: FontWeight.w600,
                         color: cs.onSurfaceVariant,
                       ),
@@ -609,10 +627,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                       title: Text(
                         t.title ?? t.type,
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: AppTextSizes.body),
                       ),
                       trailing: Text(
-                        '${isExpense ? '-' : (isIncome ? '+' : '')}${_formatAmount(t.amountMinor)}',
+                        '${_transactionSign(t.type)}${_formatAmount(t.amountMinor)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: color,
@@ -633,4 +651,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ],
     );
   }
+}
+
+String _transactionSign(String type) {
+  return switch (type) {
+    'expense' => '-',
+    'income' => '+',
+    _ => '',
+  };
 }

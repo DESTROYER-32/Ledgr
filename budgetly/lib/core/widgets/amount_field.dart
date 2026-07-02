@@ -5,7 +5,7 @@ import '../utils/money_utils.dart';
 class AmountField extends StatelessWidget {
   final TextEditingController controller;
   final String? label;
-  final String currencySymbol;
+  final String currencyCode;
   final bool autofocus;
   final String? Function(String?)? validator;
 
@@ -13,14 +13,18 @@ class AmountField extends StatelessWidget {
     super.key,
     required this.controller,
     this.label = 'Amount',
-    this.currencySymbol = MoneyUtils.defaultCurrencyCode,
+    String currencyCode = MoneyUtils.defaultCurrencyCode,
+    @Deprecated(
+      'Use currencyCode. This parameter expects an ISO currency code, not a symbol.',
+    )
+    String? currencySymbol,
     this.autofocus = false,
     this.validator,
-  });
+  }) : currencyCode = currencySymbol ?? currencyCode;
 
   @override
   Widget build(BuildContext context) {
-    final symbol = CurrencyUtils.symbolFor(currencySymbol);
+    final symbol = CurrencyUtils.symbolFor(currencyCode);
     return TextFormField(
       controller: controller,
       autofocus: autofocus,

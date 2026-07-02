@@ -131,8 +131,11 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     if (!mounted) return;
     final cat = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) =>
-          _LimitDialog(categories: cats, isIncome: _budget!.isIncome),
+      builder: (ctx) => _LimitDialog(
+        categories: cats,
+        isIncome: _budget!.isIncome,
+        currencyCode: _budget!.currencyCode,
+      ),
     );
     if (cat == null) return;
     final repo = ref.read(budgetRepositoryProvider);
@@ -160,11 +163,14 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
     );
     if (result == null || !mounted) return;
     final walletId = result['walletId'] as int;
-    final amount = ((result['amount'] as double) * 100).round();
-    final date = result['date'] as DateTime;
-
     final wallet = await ref.read(walletRepositoryProvider).getById(walletId);
     if (wallet == null || !mounted) return;
+
+    final amount = MoneyUtils.toMinor(
+      result['amount'] as double,
+      currencyCode: wallet.currencyCode,
+    );
+    final date = result['date'] as DateTime;
 
     await ref.read(transactionRepositoryProvider).insertWithBudgets(
       TransactionsCompanion.insert(
@@ -361,7 +367,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                     Text(
                       budget.isIncome ? 'Goal' : 'Budget',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         color: cs.onSurfaceVariant,
                       ),
                     ),
@@ -379,7 +385,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                 const SizedBox(width: 6),
                 Text(
                   '${MoneyUtils.formatDateShort(budget.periodStart)} - ${MoneyUtils.formatDateShort(budget.periodEnd)}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -390,7 +399,6 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 
   Widget _buildHistoryCard(ThemeData theme, ColorScheme cs, Budget budget) {
-    if (_prevTotalSpent == 0) return const SizedBox.shrink();
     final diff = _totalSpent - _prevTotalSpent;
     final pctChange = _prevTotalSpent > 0
         ? ((diff / _prevTotalSpent) * 100).round()
@@ -428,13 +436,13 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                       '${MoneyUtils.format(_prevTotalSpent, currencyCode: budget.currencyCode)} \u2192 ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: AppTextSizes.body,
                       ),
                     ),
                     Text(
-                      '${increased ? '+' : ''}$pctChange% ${isIncome ? (increased ? 'more saved' : 'less saved') : (increased ? 'more spent' : 'less spent')}',
+                      '${increased ? '+' : ''}$pctChange% ${_historyChangeLabel(isIncome: isIncome, increased: increased)}',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTextSizes.small,
                         color: cs.onSurfaceVariant,
                       ),
                     ),
@@ -477,7 +485,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                     '${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} / ${MoneyUtils.format(_totalPlanned, currencyCode: budget.currencyCode)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      fontSize: AppTextSizes.compact,
                     ),
                   ),
               ],
@@ -503,7 +511,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                         ? '${MoneyUtils.format(-remaining, currencyCode: budget.currencyCode)} over'
                         : '${MoneyUtils.format(remaining, currencyCode: budget.currencyCode)} ${budget.isIncome ? 'left to save' : 'remaining'}',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: AppTextSizes.small,
                       color: isOver ? AppColors.expense : cs.onSurfaceVariant,
                       fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
                     ),
@@ -511,7 +519,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   const Spacer(),
                   Text(
                     '${(pct * 100).toStringAsFixed(0)}%',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.small,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -523,7 +534,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                   budget.isIncome
                       ? 'Saved ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} (no goal set)'
                       : 'Spent ${MoneyUtils.format(_totalSpent, currencyCode: budget.currencyCode)} (no limit set)',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: AppTextSizes.small,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
           ],
@@ -574,7 +588,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             OutlinedButton.icon(
               onPressed: _addLimit,
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add Limit', style: TextStyle(fontSize: 13)),
+              label: const Text(
+                'Add Limit',
+                style: TextStyle(fontSize: AppTextSizes.compact),
+              ),
             ),
           ],
         ),
@@ -624,7 +641,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                             radius: 28,
                             title: '${(pct * 100).toStringAsFixed(0)}%',
                             titleStyle: const TextStyle(
-                              fontSize: 10,
+                              fontSize: AppTextSizes.micro,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -661,7 +678,9 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
                               Expanded(
                                 child: Text(
                                   cat?.name ?? 'Cat ${e.key}',
-                                  style: const TextStyle(fontSize: 11),
+                                  style: const TextStyle(
+                                    fontSize: AppTextSizes.tiny,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -764,6 +783,11 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
   }
 }
 
+String _historyChangeLabel({required bool isIncome, required bool increased}) {
+  if (isIncome) return increased ? 'more saved' : 'less saved';
+  return increased ? 'more spent' : 'less spent';
+}
+
 class _CategoryLimitRow extends StatelessWidget {
   final BudgetCategoryLimit limit;
   final int spent;
@@ -804,14 +828,17 @@ class _CategoryLimitRow extends StatelessWidget {
                           .firstOrNull;
                       return Text(
                         cat?.name ?? 'Category ${limit.categoryId}',
-                        style: const TextStyle(fontSize: 13),
+                        style: const TextStyle(fontSize: AppTextSizes.compact),
                       );
                     },
                   ),
                   const Spacer(),
                   Text(
                     '${spent > 0 ? MoneyUtils.format(spent, currencyCode: currencyCode) : ''} / ${MoneyUtils.format(limit.plannedAmountMinor, currencyCode: currencyCode)}',
-                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: AppTextSizes.tiny,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -846,7 +873,12 @@ class _CategoryLimitRow extends StatelessWidget {
 class _LimitDialog extends StatefulWidget {
   final List<Category> categories;
   final bool isIncome;
-  const _LimitDialog({required this.categories, required this.isIncome});
+  final String currencyCode;
+  const _LimitDialog({
+    required this.categories,
+    required this.isIncome,
+    required this.currencyCode,
+  });
 
   @override
   State<_LimitDialog> createState() => _LimitDialogState();
@@ -911,10 +943,13 @@ class _LimitDialogState extends State<_LimitDialog> {
             if (_selectedCatId == null || _amountController.text.isEmpty) {
               return;
             }
-            final amt = (double.tryParse(_amountController.text) ?? 0) * 100;
+            final amt = MoneyUtils.toMinor(
+              double.tryParse(_amountController.text) ?? 0,
+              currencyCode: widget.currencyCode,
+            );
             Navigator.pop(context, {
               'categoryId': _selectedCatId!,
-              'amount': amt.round(),
+              'amount': amt,
             });
           },
           child: const Text('Add'),

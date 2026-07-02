@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/minor_conversion_cache.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/transaction_tile.dart';
@@ -60,8 +61,7 @@ class _CategoryTransactionsScreenState
     final subs = await categoryRepo.watchSubcategories(widget.categoryId).first;
     _category = category;
     _categoriesById = {
-      ?category?.id: ?category,
-      for (final sub in subs) sub.id: sub,
+      for (final c in [category, ...subs].nonNulls) c.id: c,
     };
     _categoryIds = [widget.categoryId, ...subs.map((c) => c.id)];
     await _loadPage(reset: true);
@@ -113,6 +113,10 @@ class _CategoryTransactionsScreenState
     final showDefaultCurrency =
         ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;
     final exchangeRates = ref.watch(exchangeRatesProvider).valueOrNull ?? {};
+    final conversionCache = MinorConversionCache(
+      toCurrency: displayCurrency,
+      rates: exchangeRates,
+    );
     final title = _category?.name ?? 'Category';
 
     return Scaffold(
@@ -170,12 +174,12 @@ class _CategoryTransactionsScreenState
                             final category = t.categoryId == null
                                 ? null
                                 : _categoriesById[t.categoryId];
-                            final converted = MoneyUtils.convertMinor(
+                            final converted = conversionCache.convert(
                               t.amountMinor,
                               fromCurrency: t.currencyCode,
-                              toCurrency: displayCurrency,
-                              rates: exchangeRates,
                             );
+                            final showConverted =
+                                showDefaultCurrency && converted != null;
                             return TransactionTile(
                               id: t.id,
                               type: t.type,
@@ -183,9 +187,9 @@ class _CategoryTransactionsScreenState
                               title: t.title,
                               date: t.date,
                               currencyCode: t.currencyCode,
-                              displayAmountMinor: converted,
+                              displayAmountMinor: converted ?? t.amountMinor,
                               displayCurrencyCode: displayCurrency,
-                              showDisplayCurrency: showDefaultCurrency,
+                              showDisplayCurrency: showConverted,
                               categoryName: category?.name,
                               categoryColor: category == null
                                   ? null
