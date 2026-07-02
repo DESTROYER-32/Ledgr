@@ -1288,7 +1288,10 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         const SizedBox(width: 8),
                         Text(
-                          MoneyUtils.format(r.amountMinor),
+                          MoneyUtils.format(
+                            r.amountMinor,
+                            currencyCode: r.currencyCode,
+                          ),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: AppTextSizes.compact,
