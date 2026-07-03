@@ -13,7 +13,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: budgetly
+        working-directory: ledgr
 
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +39,8 @@ jobs:
       - name: Cache Build Runner
         uses: actions/cache@v4
         with:
-          path: budgetly/.dart_tool/build
-          key: ${{ runner.os }}-build-runner-${{ hashFiles('budgetly/pubspec.lock') }}
+          path: ledgr/.dart_tool/build
+          key: ${{ runner.os }}-build-runner-${{ hashFiles('ledgr/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-build-runner-
 
@@ -54,8 +54,8 @@ jobs:
 
       # - uses: actions/upload-artifact@v4
       #   with:
-      #     name: budgetly-apk
-      #     path: budgetly/build/app/outputs/flutter-apk/app-release.apk
+      #     name: ledgr-apk
+      #     path: ledgr/build/app/outputs/flutter-apk/app-release.apk
 
       - name: Zip & send APK to Telegram
         if: success()
@@ -63,13 +63,13 @@ jobs:
           TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
-        working-directory: budgetly
+        working-directory: ledgr
         run: |
           cd build/app/outputs/flutter-apk
-          zip -9 budgetly-apk.zip app-release.apk
+          zip -9 ledgr-apk.zip app-release.apk
           curl -s -S --max-time 120 \
-            -F document=@"budgetly-apk.zip" \
+            -F document=@"ledgr-apk.zip" \
             -F chat_id="${CHAT_ID}" \
             -F message_thread_id="${TOPIC_ID}" \
-            -F caption="Budgetly APK — ${GITHUB_SHA:0:7}" \
+            -F caption="Ledgr APK — ${GITHUB_SHA:0:7}" \
             "https://api.telegram.org/bot${TOKEN}/sendDocument"
