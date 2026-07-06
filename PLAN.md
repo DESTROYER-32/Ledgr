@@ -1,132 +1,277 @@
-# Ledgr Verified Issue Plan
+# Feature Implementation Plan
 
-> Updated on 2026-06-30. Critical, medium, and fresh high-value scan findings have been addressed. The app is pre-release, so local schema downgrade from the short-lived schema v2 build is handled destructively for test databases while the canonical schema remains version 1.
-
-## Status legend
-
-- `[todo]` confirmed issue still present
-- `[fixed]` code fix applied and validated
-- `[defer]` valid issue but lower priority or needs product decision
+> Branch: `Feat` | Last updated: 2026-07-06
 
 ---
 
-## Critical
+## Status Summary
 
-### 1. `[fixed]` Foreign keys missing delete actions
-
-**File:** `ledgr/lib/core/database/tables.dart`
-
-Fixed: required child rows cascade, nullable links set null, and generated Drift schema emits `ON DELETE` clauses.
-
-### 2. `[fixed]` Raw SQL `whereClause` interpolation
-
-**File:** `ledgr/lib/core/database/repositories/transaction_repository.dart`
-
-Fixed: raw condition strings were replaced with typed `type` and optional `specialType` parameters passed as Drift SQL variables.
-
-### 3. `[fixed]` Database close ownership ambiguity
-
-**Files:** `ledgr/lib/core/providers/providers.dart`, `ledgr/lib/main.dart`
-
-Fixed: `main()` overrides `appDatabaseProvider` with provider-owned disposal, and `LedgrApp` no longer manually closes the DB.
+| Feature | Status | Notes |
+|---|---|---|
+| Net Worth Tracking | ✅ Implemented | Current net worth, snapshots, history chart, dashboard card, monthly delta |
+| Cash Flow Forecasting | ✅ Implemented | Overall + wallet forecasts, 30/60/90 selector, chart, upcoming list, safe-to-spend |
+| Investment Portfolio Tracking | 🟡 V1 Implemented | Manual holdings/prices, summary, allocation chart, dashboard card |
+| Live Market Prices | ⬜ Remaining | Yahoo Finance / CoinGecko integration not implemented yet |
+| Trade Workflow | ⬜ Remaining | DB table exists, but buy/sell trade form and history UI are not implemented yet |
 
 ---
 
-## Medium and fresh scan issues
+## Net Worth Tracking
 
-### 1. `[fixed]` `_sumByCategory` excluded uncategorized transactions
+**Goal:** Show assets − liabilities over time with a trend chart.
 
-Fixed: category totals include `NULL` category rows under `TransactionRepository.uncategorizedCategoryId`, and the dashboard chart labels them `Uncategorized`.
+**Status:** ✅ Implemented
 
-### 2. `[fixed]` History card hidden when previous period is zero
+### Implemented
 
-Fixed: removed the early return so `0 → current` is displayed as a valid previous-period state.
+- `NetWorthSnapshots` table added.
+- Drift migration added with schema version bump.
+- Snapshot index added.
+- `NetWorthSnapshotRepository` added.
+- `net_worth_calculator.dart` added.
+- `net_worth_providers.dart` added.
+- `currentNetWorthProvider` added.
+- `netWorthHistoryProvider` added.
+- `netWorthMonthlyDeltaProvider` added.
+- `net_worth_screen.dart` added.
+- `net_worth_card.dart` added.
+- Dashboard card added.
+- `/net-worth` route added.
+- Current assets/liabilities breakdown added.
+- Trend chart added.
+- Dashboard monthly delta added.
 
-### 3. `[fixed]` Missing exchange rates silently faked converted values
+### Implemented data mapping
 
-Fixed: `convertMinor` throws on missing rates, `tryConvertMinor` returns `null`, and UI paths hide converted values when rates are unavailable.
+| Existing Data | Role |
+|---|---|
+| Wallets with positive balances | Assets |
+| Credit/loan/negative-balance wallets | Liabilities |
+| Loan objectives (`type='loan'`) | Liabilities |
+| Goal objectives | Excluded |
 
-### 4. `[fixed]` Currency conversion ignored non-2-decimal currencies
+### Implemented table
 
-Fixed: `MoneyUtils.convertMinor`, `tryConvertMinor`, and `ExchangeRateService.convert` convert via source major units and target minor units. Added tests covering USD, JPY, and BHD.
+```text
+NetWorthSnapshots
+├── id
+├── date
+├── assetsMinor
+├── liabilitiesMinor
+├── netWorthMinor
+├── currencyCode
+└── detailsJson
+```
 
-### 5. `[fixed]` Forms and exports hardcoded `* 100` and `/ 100`
+### Remaining / Future polish
 
-Fixed: transaction, recurring, wallet, budget, objective, onboarding, search, backup CSV, bill splitter, and balance correction paths now use `MoneyUtils.toMinor`, `toMajor`, or `toMajorText` where the value is money. Remaining `* 100` usages are percentages or timestamps.
-
-### 6. `[fixed]` App lock could flash app content before lock state resolved
-
-Fixed: the app builder renders a blank scaffold while lock state is loading.
-
-### 7. `[fixed]` App lock refresh had no re-entrancy guard
-
-Fixed: `refresh()` is guarded by an in-flight future.
-
-### 8. `[fixed]` App lock failed-attempt rate limiting was in memory only
-
-Fixed: failed attempts and lockout expiry are persisted in `SettingsRepository` and cleared on successful PIN, biometric unlock, PIN reset, and disable.
-
-### 9. `[fixed]` Recurring transaction processing was not transactional
-
-Fixed: each generated transaction and recurring schedule update happen inside one database transaction.
-
-### 10. `[fixed]` `updatedAt` columns were not maintained on updates
-
-Fixed: update/archive/sort-order repository paths now set `updatedAt` where the table has that column.
-
-### 11. `[fixed]` `BudgetCategoryLimits` missing wallet-aware uniqueness
-
-Fixed: table-level unique key preserves wallet-specific limits and a SQLite expression unique index on `COALESCE(wallet_id, -1)` prevents duplicate global limits with `walletId = NULL`.
-
-### 12. `[fixed]` Budget delete was not transactional
-
-Fixed: child cleanup and budget deletion run inside `_db.transaction()`.
-
-### 13. `[fixed]` Dashboard pull-to-refresh was incomplete
-
-Fixed: refresh invalidates balance, transaction, budget, wallet, recurring, chart, monthly summary, exchange-rate, and insights providers.
-
-### 14. `[fixed]` Dashboard insights errors rendered empty UI
-
-Fixed: insights now render a visible error card with recovery guidance.
-
-### 15. `[fixed]` Dashboard insights went stale after transaction changes
-
-Fixed: insights provider watches `allTransactionsProvider` and is invalidated by pull-to-refresh.
-
-### 16. `[fixed]` Pre-release schema downgrade risk
-
-Fixed: canonical schema is version 1 and `onUpgrade` handles `from > to` by destructively recreating the local pre-release database schema.
-
-### 17. `[fixed]` Drift table list order did not put all parent tables first
-
-Fixed: `Budgets` and `Objectives` now appear before child tables that reference them.
-
-### 18. `[fixed]` `spentForBudget` applied redundant `includeIncome` filter
-
-Fixed: removed the duplicate expense filter.
-
-### 19. `[fixed]` Drift multiple database warning in widget tests
-
-Fixed: transaction form widget tests now use the in-memory test provider scope, and shared test provider overrides own DB disposal.
+- Add a manual “save snapshot now” action if desired.
+- Add configurable snapshot cadence if automatic daily updates are not enough.
+- Add richer chart labels/tooltips if needed.
 
 ---
 
-## Low priority remaining cleanup
+## Cash Flow Forecasting
 
-- `[fixed]` Operational silent `catch (_) {}` blocks now log warnings through `AppLogger`; remaining `catch (_)` cases are intentional MoneyUtils parse fallbacks.
-- `[fixed]` `Debouncer` moved from `search_screen.dart` into reusable `core/utils/debouncer.dart`.
-- `[fixed]` `_QuickEntrySheet` no longer stores a `BuildContext`; it receives a navigation callback.
-- `[fixed]` `ShimmerLoading` now clamps unbounded/zero fallback width to avoid rendering at zero width.
-- `[fixed]` `amount_field.dart` exposes `currencyCode`; deprecated `currencySymbol` remains as a compatibility alias.
-- `[fixed]` `modern_selection_field.dart` disables modal-sheet drag while the inner `DraggableScrollableSheet` owns dragging.
-- `[fixed]` `ModernSelectionField` keys its `FormField` by value so external value changes do not leave stale `initialValue` state.
-- `[fixed]` Nested ternaries in the scanned UI hot spots were replaced with helpers or clearer control flow.
-- `[fixed]` Provider utility `currencyOptionsWithSelection` moved to `core/utils/currency_options.dart`.
-- `[fixed]` `mainCategoryPk` renamed to `parentCategoryId`; generated Drift code was regenerated. This is safe because the app is pre-release schema v1.
-- `[fixed]` Direct `DateFormat` use was removed from UI code; month labels now go through `AppDateUtils`.
-- `[fixed]` Repeated display-currency conversions now use `MinorConversionCache`, which skips same-currency conversions and caches repeated conversions.
-- `[fixed]` Remaining provider utility helpers were moved out of `providers.dart`: wallet-balance helper to `core/utils/wallet_balance_utils.dart` and date-range parsing to `core/utils/date_range_utils.dart`.
-- `[fixed]` Flutter localization infrastructure is wired with `flutter_localizations`, `l10n.yaml`, generated `AppLocalizations`, and an English ARB template.
-- `[fixed]` Raw `fontSize:` values in app source were migrated to `AppTextSizes` tokens.
-- `[fixed]` Remaining semantic red/green color usages were migrated to `AppColors.expense` and `AppColors.income`.
+**Goal:** Project future wallet balances based on upcoming + recurring transactions.
+
+**Status:** ✅ Implemented
+
+### Implemented
+
+- `cash_flow_projector.dart` added.
+- `cash_flow_providers.dart` added.
+- `overallCashFlowProvider` added.
+- `walletCashFlowProvider(walletId)` added.
+- `cashFlowProjectionProvider(CashFlowRequest)` added.
+- `cash_flow_screen.dart` added.
+- `cash_flow_mini_card.dart` added.
+- `upcoming_bill_tile.dart` added.
+- Dashboard mini card added.
+- `/cash-flow` route added.
+- `/cash-flow/:id` wallet-specific route added.
+- Account detail screen entry point added.
+- 30/60/90 day range selector added.
+- Safe-to-spend / lowest balance display added.
+- Chart date labels added.
+- Chart money-axis labels added.
+- Chart tooltip added.
+- Internal transfers are handled so overall cash flow is not distorted.
+
+### Implemented data sources
+
+| Source | Role |
+|---|---|
+| Future-dated `Transactions` | One-time future cash flow |
+| Active `RecurringTransactions` | Generated projected occurrences |
+| Current wallet balances | Starting point |
+
+### Remaining / Future polish
+
+- Add filtering by income/expense type.
+- Add warning badges for negative projected balance.
+- Add export/share forecast if useful.
+- Add tests directly targeting `CashFlowProjector` edge cases.
+
+---
+
+## Investment Portfolio Tracking
+
+**Goal:** Track stocks, ETFs, and crypto with cost basis, current value, and gain/loss.
+
+**Status:** 🟡 V1 Implemented
+
+### Implemented in V1
+
+- `InvestmentHoldings` table added.
+- `PortfolioTransactions` table added.
+- Drift migration added with schema version bump.
+- Portfolio indexes added.
+- `PortfolioRepository` added.
+- `portfolio_providers.dart` added.
+- `portfolio_screen.dart` added.
+- `holding_form_screen.dart` added.
+- `holding_tile.dart` added.
+- `allocation_chart.dart` added.
+- `portfolio_mini_card.dart` added.
+- `/portfolio` route added.
+- `/portfolio/holdings/new` route added.
+- `/portfolio/holdings/:id/edit` route added.
+- Dashboard portfolio card added.
+- Manual holdings supported.
+- Manual current price supported.
+- Cost basis supported.
+- Gain/loss calculation supported.
+- Allocation by asset type supported.
+- Add Holding selectors now use themed `ModernSelectionField` controls.
+
+### Implemented tables
+
+```text
+InvestmentHoldings
+├── id
+├── walletId
+├── tickerSymbol
+├── assetName
+├── assetType
+├── shares
+├── avgCostBasisMinor
+├── currencyCode
+├── currentPriceMinor
+├── lastPriceUpdate
+├── createdAt
+└── updatedAt
+```
+
+```text
+PortfolioTransactions
+├── id
+├── holdingId
+├── date
+├── type
+├── shares
+├── pricePerShareMinor
+├── feesMinor
+└── notes
+```
+
+### Remaining
+
+#### Live market prices
+
+- Fetch stock/ETF prices from Yahoo Finance or another provider.
+- Fetch crypto prices from CoinGecko.
+- Cache fetched prices in `currentPriceMinor` and `lastPriceUpdate`.
+- Add refresh button and stale-price indicator.
+- Keep manual price fallback.
+
+#### Trade workflow
+
+- Add `trade_form_screen.dart`.
+- Add buy/sell transaction UI.
+- Add portfolio transaction history UI.
+- Update holdings from trades.
+- Recalculate shares and average cost basis after buys/sells.
+- Handle fees.
+- Handle sell validation so shares cannot go below zero.
+
+#### Wallet types
+
+- Add explicit investment/crypto wallet type options in the wallet form if the app should distinguish them.
+- Decide whether portfolio holdings should be allowed on any wallet or only investment/crypto wallets.
+
+#### Future analytics
+
+- Portfolio value history chart.
+- Allocation by ticker.
+- Allocation by wallet.
+- Realized vs unrealized gain/loss.
+- Dividend/income support.
+
+---
+
+## Dashboard Integration
+
+**Status:** 🟡 Mostly implemented
+
+### Implemented
+
+- Net Worth card added.
+- Cash Flow Forecast card added.
+- Portfolio card added.
+
+### Remaining / Future polish
+
+- Add dashboard customization or collapsing if the dashboard becomes too crowded.
+- Add Settings menu links for Net Worth, Cash Flow, and Portfolio.
+- Add Analytics tab entry for Net Worth if desired.
+- Add Wallets tab entry for Portfolio if desired.
+
+---
+
+## Router Additions
+
+### Implemented
+
+```dart
+GoRoute(path: '/net-worth', ...)
+GoRoute(path: '/cash-flow', ...)
+GoRoute(path: '/cash-flow/:id', ...)
+GoRoute(path: '/portfolio', ...)
+GoRoute(path: '/portfolio/holdings/new', ...)
+GoRoute(path: '/portfolio/holdings/:id/edit', ...)
+```
+
+### Remaining
+
+```dart
+GoRoute(path: '/portfolio/trades/new', ...)
+```
+
+---
+
+## Recent Bug Fixes
+
+- Fixed recurring transaction amount prefix showing hardcoded `USD`.
+- Recurring amount prefix now uses display currency before account selection and account currency after selection.
+- Fixed recurring form keyboard/app-switch layout issue by dismissing focus on app lifecycle changes.
+- Fixed cash flow chart plotting minor units instead of major currency units.
+- Added date and money labels to cash flow chart.
+- Replaced Add Holding raw dropdowns with themed modern selectors.
+
+---
+
+## Recommended Next Steps
+
+1. Implement Portfolio trade workflow:
+   - buy/sell form
+   - transaction history
+   - average cost basis recalculation
+2. Add live price fetching:
+   - Yahoo Finance for stocks/ETFs
+   - CoinGecko for crypto
+3. Add Settings and navigation links for the new feature screens.
+4. Add focused unit tests for:
+   - net worth snapshot upsert
+   - cash flow projector edge cases
+   - portfolio summary calculations
