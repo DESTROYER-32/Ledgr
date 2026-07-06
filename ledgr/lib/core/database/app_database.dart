@@ -23,6 +23,7 @@ part 'app_database.g.dart';
     Settings,
     AssociatedTitles,
     DeleteLogs,
+    NetWorthSnapshots,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -31,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -47,6 +48,7 @@ class AppDatabase extends _$AppDatabase {
         if (from > to) {
           for (final table in const [
             'delete_logs',
+            'net_worth_snapshots',
             'associated_titles',
             'recurring_transactions',
             'budget_wallets',
@@ -64,6 +66,10 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await _createIndexes();
           return;
+        }
+
+        if (from < 2) {
+          await m.createTable(netWorthSnapshots);
         }
 
         await _createIndexes();
@@ -105,6 +111,9 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_recurring_wallet_id ON recurring_transactions(wallet_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_net_worth_snapshots_date ON net_worth_snapshots(date)',
     );
   }
 }

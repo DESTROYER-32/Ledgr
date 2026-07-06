@@ -1,7 +1,9 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/money_utils.dart';
+import '../../core/database/app_database.dart';
 import 'net_worth_calculator.dart';
 import 'net_worth_providers.dart';
 
@@ -11,6 +13,7 @@ class NetWorthScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(currentNetWorthProvider);
+    final historyAsync = ref.watch(netWorthHistoryProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -65,9 +68,80 @@ class NetWorthScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
+            _HistoryChart(historyAsync: historyAsync),
+            const SizedBox(height: 16),
             _Breakdown(title: 'Assets', items: summary.assetWallets),
             const SizedBox(height: 16),
             _Breakdown(title: 'Liabilities', items: summary.liabilityItems),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryChart extends StatelessWidget {
+  const _HistoryChart({required this.historyAsync});
+
+  final AsyncValue<List<NetWorthSnapshot>> historyAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Trend', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            historyAsync.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (error, _) => Text('History unavailable: $error'),
+              data: (history) {
+                if (history.length < 2) {
+                  return const Text(
+                    'A trend chart will appear after more snapshots are saved.',
+                  );
+                }
+                final currency = history.last.currencyCode;
+                final spots = [
+                  for (var i = 0; i < history.length; i++)
+                    FlSpot(
+                      i.toDouble(),
+                      MoneyUtils.toMajor(
+                        history[i].netWorthMinor,
+                        currencyCode: currency,
+                      ),
+                    ),
+                ];
+                return SizedBox(
+                  height: 220,
+                  child: LineChart(
+                    LineChartData(
+                      gridData: const FlGridData(drawVerticalLine: false),
+                      titlesData: const FlTitlesData(
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: spots,
+                          isCurved: true,
+                          dotData: const FlDotData(show: false),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),

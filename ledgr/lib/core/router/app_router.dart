@@ -109,6 +109,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CashFlowScreen(),
       ),
       GoRoute(
+        path: '/cash-flow/:id',
+        name: 'cash-flow-wallet',
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid wallet id.')
+              : CashFlowScreen(walletId: id);
+        },
+      ),
+      GoRoute(
         path: '/budgets/:id',
         name: 'budget-detail',
         builder: (context, state) {

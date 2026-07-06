@@ -2,18 +2,47 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/database/app_database.dart';
+import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
 import 'cash_flow_providers.dart';
+import 'widgets/upcoming_bill_tile.dart';
 
-class CashFlowScreen extends ConsumerWidget {
-  const CashFlowScreen({super.key});
+class CashFlowScreen extends ConsumerStatefulWidget {
+  const CashFlowScreen({super.key, this.walletId});
+
+  final int? walletId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final projectionAsync = ref.watch(overallCashFlowProvider);
+  ConsumerState<CashFlowScreen> createState() => _CashFlowScreenState();
+}
+
+class _CashFlowScreenState extends ConsumerState<CashFlowScreen> {
+  int _days = 90;
+
+  String? _walletName(List<Wallet> wallets) {
+    for (final wallet in wallets) {
+      if (wallet.id == widget.walletId) return wallet.name;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final projectionAsync = ref.watch(
+      cashFlowProjectionProvider(
+        CashFlowRequest(walletId: widget.walletId, days: _days),
+      ),
+    );
+    final walletAsync = widget.walletId == null
+        ? null
+        : ref.watch(activeWalletsProvider).whenData(_walletName);
+    final title = widget.walletId == null
+        ? 'Cash Flow Forecast'
+        : 'Cash Flow${walletAsync?.valueOrNull == null ? '' : ': ${walletAsync!.valueOrNull}'}';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Cash Flow Forecast')),
+      appBar: AppBar(title: Text(title)),
       body: projectionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('$error')),
@@ -41,6 +70,17 @@ class CashFlowScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: 30, label: Text('30D')),
+                  ButtonSegment(value: 60, label: Text('60D')),
+                  ButtonSegment(value: 90, label: Text('90D')),
+                ],
+                selected: {_days},
+                onSelectionChanged: (value) =>
+                    setState(() => _days = value.first),
+              ),
+              const SizedBox(height: 12),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -48,8 +88,18 @@ class CashFlowScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Next 90 days',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        'Next $_days days',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Safe to spend: ${MoneyUtils.format(projection.lowestPoint.balanceMinor, currencyCode: projection.currencyCode)}',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: projection.lowestPoint.balanceMinor < 0
+                              ? theme.colorScheme.error
+                              : Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
@@ -103,10 +153,12 @@ class CashFlowScreen extends ConsumerWidget {
                                         index >= projection.points.length) {
                                       return const SizedBox.shrink();
                                     }
+                                    final tickInterval = bottomInterval.round();
                                     final isTick =
                                         index == 0 ||
                                         index == projection.points.length - 1 ||
-                                        index % bottomInterval.round() == 0;
+                                        (tickInterval > 0 &&
+                                            index % tickInterval == 0);
                                     if (!isTick) return const SizedBox.shrink();
                                     return Padding(
                                       padding: const EdgeInsets.only(top: 8),
@@ -167,10 +219,7 @@ class CashFlowScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Upcoming cash flow',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text('Upcoming cash flow', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               if (projection.events.isEmpty)
                 const Card(
@@ -184,26 +233,7 @@ class CashFlowScreen extends ConsumerWidget {
               else
                 ...projection.events
                     .take(30)
-                    .map(
-                      (event) => Card(
-                        child: ListTile(
-                          title: Text(event.title),
-                          subtitle: Text(AppDateUtils.formatDate(event.date)),
-                          trailing: Text(
-                            MoneyUtils.format(
-                              event.amountMinor,
-                              currencyCode: event.currencyCode,
-                            ),
-                            style: TextStyle(
-                              color: event.amountMinor < 0
-                                  ? Theme.of(context).colorScheme.error
-                                  : Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    .map((event) => UpcomingBillTile(event: event)),
             ],
           );
         },

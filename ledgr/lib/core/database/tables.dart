@@ -207,3 +207,14 @@ class DeleteLogs extends Table {
   TextColumn get jsonData => text()();
   DateTimeColumn get deletedAt => dateTime().withDefault(currentDateAndTime)();
 }
+
+@DataClassName('NetWorthSnapshot')
+class NetWorthSnapshots extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  IntColumn get assetsMinor => integer()();
+  IntColumn get liabilitiesMinor => integer()();
+  IntColumn get netWorthMinor => integer()();
+  TextColumn get currencyCode => text()();
+  TextColumn get detailsJson => text().nullable()();
+}
