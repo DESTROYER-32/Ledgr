@@ -11,6 +11,8 @@ import '../../features/categories/categories_screen.dart';
 import '../../features/categories/category_form_screen.dart';
 import '../../features/categories/category_transactions_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/cash_flow/cash_flow_screen.dart';
+import '../../features/net_worth/net_worth_screen.dart';
 import '../../features/objectives/objective_detail_screen.dart';
 import '../../features/objectives/objective_form_screen.dart';
 import '../../features/objectives/objectives_list_screen.dart';
@@ -95,6 +97,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/budgets/new',
         name: 'budget-new',
         builder: (context, state) => const BudgetFormScreen(),
+      ),
+      GoRoute(
+        path: '/net-worth',
+        name: 'net-worth',
+        builder: (context, state) => const NetWorthScreen(),
+      ),
+      GoRoute(
+        path: '/cash-flow',
+        name: 'cash-flow',
+        builder: (context, state) => const CashFlowScreen(),
       ),
       GoRoute(
         path: '/budgets/:id',

@@ -33,6 +33,13 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   bool _isLoading = false;
   bool _isEditing = false;
 
+  String _selectedCurrency(List<Wallet> wallets) {
+    for (final wallet in wallets) {
+      if (wallet.id == _walletId) return wallet.currencyCode;
+    }
+    return MoneyUtils.defaultCurrencyCode;
+  }
+
   final _schedules = [
     ('daily', 'Daily'),
     ('weekly', 'Weekly'),
@@ -149,6 +156,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
     final theme = Theme.of(context);
+    final wallets = walletsAsync.valueOrNull ?? const <Wallet>[];
+    final selectedCurrency = _selectedCurrency(wallets);
 
     return Scaffold(
       appBar: AppBar(
@@ -186,9 +195,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _amountController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Amount',
-                prefixText: 'USD ',
+                prefixText: '$selectedCurrency ',
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
