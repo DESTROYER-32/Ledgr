@@ -18,7 +18,8 @@ class RecurringFormScreen extends ConsumerStatefulWidget {
       _RecurringFormScreenState();
 }
 
-class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
+class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
@@ -32,6 +33,13 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   DateTime? _endDate;
   bool _isLoading = false;
   bool _isEditing = false;
+
+  String _selectedCurrency(List<Wallet> wallets, String fallbackCurrency) {
+    for (final wallet in wallets) {
+      if (wallet.id == _walletId) return wallet.currencyCode;
+    }
+    return fallbackCurrency;
+  }
 
   final _schedules = [
     ('daily', 'Daily'),
@@ -52,9 +60,20 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.recurringId != null) {
       _isEditing = true;
       _load();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      FocusManager.instance.primaryFocus?.unfocus();
     }
   }
 
@@ -92,6 +111,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _amountController.dispose();
     _titleController.dispose();
     _noteController.dispose();
@@ -149,6 +169,11 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final walletsAsync = ref.watch(activeWalletsProvider);
     final catsAsync = ref.watch(expenseCategoriesProvider);
     final theme = Theme.of(context);
+    final wallets = walletsAsync.valueOrNull ?? const <Wallet>[];
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
+    final selectedCurrency = _selectedCurrency(wallets, displayCurrency);
 
     return Scaffold(
       appBar: AppBar(
@@ -186,9 +211,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _amountController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Amount',
-                prefixText: 'USD ',
+                prefixText: '$selectedCurrency ',
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,

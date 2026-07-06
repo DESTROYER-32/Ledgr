@@ -13,6 +13,8 @@ import '../../core/widgets/balance_card.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/stat_tile.dart';
 import '../../core/widgets/transaction_tile.dart';
+import '../cash_flow/widgets/cash_flow_mini_card.dart';
+import '../net_worth/widgets/net_worth_card.dart';
 
 final _dashboardObjectiveTotalProvider = FutureProvider.autoDispose
     .family<int, int>((ref, objectiveId) {
@@ -110,6 +112,8 @@ class DashboardScreen extends ConsumerWidget {
               totalBalanceAsync,
               displayCurrencyAsync,
             ),
+            const SizedBox(height: 12),
+            const NetWorthCard(),
             const SizedBox(height: 20),
             _buildWalletCards(
               context,
@@ -136,6 +140,8 @@ class DashboardScreen extends ConsumerWidget {
               displayCurrencyAsync,
               activeBudgets,
             ),
+            const SizedBox(height: 12),
+            const CashFlowMiniCard(),
             const SizedBox(height: 24),
             _buildQuickActions(context, cs),
             const SizedBox(height: 24),
