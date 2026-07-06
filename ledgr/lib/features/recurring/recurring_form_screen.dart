@@ -18,7 +18,8 @@ class RecurringFormScreen extends ConsumerStatefulWidget {
       _RecurringFormScreenState();
 }
 
-class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
+class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
@@ -59,9 +60,20 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.recurringId != null) {
       _isEditing = true;
       _load();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      FocusManager.instance.primaryFocus?.unfocus();
     }
   }
 
@@ -99,6 +111,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _amountController.dispose();
     _titleController.dispose();
     _noteController.dispose();
