@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/providers.dart';
 import '../../core/utils/money_utils.dart';
+import '../../core/widgets/modern_selection_field.dart';
 
 class HoldingFormScreen extends ConsumerStatefulWidget {
   const HoldingFormScreen({super.key, this.holdingId});
@@ -26,6 +27,26 @@ class _HoldingFormScreenState extends ConsumerState<HoldingFormScreen> {
   String _assetType = 'stock';
   int? _walletId;
   String _currencyCode = MoneyUtils.defaultCurrencyCode;
+
+  static const _assetTypeItems = [
+    ModernSelectionItem(
+      value: 'stock',
+      title: 'Stock',
+      icon: Icons.trending_up,
+    ),
+    ModernSelectionItem(value: 'etf', title: 'ETF', icon: Icons.pie_chart),
+    ModernSelectionItem(
+      value: 'crypto',
+      title: 'Crypto',
+      icon: Icons.currency_bitcoin,
+    ),
+    ModernSelectionItem(value: 'bond', title: 'Bond', icon: Icons.receipt_long),
+    ModernSelectionItem(
+      value: 'mutual_fund',
+      title: 'Mutual fund',
+      icon: Icons.account_balance,
+    ),
+  ];
 
   @override
   void initState() {
@@ -119,21 +140,30 @@ class _HoldingFormScreenState extends ConsumerState<HoldingFormScreen> {
             walletsAsync.when(
               loading: () => const LinearProgressIndicator(),
               error: (error, _) => Text('$error'),
-              data: (wallets) => DropdownButtonFormField<int>(
-                initialValue: _walletId,
-                decoration: const InputDecoration(labelText: 'Account'),
+              data: (wallets) => ModernSelectionField<int>(
+                label: 'Account',
+                value: _walletId,
+                leadingIcon: Icons.account_balance_wallet_outlined,
                 items: [
                   for (final wallet in wallets)
-                    DropdownMenuItem(
+                    ModernSelectionItem(
                       value: wallet.id,
-                      child: Text('${wallet.name} (${wallet.currencyCode})'),
+                      title: wallet.name,
+                      subtitle: wallet.type.replaceAll('_', ' '),
+                      icon: Icons.account_balance_outlined,
+                      badge: wallet.currencyCode,
                     ),
                 ],
                 onChanged: (value) {
-                  final wallet = wallets.where((w) => w.id == value).first;
+                  Wallet? selected;
+                  for (final wallet in wallets) {
+                    if (wallet.id == value) selected = wallet;
+                  }
                   setState(() {
                     _walletId = value;
-                    _currencyCode = wallet.currencyCode;
+                    _currencyCode =
+                        selected?.currencyCode ??
+                        MoneyUtils.defaultCurrencyCode;
                   });
                 },
                 validator: (value) => value == null ? 'Required' : null,
@@ -154,19 +184,12 @@ class _HoldingFormScreenState extends ConsumerState<HoldingFormScreen> {
                   v == null || v.trim().isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _assetType,
-              decoration: const InputDecoration(labelText: 'Asset type'),
-              items: const [
-                DropdownMenuItem(value: 'stock', child: Text('Stock')),
-                DropdownMenuItem(value: 'etf', child: Text('ETF')),
-                DropdownMenuItem(value: 'crypto', child: Text('Crypto')),
-                DropdownMenuItem(value: 'bond', child: Text('Bond')),
-                DropdownMenuItem(
-                  value: 'mutual_fund',
-                  child: Text('Mutual fund'),
-                ),
-              ],
+            ModernSelectionField<String>(
+              label: 'Asset type',
+              value: _assetType,
+              leadingIcon: Icons.category_outlined,
+              searchEnabled: false,
+              items: _assetTypeItems,
               onChanged: (value) =>
                   setState(() => _assetType = value ?? 'stock'),
             ),
