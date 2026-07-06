@@ -16,6 +16,8 @@ import '../../features/net_worth/net_worth_screen.dart';
 import '../../features/objectives/objective_detail_screen.dart';
 import '../../features/objectives/objective_form_screen.dart';
 import '../../features/objectives/objectives_list_screen.dart';
+import '../../features/portfolio/holding_form_screen.dart';
+import '../../features/portfolio/portfolio_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/recurring/recurring_screen.dart';
 import '../../features/recurring/recurring_form_screen.dart';
@@ -116,6 +118,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           return id == null
               ? _invalidRoute('Invalid wallet id.')
               : CashFlowScreen(walletId: id);
+        },
+      ),
+      GoRoute(
+        path: '/portfolio',
+        name: 'portfolio',
+        builder: (context, state) => const PortfolioScreen(),
+      ),
+      GoRoute(
+        path: '/portfolio/holdings/new',
+        name: 'portfolio-holding-new',
+        builder: (context, state) => const HoldingFormScreen(),
+      ),
+      GoRoute(
+        path: '/portfolio/holdings/:id/edit',
+        name: 'portfolio-holding-edit',
+        builder: (context, state) {
+          final id = _idParam(state);
+          return id == null
+              ? _invalidRoute('Invalid holding id.')
+              : HoldingFormScreen(holdingId: id);
         },
       ),
       GoRoute(

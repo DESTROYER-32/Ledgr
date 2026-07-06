@@ -10,6 +10,7 @@ import '../database/repositories/category_repository.dart';
 import '../database/repositories/delete_log_repository.dart';
 import '../database/repositories/objective_repository.dart';
 import '../database/repositories/net_worth_snapshot_repository.dart';
+import '../database/repositories/portfolio_repository.dart';
 import '../database/repositories/recurring_repository.dart';
 import '../security/app_lock_controller.dart';
 import '../services/backup_service.dart';
@@ -103,6 +104,10 @@ final netWorthSnapshotRepositoryProvider = Provider<NetWorthSnapshotRepository>(
     return NetWorthSnapshotRepository(ref.watch(appDatabaseProvider));
   },
 );
+
+final portfolioRepositoryProvider = Provider<PortfolioRepository>((ref) {
+  return PortfolioRepository(ref.watch(appDatabaseProvider));
+});
 
 final associatedTitleRepositoryProvider = Provider<AssociatedTitleRepository>((
   ref,

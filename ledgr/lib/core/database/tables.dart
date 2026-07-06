@@ -218,3 +218,36 @@ class NetWorthSnapshots extends Table {
   TextColumn get currencyCode => text()();
   TextColumn get detailsJson => text().nullable()();
 }
+
+@DataClassName('InvestmentHolding')
+class InvestmentHoldings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get walletId =>
+      integer().references(Wallets, #id, onDelete: KeyAction.cascade)();
+  TextColumn get tickerSymbol => text()();
+  TextColumn get assetName => text()();
+  TextColumn get assetType => text()();
+  RealColumn get shares => real()();
+  IntColumn get avgCostBasisMinor => integer()();
+  TextColumn get currencyCode => text()();
+  IntColumn get currentPriceMinor => integer().nullable()();
+  DateTimeColumn get lastPriceUpdate => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DataClassName('PortfolioTransaction')
+class PortfolioTransactions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get holdingId => integer().references(
+    InvestmentHoldings,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get type => text()();
+  RealColumn get shares => real()();
+  IntColumn get pricePerShareMinor => integer()();
+  IntColumn get feesMinor => integer().nullable()();
+  TextColumn get notes => text().nullable()();
+}
