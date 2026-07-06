@@ -13,6 +13,7 @@ class NetWorthCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final summaryAsync = ref.watch(currentNetWorthProvider);
+    final deltaAsync = ref.watch(netWorthMonthlyDeltaProvider);
 
     return Card(
       child: InkWell(
@@ -48,9 +49,23 @@ class NetWorthCard extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        'Assets ${MoneyUtils.format(summary.assetsMinor, currencyCode: summary.currencyCode)} • Debt ${MoneyUtils.format(summary.liabilitiesMinor, currencyCode: summary.currencyCode)}',
-                        style: theme.textTheme.bodySmall,
+                      deltaAsync.maybeWhen(
+                        data: (delta) => Text(
+                          delta == null
+                              ? 'Assets ${MoneyUtils.format(summary.assetsMinor, currencyCode: summary.currencyCode)} • Debt ${MoneyUtils.format(summary.liabilitiesMinor, currencyCode: summary.currencyCode)}'
+                              : '${delta.amountMinor >= 0 ? '+' : ''}${MoneyUtils.format(delta.amountMinor, currencyCode: summary.currencyCode)} last 30 days${delta.percent == null ? '' : ' (${delta.percent! >= 0 ? '+' : ''}${delta.percent!.toStringAsFixed(1)}%)'}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: delta == null
+                                ? null
+                                : delta.amountMinor >= 0
+                                ? Colors.green
+                                : cs.error,
+                          ),
+                        ),
+                        orElse: () => Text(
+                          'Assets ${MoneyUtils.format(summary.assetsMinor, currencyCode: summary.currencyCode)} • Debt ${MoneyUtils.format(summary.liabilitiesMinor, currencyCode: summary.currencyCode)}',
+                          style: theme.textTheme.bodySmall,
+                        ),
                       ),
                     ],
                   ),

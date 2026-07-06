@@ -50,13 +50,24 @@ class CashFlowProjector {
     required List<RecurringTransaction> recurringTransactions,
     required String displayCurrency,
     int days = 90,
+    int? walletId,
   }) async {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final end = start.add(Duration(days: days));
     var runningBalance = 0;
 
-    for (final wallet in wallets.where((wallet) => !wallet.archived)) {
+    final includedWallets = wallets
+        .where(
+          (wallet) =>
+              !wallet.archived && (walletId == null || wallet.id == walletId),
+        )
+        .toList();
+    final includedWalletIds = includedWallets
+        .map((wallet) => wallet.id)
+        .toSet();
+
+    for (final wallet in includedWallets) {
       runningBalance += await _exchangeRates.convert(
         walletBalances[wallet.id] ?? wallet.initialBalanceMinor,
         wallet.currencyCode,
@@ -70,26 +81,39 @@ class CashFlowProjector {
       eventsByDay.putIfAbsent(key, () => []).add(event);
     }
 
-    for (final transaction in transactions.where(
-      (t) => t.date.isAfter(start) && !t.date.isAfter(end),
-    )) {
+    for (final transaction in transactions.where((t) {
+      final isInWindow = t.date.isAfter(start) && !t.date.isAfter(end);
+      if (!isInWindow) return false;
+      if (walletId == null) return true;
+      return t.walletId == walletId || t.transferWalletId == walletId;
+    })) {
+      final amountMinor = await _signedConvertedTransactionAmount(
+        transaction.type,
+        transaction.amountMinor,
+        transaction.currencyCode,
+        displayCurrency,
+        sourceIncluded: includedWalletIds.contains(transaction.walletId),
+        destinationIncluded:
+            transaction.transferWalletId != null &&
+            includedWalletIds.contains(transaction.transferWalletId),
+      );
+      if (amountMinor == 0) continue;
       addEvent(
         CashFlowEvent(
           date: transaction.date,
           title: transaction.title ?? transaction.type,
-          amountMinor: await _signedConvertedTransactionAmount(
-            transaction.type,
-            transaction.amountMinor,
-            transaction.currencyCode,
-            displayCurrency,
-          ),
+          amountMinor: amountMinor,
           currencyCode: displayCurrency,
           type: transaction.type,
         ),
       );
     }
 
-    for (final recurring in recurringTransactions.where((r) => r.active)) {
+    for (final recurring in recurringTransactions.where((r) {
+      if (!r.active) return false;
+      if (walletId == null) return true;
+      return r.walletId == walletId || r.transferWalletId == walletId;
+    })) {
       final firstDue = recurring.nextDueDate ?? recurring.startDate;
       var occurrenceStart = firstDue;
       while (occurrenceStart.isBefore(start)) {
@@ -108,16 +132,22 @@ class CashFlowProjector {
       ).where((date) => !date.isBefore(start) && !date.isAfter(end));
 
       for (final date in instances) {
+        final amountMinor = await _signedConvertedTransactionAmount(
+          recurring.transactionType,
+          recurring.amountMinor,
+          recurring.currencyCode,
+          displayCurrency,
+          sourceIncluded: includedWalletIds.contains(recurring.walletId),
+          destinationIncluded:
+              recurring.transferWalletId != null &&
+              includedWalletIds.contains(recurring.transferWalletId),
+        );
+        if (amountMinor == 0) continue;
         addEvent(
           CashFlowEvent(
             date: date,
             title: recurring.title ?? recurring.transactionType,
-            amountMinor: await _signedConvertedTransactionAmount(
-              recurring.transactionType,
-              recurring.amountMinor,
-              recurring.currencyCode,
-              displayCurrency,
-            ),
+            amountMinor: amountMinor,
             currencyCode: displayCurrency,
             type: recurring.transactionType,
           ),
@@ -152,13 +182,20 @@ class CashFlowProjector {
     String type,
     int amountMinor,
     String fromCurrency,
-    String toCurrency,
-  ) async {
+    String toCurrency, {
+    required bool sourceIncluded,
+    required bool destinationIncluded,
+  }) async {
     final converted = await _exchangeRates.convert(
       amountMinor.abs(),
       fromCurrency,
       toCurrency,
     );
+    if (type == 'transfer') {
+      if (sourceIncluded && destinationIncluded) return 0;
+      if (destinationIncluded) return converted;
+      return -converted;
+    }
     return type == 'income' ? converted : -converted;
   }
 }

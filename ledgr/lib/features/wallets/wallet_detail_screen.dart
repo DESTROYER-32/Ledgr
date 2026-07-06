@@ -59,6 +59,11 @@ class WalletDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(wallet.name),
         actions: [
+          IconButton(
+            tooltip: 'Cash flow forecast',
+            onPressed: () => context.push('/cash-flow/${wallet.id}'),
+            icon: const Icon(Icons.show_chart),
+          ),
           PopupMenuButton<String>(
             onSelected: (v) async {
               final repo = ref.read(walletRepositoryProvider);
