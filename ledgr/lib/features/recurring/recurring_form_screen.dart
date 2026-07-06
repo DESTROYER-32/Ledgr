@@ -33,11 +33,11 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   bool _isLoading = false;
   bool _isEditing = false;
 
-  String _selectedCurrency(List<Wallet> wallets) {
+  String _selectedCurrency(List<Wallet> wallets, String fallbackCurrency) {
     for (final wallet in wallets) {
       if (wallet.id == _walletId) return wallet.currencyCode;
     }
-    return MoneyUtils.defaultCurrencyCode;
+    return fallbackCurrency;
   }
 
   final _schedules = [
@@ -157,7 +157,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final catsAsync = ref.watch(expenseCategoriesProvider);
     final theme = Theme.of(context);
     final wallets = walletsAsync.valueOrNull ?? const <Wallet>[];
-    final selectedCurrency = _selectedCurrency(wallets);
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
+        MoneyUtils.defaultCurrencyCode;
+    final selectedCurrency = _selectedCurrency(wallets, displayCurrency);
 
     return Scaffold(
       appBar: AppBar(
