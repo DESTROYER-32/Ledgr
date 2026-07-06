@@ -18,6 +18,7 @@ class CashFlowScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('$error')),
         data: (projection) {
+          final theme = Theme.of(context);
           final spots = [
             for (var i = 0; i < projection.points.length; i++)
               FlSpot(
@@ -28,6 +29,14 @@ class CashFlowScreen extends ConsumerWidget {
                 ),
               ),
           ];
+          final bottomInterval = projection.points.length <= 1
+              ? 1.0
+              : ((projection.points.length - 1) / 3).roundToDouble();
+          final values = spots.map((spot) => spot.y).toList();
+          final minY = values.reduce((a, b) => a < b ? a : b);
+          final maxY = values.reduce((a, b) => a > b ? a : b);
+          final range = (maxY - minY).abs();
+          final leftInterval = range == 0 ? 1.0 : range / 3;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -44,12 +53,81 @@ class CashFlowScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
-                        height: 220,
+                        height: 260,
                         child: LineChart(
                           LineChartData(
-                            gridData: const FlGridData(show: false),
-                            titlesData: const FlTitlesData(show: false),
-                            borderData: FlBorderData(show: false),
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              horizontalInterval: leftInterval,
+                            ),
+                            titlesData: FlTitlesData(
+                              topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 56,
+                                  interval: leftInterval,
+                                  getTitlesWidget: (value, meta) {
+                                    final minor = MoneyUtils.toMinor(
+                                      value,
+                                      currencyCode: projection.currencyCode,
+                                    );
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: Text(
+                                        MoneyUtils.formatCompact(
+                                          minor,
+                                          currencyCode: projection.currencyCode,
+                                        ),
+                                        style: theme.textTheme.labelSmall,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 32,
+                                  interval: bottomInterval,
+                                  getTitlesWidget: (value, meta) {
+                                    final index = value.round();
+                                    if (index < 0 ||
+                                        index >= projection.points.length) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final isTick =
+                                        index == 0 ||
+                                        index == projection.points.length - 1 ||
+                                        index % bottomInterval.round() == 0;
+                                    if (!isTick) return const SizedBox.shrink();
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(
+                                        AppDateUtils.formatDateShort(
+                                          projection.points[index].date,
+                                        ),
+                                        style: theme.textTheme.labelSmall,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            borderData: FlBorderData(
+                              show: true,
+                              border: Border(
+                                left: BorderSide(color: theme.dividerColor),
+                                bottom: BorderSide(color: theme.dividerColor),
+                              ),
+                            ),
                             lineTouchData: LineTouchData(
                               touchTooltipData: LineTouchTooltipData(
                                 getTooltipItems: (touchedSpots) => touchedSpots
