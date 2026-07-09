@@ -9,6 +9,8 @@ import '../database/repositories/budget_repository.dart';
 import '../database/repositories/category_repository.dart';
 import '../database/repositories/delete_log_repository.dart';
 import '../database/repositories/objective_repository.dart';
+import '../database/repositories/net_worth_snapshot_repository.dart';
+import '../database/repositories/portfolio_repository.dart';
 import '../database/repositories/recurring_repository.dart';
 import '../security/app_lock_controller.dart';
 import '../services/backup_service.dart';
@@ -95,6 +97,16 @@ final backupServiceProvider = Provider<BackupService>((ref) {
 
 final objectiveRepositoryProvider = Provider<ObjectiveRepository>((ref) {
   return ObjectiveRepository(ref.watch(appDatabaseProvider));
+});
+
+final netWorthSnapshotRepositoryProvider = Provider<NetWorthSnapshotRepository>(
+  (ref) {
+    return NetWorthSnapshotRepository(ref.watch(appDatabaseProvider));
+  },
+);
+
+final portfolioRepositoryProvider = Provider<PortfolioRepository>((ref) {
+  return PortfolioRepository(ref.watch(appDatabaseProvider));
 });
 
 final associatedTitleRepositoryProvider = Provider<AssociatedTitleRepository>((
