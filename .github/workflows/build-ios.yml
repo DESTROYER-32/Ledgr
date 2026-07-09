@@ -28,12 +28,19 @@ jobs:
 
       - run: dart run build_runner build --delete-conflicting-outputs
 
-      - run: flutter build ipa --no-codesign --release
+      - run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/Release-iphoneos/Runner.app Payload/
+          zip -9 -r Runner.ipa Payload/
+          rm -rf Payload
 
       - uses: actions/upload-artifact@v4
         with:
           name: Ledgr-iPA
-          path: ledgr/build/ios/ipa/*.ipa
+          path: ledgr/Runner.ipa
 
       - name: Compress & send IPA to Telegram
         if: success()
@@ -42,7 +49,6 @@ jobs:
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
         run: |
-          cd build/ios/ipa
           zip -9 ledgr-ipa.zip Runner.ipa
           curl -s -S --max-time 120 \
             -F document=@"ledgr-ipa.zip" \
