@@ -17,6 +17,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.44.1
+          cache: true
 
       - name: Cache Build Runner
         uses: actions/cache@v4
@@ -27,6 +28,12 @@ jobs:
             ${{ runner.os }}-build-runner-
 
       - run: dart run build_runner build --delete-conflicting-outputs
+
+      - run: dart format --set-exit-if-changed .
+
+      - run: flutter analyze
+
+      - run: flutter test
 
       - run: flutter build ios --release --no-codesign
 
@@ -49,10 +56,18 @@ jobs:
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
         run: |
+          if [ -z "${TOKEN}" ] || [ -z "${CHAT_ID}" ]; then
+            echo "Telegram secrets not configured; skipping Telegram delivery."
+            exit 0
+          fi
           zip -9 ledgr-ipa.zip Runner.ipa
-          curl -s -S --max-time 120 \
+          args=(
             -F document=@"ledgr-ipa.zip" \
             -F chat_id="${CHAT_ID}" \
-            -F message_thread_id="${TOPIC_ID}" \
             -F caption="Ledgr IPA — ${GITHUB_SHA:0:7}" \
+          )
+          if [ -n "${TOPIC_ID}" ]; then
+            args+=( -F message_thread_id="${TOPIC_ID}" )
+          fi
+          curl -s -S --max-time 120 "${args[@]}" \
             "https://api.telegram.org/bot${TOKEN}/sendDocument"
