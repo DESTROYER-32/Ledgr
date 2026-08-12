@@ -77,6 +77,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
     }
   }
 
+  DateTime? _existingNextDueDate;
+
   Future<void> _load() async {
     final r = await ref
         .read(recurringRepositoryProvider)
@@ -86,6 +88,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
         _type = r.transactionType;
         _schedule = r.scheduleRule;
         _endDate = r.endDate;
+        _existingNextDueDate = r.nextDueDate;
         final months = RecurringUtils.monthIntervalForRule(r.scheduleRule);
         if (months != null &&
             r.scheduleRule != 'monthly' &&
@@ -152,7 +155,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
       scheduleRule: Value(_effectiveSchedule),
       startDate: Value(_startDate),
       endDate: Value(_endDate),
-      nextDueDate: Value(_startDate),
+      nextDueDate: Value((_isEditing && _existingNextDueDate != null)
+          ? _existingNextDueDate!
+          : _startDate),
     );
 
     if (_isEditing) {

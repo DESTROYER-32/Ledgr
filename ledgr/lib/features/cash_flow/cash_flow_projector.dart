@@ -82,7 +82,7 @@ class CashFlowProjector {
     }
 
     for (final transaction in transactions.where((t) {
-      final isInWindow = t.date.isAfter(start) && !t.date.isAfter(end);
+      final isInWindow = !t.date.isBefore(start) && !t.date.isAfter(end);
       if (!isInWindow) return false;
       if (walletId == null) return true;
       return t.walletId == walletId || t.transferWalletId == walletId;
