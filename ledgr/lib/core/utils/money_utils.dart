@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:intl/intl.dart';
 
+import 'currency_utils.dart';
+
 class MoneyUtils {
   MoneyUtils._();
 
@@ -42,6 +44,11 @@ class MoneyUtils {
   }
 
   static int decimalDigitsFor(String code) {
+    for (final info in CurrencyUtils.currencies) {
+      if (info.code.toUpperCase() == code.toUpperCase()) {
+        return info.minorUnits;
+      }
+    }
     try {
       return NumberFormat.simpleCurrency(name: code).decimalDigits ?? 2;
     } catch (_) {
@@ -96,17 +103,8 @@ class MoneyUtils {
 
   static int toMinor(double amount, {String? currencyCode}) {
     final digits = decimalDigitsFor(currencyCode ?? defaultCurrencyCode);
-    final fixed = amount.toStringAsFixed(digits);
-    final negative = fixed.startsWith('-');
-    final normalized = negative ? fixed.substring(1) : fixed;
-    final parts = normalized.split('.');
-    final major = int.tryParse(parts[0]) ?? 0;
-    final fraction = parts.length > 1
-        ? parts[1].padRight(digits, '0')
-        : ''.padRight(digits, '0');
-    final minor =
-        major * math.pow(10, digits).toInt() + (int.tryParse(fraction) ?? 0);
-    return negative ? -minor : minor;
+    final factor = math.pow(10, digits).toDouble();
+    return (amount * factor).round();
   }
 
   static double toMajor(int minor, {String? currencyCode}) {

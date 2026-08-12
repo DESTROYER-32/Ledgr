@@ -35,10 +35,12 @@ final currentNetWorthProvider = FutureProvider<NetWorthSummary>((ref) async {
         displayCurrency: displayCurrency,
       );
 
-  await ref
-      .watch(netWorthSnapshotRepositoryProvider)
-      .upsertForDay(
-        date: DateTime.now(),
+  final snapshotRepo = ref.read(netWorthSnapshotRepositoryProvider);
+  final now = DateTime.now();
+  Future.microtask(() async {
+    try {
+      await snapshotRepo.upsertForDay(
+        date: now,
         assetsMinor: summary.assetsMinor,
         liabilitiesMinor: summary.liabilitiesMinor,
         netWorthMinor: summary.netWorthMinor,
@@ -54,6 +56,8 @@ final currentNetWorthProvider = FutureProvider<NetWorthSummary>((ref) async {
           ],
         },
       );
+    } catch (_) {}
+  });
 
   return summary;
 });

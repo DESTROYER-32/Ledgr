@@ -236,24 +236,21 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
           s + MoneyUtils.toMinor(i.amount, currencyCode: wallet.currencyCode),
     );
 
-    for (final person in _people) {
-      if (person == 'You') continue;
-      await repo.insert(
-        TransactionsCompanion.insert(
-          type: 'expense',
-          amountMinor: perPerson,
-          currencyCode: wallet.currencyCode,
-          date: DateTime.now(),
-          walletId: wallet.id,
-          title: Value('$title ($person)'),
-          specialType: const Value('none'),
-        ),
-      );
-    }
+    await repo.insert(
+      TransactionsCompanion.insert(
+        type: 'expense',
+        amountMinor: perPerson,
+        currencyCode: wallet.currencyCode,
+        date: DateTime.now(),
+        walletId: wallet.id,
+        title: Value('$title (My share)'),
+        specialType: const Value('none'),
+      ),
+    );
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Created ${_people.length - 1} transaction(s)')),
+        const SnackBar(content: Text('Created transaction for your share of the bill')),
       );
       context.pop();
     }

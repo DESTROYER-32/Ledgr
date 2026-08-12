@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -157,7 +158,8 @@ class AppLockController extends ChangeNotifier {
   Future<void> setPin(String pin) async {
     final salt = _randomSalt();
     await _settings.set(_pinSaltKey, salt);
-    await _settings.set(_pinHashKey, _hashPin(pin, salt));
+    final hash = await Isolate.run(() => _hashPin(pin, salt));
+    await _settings.set(_pinHashKey, hash);
     await clearAttemptState();
     _state = _state.copyWith(
       isEnabled: true,
@@ -192,11 +194,13 @@ class AppLockController extends ChangeNotifier {
   Future<bool> verifyPin(String pin) async {
     final salt = await _settings.get(_pinSaltKey);
     final expected = await _settings.get(_pinHashKey);
-    final ok =
-        salt != null && expected != null && _verifyHash(pin, salt, expected);
+    final ok = salt != null &&
+        expected != null &&
+        await Isolate.run(() => _verifyHash(pin, salt, expected));
     if (ok) {
       if (!expected.startsWith('$_pbkdf2Prefix\$')) {
-        await _settings.set(_pinHashKey, _hashPin(pin, salt));
+        final rehashed = await Isolate.run(() => _hashPin(pin, salt));
+        await _settings.set(_pinHashKey, rehashed);
       }
       await clearAttemptState();
       _state = _state.copyWith(isLocked: false);

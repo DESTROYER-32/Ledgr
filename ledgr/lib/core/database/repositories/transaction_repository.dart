@@ -112,33 +112,35 @@ class TransactionRepository {
   }
 
   Future<void> delete(int id) async {
-    final t = await getById(id);
-    if (t != null) {
-      await _db
-          .into(_db.deleteLogs)
-          .insert(
-            DeleteLogsCompanion.insert(
-              type: 'transaction',
-              jsonData: jsonEncode({
-                'type': t.type,
-                'specialType': t.specialType,
-                'amountMinor': t.amountMinor,
-                'currencyCode': t.currencyCode,
-                'date': t.date.toIso8601String(),
-                'walletId': t.walletId,
-                'transferWalletId': t.transferWalletId,
-                'categoryId': t.categoryId,
-                'title': t.title,
-                'note': t.note,
-                'tags': t.tags,
-              }),
-            ),
-          );
-    }
-    await (_db.transactionBudgets.delete()
-          ..where((tb) => tb.transactionId.equals(id)))
-        .go();
-    await (_db.transactions.delete()..where((t) => t.id.equals(id))).go();
+    await _db.transaction(() async {
+      final t = await getById(id);
+      if (t != null) {
+        await _db
+            .into(_db.deleteLogs)
+            .insert(
+              DeleteLogsCompanion.insert(
+                type: 'transaction',
+                jsonData: jsonEncode({
+                  'type': t.type,
+                  'specialType': t.specialType,
+                  'amountMinor': t.amountMinor,
+                  'currencyCode': t.currencyCode,
+                  'date': t.date.toIso8601String(),
+                  'walletId': t.walletId,
+                  'transferWalletId': t.transferWalletId,
+                  'categoryId': t.categoryId,
+                  'title': t.title,
+                  'note': t.note,
+                  'tags': t.tags,
+                }),
+              ),
+            );
+      }
+      await (_db.transactionBudgets.delete()
+            ..where((tb) => tb.transactionId.equals(id)))
+          .go();
+      await (_db.transactions.delete()..where((t) => t.id.equals(id))).go();
+    });
   }
 
   Future<List<Transaction>> search({
@@ -292,7 +294,7 @@ class TransactionRepository {
           ],
         )
         .getSingle();
-    return row.data['total'] as int;
+    return (row.data['total'] as num).toInt();
   }
 
   Future<int> totalByObjective(int objectiveId) async {
@@ -306,7 +308,7 @@ class TransactionRepository {
           variables: [Variable.withInt(objectiveId)],
         )
         .getSingle();
-    return row.data['total'] as int;
+    return (row.data['total'] as num).toInt();
   }
 
   Future<Map<int, int>> totalsByObjectives(Iterable<int> objectiveIds) async {
@@ -321,7 +323,7 @@ class TransactionRepository {
           ''', variables: ids.map(Variable.withInt).toList()).get();
     return {
       for (final row in rows)
-        row.data['objective_fk'] as int: row.data['total'] as int,
+        row.data['objective_fk'] as int: (row.data['total'] as num).toInt(),
     };
   }
 
@@ -353,7 +355,7 @@ class TransactionRepository {
     return {
       for (final row in rows)
         (row.data['category_id'] as int?) ?? uncategorizedCategoryId:
-            row.data['total'] as int,
+            (row.data['total'] as num).toInt(),
     };
   }
 
@@ -378,6 +380,6 @@ class TransactionRepository {
             AND type = ?
             $specialTypeFilter
           ''', variables: variables).getSingle();
-    return row.data['total'] as int;
+    return (row.data['total'] as num).toInt();
   }
 }

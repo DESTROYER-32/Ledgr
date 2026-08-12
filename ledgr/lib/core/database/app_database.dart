@@ -48,6 +48,7 @@ class AppDatabase extends _$AppDatabase {
         // The app has not shipped, so downgrade by recreating the local schema
         // instead of carrying a permanent migration path for test databases.
         if (from > to) {
+          await customStatement('PRAGMA foreign_keys = OFF;');
           for (final table in const [
             'delete_logs',
             'net_worth_snapshots',
@@ -65,10 +66,11 @@ class AppDatabase extends _$AppDatabase {
             'categories',
             'wallets',
           ]) {
-            await m.deleteTable(table);
+            await customStatement('DROP TABLE IF EXISTS $table;');
           }
           await m.createAll();
           await _createIndexes();
+          await customStatement('PRAGMA foreign_keys = ON;');
           return;
         }
 

@@ -60,7 +60,9 @@ class NetWorthCalculator {
           normalizedType == 'credit' ||
           normalizedType == 'loan';
 
-      if (isCredit || balance < 0) {
+      final isLiability = isCredit ? balance >= 0 : balance < 0;
+
+      if (isLiability) {
         liabilities += converted;
         liabilityItems.add(
           NetWorthBreakdownItem(

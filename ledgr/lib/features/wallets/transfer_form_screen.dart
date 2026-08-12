@@ -41,7 +41,8 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
   }
 
   Future<void> _save(List<Wallet> wallets) async {
-    if (_saving || !_formKey.currentState!.validate()) return;
+    if (_saving) return;
+    if (!_formKey.currentState!.validate()) return;
     if (_fromWalletId == null || _toWalletId == null) {
       _snack('Choose both accounts.');
       return;
