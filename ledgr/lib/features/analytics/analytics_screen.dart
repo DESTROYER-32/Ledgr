@@ -626,10 +626,11 @@ class _AnalyticsEntry {
 }
 
 List<_AnalyticsEntry> _topEntries(Map<String, int> values) {
-  final entries = values.entries
-      .map((entry) => _AnalyticsEntry(entry.key, entry.value))
-      .toList()
-    ..sort((a, b) => b.amount.compareTo(a.amount));
+  final entries =
+      values.entries
+          .map((entry) => _AnalyticsEntry(entry.key, entry.value))
+          .toList()
+        ..sort((a, b) => b.amount.compareTo(a.amount));
   return entries.take(6).toList();
 }
 

@@ -26,7 +26,9 @@ final currentNetWorthProvider = FutureProvider<NetWorthSummary>((ref) async {
   final balances = await ref.watch(walletBalancesProvider.future);
   final displayCurrency = await ref.watch(displayCurrencyProvider.future);
 
-  final summary = await ref.watch(netWorthCalculatorProvider).calculate(
+  final summary = await ref
+      .watch(netWorthCalculatorProvider)
+      .calculate(
         wallets: wallets,
         walletBalances: balances,
         objectives: objectives,

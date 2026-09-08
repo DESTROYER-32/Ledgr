@@ -29,8 +29,8 @@ final portfolioHoldingsProvider = StreamProvider<List<InvestmentHolding>>((
 
 final holdingsByWalletProvider =
     StreamProvider.family<List<InvestmentHolding>, int>((ref, walletId) {
-  return ref.watch(portfolioRepositoryProvider).watchByWallet(walletId);
-});
+      return ref.watch(portfolioRepositoryProvider).watchByWallet(walletId);
+    });
 
 final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
   final holdings = await ref.watch(portfolioHoldingsProvider.future);
@@ -48,13 +48,13 @@ final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
     final convertedValue = holding.currencyCode == displayCurrency
         ? value
         : (await ref
-            .watch(exchangeRateServiceProvider)
-            .convert(value, holding.currencyCode, displayCurrency));
+              .watch(exchangeRateServiceProvider)
+              .convert(value, holding.currencyCode, displayCurrency));
     final convertedCost = holding.currencyCode == displayCurrency
         ? cost
         : (await ref
-            .watch(exchangeRateServiceProvider)
-            .convert(cost, holding.currencyCode, displayCurrency));
+              .watch(exchangeRateServiceProvider)
+              .convert(cost, holding.currencyCode, displayCurrency));
     totalValue += convertedValue;
     totalCost += convertedCost;
     allocation[holding.assetType] =

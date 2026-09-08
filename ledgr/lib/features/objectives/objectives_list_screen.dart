@@ -197,8 +197,9 @@ class ObjectivesListScreen extends ConsumerWidget {
     ThemeData theme,
     int total,
   ) {
-    final progress =
-        objective.amountMinor > 0 ? total / objective.amountMinor : 0.0;
+    final progress = objective.amountMinor > 0
+        ? total / objective.amountMinor
+        : 0.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -64,8 +64,8 @@ class RecurringScreen extends ConsumerWidget {
                       isExpense
                           ? Icons.arrow_upward
                           : (isIncome
-                              ? Icons.arrow_downward
-                              : Icons.swap_horiz),
+                                ? Icons.arrow_downward
+                                : Icons.swap_horiz),
                       color: color,
                       size: 20,
                     ),
@@ -96,7 +96,9 @@ class RecurringScreen extends ConsumerWidget {
                         value: r.active,
                         onChanged: (v) async {
                           try {
-                            await ref.read(recurringRepositoryProvider).update(
+                            await ref
+                                .read(recurringRepositoryProvider)
+                                .update(
                                   r.id,
                                   RecurringTransactionsCompanion(
                                     active: Value(v),

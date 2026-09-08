@@ -155,6 +155,6 @@ class _TransactionList extends StatelessWidget {
   String? _frequencyLabel(String? recurrenceRule) => recurrenceRule == null
       ? null
       : recurrenceRule == 'one_time'
-          ? 'One time'
-          : RecurringUtils.describeSchedule(recurrenceRule);
+      ? 'One time'
+      : RecurringUtils.describeSchedule(recurrenceRule);
 }

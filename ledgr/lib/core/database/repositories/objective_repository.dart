@@ -6,20 +6,23 @@ class ObjectiveRepository {
   final AppDatabase _db;
   ObjectiveRepository(this._db);
 
-  Stream<List<Objective>> watchAll() => (_db.objectives.select()
-        ..where((o) => o.archived.equals(false))
-        ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
-      .watch();
+  Stream<List<Objective>> watchAll() =>
+      (_db.objectives.select()
+            ..where((o) => o.archived.equals(false))
+            ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
+          .watch();
 
-  Stream<List<Objective>> watchPinned() => (_db.objectives.select()
-        ..where((o) => o.pinned.equals(true) & o.archived.equals(false))
-        ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
-      .watch();
+  Stream<List<Objective>> watchPinned() =>
+      (_db.objectives.select()
+            ..where((o) => o.pinned.equals(true) & o.archived.equals(false))
+            ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
+          .watch();
 
-  Stream<List<Objective>> watchByType(String type) => (_db.objectives.select()
-        ..where((o) => o.type.equals(type) & o.archived.equals(false))
-        ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
-      .watch();
+  Stream<List<Objective>> watchByType(String type) =>
+      (_db.objectives.select()
+            ..where((o) => o.type.equals(type) & o.archived.equals(false))
+            ..orderBy([(o) => OrderingTerm(expression: o.sortOrder)]))
+          .watch();
 
   Future<Objective?> getById(int id) =>
       (_db.objectives.select()..where((o) => o.id.equals(id)))

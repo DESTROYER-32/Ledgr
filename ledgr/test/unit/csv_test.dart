@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('CSV Parsing', () {
     test('parses valid CSV header + data rows', () {
-      const csv = 'Date,Type,Amount,Title\n'
+      const csv =
+          'Date,Type,Amount,Title\n'
           '2024-06-01,expense,25.50,Groceries\n'
           '2024-06-02,income,1000.00,Salary\n';
       final rows = const CsvToListConverter(eol: '\n').convert(csv);
@@ -23,7 +24,8 @@ void main() {
     });
 
     test('handles CSV with extra columns', () {
-      const csv = 'Date,Type,Amount,Title,Note,Tags\n'
+      const csv =
+          'Date,Type,Amount,Title,Note,Tags\n'
           '2024-06-01,expense,25.50,Groceries,Weekly shopping,food\n';
       final rows = const CsvToListConverter(eol: '\n').convert(csv);
       expect(rows[1].length, 6);
@@ -54,7 +56,8 @@ void main() {
     });
 
     test('skips invalid data rows gracefully', () {
-      const csv = 'Date,Type,Amount,Title\n'
+      const csv =
+          'Date,Type,Amount,Title\n'
           'invalid-date,expense,abc,Test\n'
           '2024-06-01,expense,50.00,Valid\n';
       final rows = const CsvToListConverter(eol: '\n').convert(csv);

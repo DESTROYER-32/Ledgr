@@ -51,8 +51,9 @@ class WalletDetailScreen extends ConsumerWidget {
   ) {
     final balanceAsync = ref.watch(walletBalancesProvider);
     final filter = ref.watch(_walletDetailFilterProvider(wallet.id));
-    final txStream =
-        ref.read(transactionRepositoryProvider).watchByWallet(wallet.id);
+    final txStream = ref
+        .read(transactionRepositoryProvider)
+        .watchByWallet(wallet.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -111,7 +112,7 @@ class WalletDetailScreen extends ConsumerWidget {
                   ref.watch(activeCategoriesProvider).valueOrNull ?? [];
               final displayCurrency =
                   ref.watch(displayCurrencyProvider).valueOrNull ??
-                      MoneyUtils.defaultCurrencyCode;
+                  MoneyUtils.defaultCurrencyCode;
               final showDefaultCurrency =
                   ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;
               final exchangeRates =
@@ -164,13 +165,15 @@ class WalletDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     _FilterChips(
                       filter: filter,
-                      onChanged: (next) => ref
-                          .read(
-                            _walletDetailFilterProvider(
-                              wallet.id,
-                            ).notifier,
-                          )
-                          .state = next,
+                      onChanged: (next) =>
+                          ref
+                                  .read(
+                                    _walletDetailFilterProvider(
+                                      wallet.id,
+                                    ).notifier,
+                                  )
+                                  .state =
+                              next,
                     ),
                     const SizedBox(height: 16),
                     _AnalyticsOverview(analytics: analytics),
@@ -185,13 +188,15 @@ class WalletDetailScreen extends ConsumerWidget {
                       showDefaultCurrency: showDefaultCurrency,
                       exchangeRates: exchangeRates,
                       filter: filter,
-                      onChanged: (next) => ref
-                          .read(
-                            _walletDetailFilterProvider(
-                              wallet.id,
-                            ).notifier,
-                          )
-                          .state = next,
+                      onChanged: (next) =>
+                          ref
+                                  .read(
+                                    _walletDetailFilterProvider(
+                                      wallet.id,
+                                    ).notifier,
+                                  )
+                                  .state =
+                              next,
                     ),
                   ],
                 ),
@@ -275,7 +280,9 @@ class WalletDetailScreen extends ConsumerWidget {
                   Navigator.pop(dialogContext, true);
                   return;
                 }
-                await ref.read(transactionRepositoryProvider).insert(
+                await ref
+                    .read(transactionRepositoryProvider)
+                    .insert(
                       TransactionsCompanion.insert(
                         type: diff > 0 ? 'income' : 'expense',
                         specialType: const Value('none'),
@@ -580,8 +587,8 @@ class _CashflowChart extends StatelessWidget {
             Text(
               analytics.filter.label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -652,17 +659,16 @@ class _CashflowChart extends StatelessWidget {
   }
 
   LineChartBarData _lineData(List<int> values, Color color) => LineChartBarData(
-        spots: [
-          for (var i = 0; i < values.length; i++)
-            FlSpot(i.toDouble(), values[i].toDouble()),
-        ],
-        isCurved: true,
-        color: color,
-        barWidth: 3,
-        dotData: const FlDotData(show: false),
-        belowBarData:
-            BarAreaData(show: true, color: color.withValues(alpha: .10)),
-      );
+    spots: [
+      for (var i = 0; i < values.length; i++)
+        FlSpot(i.toDouble(), values[i].toDouble()),
+    ],
+    isCurved: true,
+    color: color,
+    barWidth: 3,
+    dotData: const FlDotData(show: false),
+    belowBarData: BarAreaData(show: true, color: color.withValues(alpha: .10)),
+  );
 }
 
 class _LegendDot extends StatelessWidget {
@@ -672,17 +678,17 @@ class _LegendDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(label, style: Theme.of(context).textTheme.labelSmall),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+      const SizedBox(width: 6),
+      Text(label, style: Theme.of(context).textTheme.labelSmall),
+    ],
+  );
 }
 
 class _FilterChips extends StatelessWidget {
@@ -844,8 +850,8 @@ class _TransactionFlowList extends StatelessWidget {
             Text(
               '${transactions.length} transaction${transactions.length == 1 ? '' : 's'} • ${analytics.filter.label}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             if (transactions.isEmpty)
@@ -855,8 +861,8 @@ class _TransactionFlowList extends StatelessWidget {
                   child: Text(
                     'No ${isOutgoing ? 'outgoing' : 'incoming'} transactions',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               )
@@ -1003,14 +1009,13 @@ class _AccountFilter {
     DateTime? startDate,
     DateTime? endDate,
     _FlowType? flow,
-  }) =>
-      _AccountFilter(
-        mode: mode ?? this.mode,
-        pastDays: pastDays ?? this.pastDays,
-        startDate: startDate ?? this.startDate,
-        endDate: endDate ?? this.endDate,
-        flow: flow ?? this.flow,
-      );
+  }) => _AccountFilter(
+    mode: mode ?? this.mode,
+    pastDays: pastDays ?? this.pastDays,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    flow: flow ?? this.flow,
+  );
 
   DateTime? get effectiveStart {
     final now = DateTime.now();
@@ -1018,10 +1023,10 @@ class _AccountFilter {
       _FilterMode.allTime => null,
       _FilterMode.cycle => DateTime(now.year, now.month),
       _FilterMode.pastDays => DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).subtract(Duration(days: pastDays - 1)),
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: pastDays - 1)),
       _FilterMode.dateRange => startDate,
     };
   }
@@ -1039,9 +1044,10 @@ class _AccountFilter {
       _FilterMode.allTime => 'All time',
       _FilterMode.cycle => 'Current cycle • ${now.month}/${now.year}',
       _FilterMode.pastDays => 'Past $pastDays days',
-      _FilterMode.dateRange => startDate == null || endDate == null
-          ? 'Date range'
-          : '${MoneyUtils.formatDateShort(startDate!)} - ${MoneyUtils.formatDateShort(endDate!)}',
+      _FilterMode.dateRange =>
+        startDate == null || endDate == null
+            ? 'Date range'
+            : '${MoneyUtils.formatDateShort(startDate!)} - ${MoneyUtils.formatDateShort(endDate!)}',
     };
   }
 }
@@ -1068,7 +1074,8 @@ class _ActivityTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = transaction.type == 'expense';
     final isIncome = transaction.type == 'income';
-    final fallbackColor = overrideColor ??
+    final fallbackColor =
+        overrideColor ??
         (isExpense
             ? AppColors.expense
             : (isIncome ? AppColors.income : AppColors.transfer));
@@ -1079,10 +1086,11 @@ class _ActivityTile extends StatelessWidget {
     final fallbackAmountColor = isExpense
         ? AppColors.expense
         : isIncome
-            ? AppColors.income
-            : AppColors.transfer;
+        ? AppColors.income
+        : AppColors.transfer;
     final amountColor = overrideColor ?? fallbackAmountColor;
-    final sign = isExpense ||
+    final sign =
+        isExpense ||
             (transaction.type == 'transfer' && transaction.walletId == walletId)
         ? '-'
         : '+';
@@ -1091,7 +1099,8 @@ class _ActivityTile extends StatelessWidget {
       toCurrency: displayCurrency,
       rates: exchangeRates,
     ).convert(transaction.amountMinor, fromCurrency: originalCurrency);
-    final showConverted = showDefaultCurrency &&
+    final showConverted =
+        showDefaultCurrency &&
         convertedAmount != null &&
         originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
     return ListTile(
@@ -1101,8 +1110,8 @@ class _ActivityTile extends StatelessWidget {
         child: Icon(
           category == null
               ? (transaction.type == 'transfer'
-                  ? Icons.swap_horiz
-                  : Icons.category_outlined)
+                    ? Icons.swap_horiz
+                    : Icons.category_outlined)
               : materialCategoryIcon(category!.icon),
           color: color,
           size: 20,
@@ -1196,9 +1205,11 @@ class _AccountAnalytics {
       if (start != null && t.date.isBefore(start)) continue;
       if (end != null && !t.date.isBefore(end)) continue;
 
-      final isIncoming = t.type == 'income' ||
+      final isIncoming =
+          t.type == 'income' ||
           (t.type == 'transfer' && t.transferWalletId == wallet.id);
-      final isOutgoing = t.type == 'expense' ||
+      final isOutgoing =
+          t.type == 'expense' ||
           (t.type == 'transfer' && t.walletId == wallet.id);
       if (!isIncoming && !isOutgoing) continue;
       count++;
@@ -1208,16 +1219,18 @@ class _AccountAnalytics {
         incoming += t.amountMinor;
         incomingTransactions.add(t);
         if (bucketIndex != null) incomingSeries[bucketIndex] += t.amountMinor;
-        final label =
-            t.type == 'transfer' ? 'Transfers in' : (t.title ?? 'Income');
+        final label = t.type == 'transfer'
+            ? 'Transfers in'
+            : (t.title ?? 'Income');
         incomingBreakdown[label] =
             (incomingBreakdown[label] ?? 0) + t.amountMinor;
       } else {
         outgoing += t.amountMinor;
         outgoingTransactions.add(t);
         if (bucketIndex != null) outgoingSeries[bucketIndex] += t.amountMinor;
-        final label =
-            t.type == 'transfer' ? 'Transfers out' : (t.title ?? 'Expense');
+        final label = t.type == 'transfer'
+            ? 'Transfers out'
+            : (t.title ?? 'Expense');
         outgoingBreakdown[label] =
             (outgoingBreakdown[label] ?? 0) + t.amountMinor;
       }
@@ -1257,23 +1270,30 @@ List<_ChartBucket> _chartBuckets({
   required List<Transaction> allTransactions,
 }) {
   final now = DateTime.now();
-  final effectiveStart = start ??
+  final effectiveStart =
+      start ??
       _earliestTransactionDate(allTransactions) ??
       DateTime(now.year, now.month - 5);
-  final effectiveEnd = end ??
+  final effectiveEnd =
+      end ??
       DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
-  final days =
-      effectiveEnd.difference(effectiveStart).inDays.abs().clamp(1, 100000);
+  final days = effectiveEnd
+      .difference(effectiveStart)
+      .inDays
+      .abs()
+      .clamp(1, 100000);
 
   if (days <= 45) {
     final buckets = <_ChartBucket>[];
-    for (var d = DateTime(
-      effectiveStart.year,
-      effectiveStart.month,
-      effectiveStart.day,
-    );
-        d.isBefore(effectiveEnd);
-        d = d.add(const Duration(days: 1))) {
+    for (
+      var d = DateTime(
+        effectiveStart.year,
+        effectiveStart.month,
+        effectiveStart.day,
+      );
+      d.isBefore(effectiveEnd);
+      d = d.add(const Duration(days: 1))
+    ) {
       buckets.add(
         _ChartBucket(
           start: d,
@@ -1303,11 +1323,10 @@ List<_ChartBucket> _chartBuckets({
 }
 
 _ChartBucket _singleBucket(DateTime date) => _ChartBucket(
-      start: DateTime(date.year, date.month, date.day),
-      end: DateTime(date.year, date.month, date.day)
-          .add(const Duration(days: 1)),
-      label: '${date.day}/${date.month}',
-    );
+  start: DateTime(date.year, date.month, date.day),
+  end: DateTime(date.year, date.month, date.day).add(const Duration(days: 1)),
+  label: '${date.day}/${date.month}',
+);
 
 DateTime? _earliestTransactionDate(List<Transaction> transactions) {
   if (transactions.isEmpty) return null;

@@ -24,8 +24,8 @@ class ExchangeRateService {
     this._settings, {
     http.Client? client,
     List<String>? apiUrls,
-  })  : _client = client ?? http.Client(),
-        _apiUrls = apiUrls ?? _defaultApiUrls;
+  }) : _client = client ?? http.Client(),
+       _apiUrls = apiUrls ?? _defaultApiUrls;
 
   void close() => _client.close();
 

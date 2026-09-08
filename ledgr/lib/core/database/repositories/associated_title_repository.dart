@@ -31,8 +31,9 @@ class AssociatedTitleRepository {
       _db.into(_db.associatedTitles).insert(entry);
 
   Future<void> update(int id, AssociatedTitlesCompanion entry) =>
-      (_db.associatedTitles.update()..where((a) => a.id.equals(id)))
-          .write(entry);
+      (_db.associatedTitles.update()..where((a) => a.id.equals(id))).write(
+        entry,
+      );
 
   Future<void> delete(int id) =>
       (_db.associatedTitles.delete()..where((a) => a.id.equals(id))).go();

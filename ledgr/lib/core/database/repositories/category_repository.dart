@@ -8,37 +8,43 @@ class CategoryRepository {
 
   Stream<List<Category>> watchAll() => _db.categories.select().watch();
 
-  Stream<List<Category>> watchActive() => (_db.categories.select()
-        ..where((c) => c.archived.equals(false))
-        ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
-      .watch();
+  Stream<List<Category>> watchActive() =>
+      (_db.categories.select()
+            ..where((c) => c.archived.equals(false))
+            ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
+          .watch();
 
-  Future<List<Category>> getActive() => (_db.categories.select()
-        ..where((c) => c.archived.equals(false))
-        ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
-      .get();
+  Future<List<Category>> getActive() =>
+      (_db.categories.select()
+            ..where((c) => c.archived.equals(false))
+            ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
+          .get();
 
-  Stream<List<Category>> watchParents() => (_db.categories.select()
-        ..where(
-          (c) => c.archived.equals(false) & c.parentCategoryId.isNull(),
-        )
-        ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
-      .watch();
+  Stream<List<Category>> watchParents() =>
+      (_db.categories.select()
+            ..where(
+              (c) => c.archived.equals(false) & c.parentCategoryId.isNull(),
+            )
+            ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
+          .watch();
 
-  Stream<List<Category>> watchSubcategories(int parentId) => (_db.categories
-          .select()
-        ..where(
-          (c) => c.archived.equals(false) & c.parentCategoryId.equals(parentId),
-        )
-        ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
-      .watch();
+  Stream<List<Category>> watchSubcategories(int parentId) =>
+      (_db.categories.select()
+            ..where(
+              (c) =>
+                  c.archived.equals(false) &
+                  c.parentCategoryId.equals(parentId),
+            )
+            ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
+          .watch();
 
-  Stream<List<Category>> watchByKind(String kind) => (_db.categories.select()
-        ..where(
-          (c) => c.archived.equals(false) & c.kind.isIn([kind, 'both']),
-        )
-        ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
-      .watch();
+  Stream<List<Category>> watchByKind(String kind) =>
+      (_db.categories.select()
+            ..where(
+              (c) => c.archived.equals(false) & c.kind.isIn([kind, 'both']),
+            )
+            ..orderBy([(c) => OrderingTerm(expression: c.sortOrder)]))
+          .watch();
 
   Future<Category?> getById(int id) =>
       (_db.categories.select()..where((c) => c.id.equals(id)))
@@ -69,30 +75,35 @@ class CategoryRepository {
   }
 
   Future<bool> _hasReferences(int id) async {
-    final child = await (_db.categories.select()
-          ..where((c) => c.parentCategoryId.equals(id))
-          ..limit(1))
-        .getSingleOrNull();
+    final child =
+        await (_db.categories.select()
+              ..where((c) => c.parentCategoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
     if (child != null) return true;
-    final transaction = await (_db.transactions.select()
-          ..where((t) => t.categoryId.equals(id))
-          ..limit(1))
-        .getSingleOrNull();
+    final transaction =
+        await (_db.transactions.select()
+              ..where((t) => t.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
     if (transaction != null) return true;
-    final recurring = await (_db.recurringTransactions.select()
-          ..where((r) => r.categoryId.equals(id))
-          ..limit(1))
-        .getSingleOrNull();
+    final recurring =
+        await (_db.recurringTransactions.select()
+              ..where((r) => r.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
     if (recurring != null) return true;
-    final limit = await (_db.budgetCategoryLimits.select()
-          ..where((l) => l.categoryId.equals(id))
-          ..limit(1))
-        .getSingleOrNull();
+    final limit =
+        await (_db.budgetCategoryLimits.select()
+              ..where((l) => l.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
     if (limit != null) return true;
-    final associatedTitle = await (_db.associatedTitles.select()
-          ..where((a) => a.categoryId.equals(id))
-          ..limit(1))
-        .getSingleOrNull();
+    final associatedTitle =
+        await (_db.associatedTitles.select()
+              ..where((a) => a.categoryId.equals(id))
+              ..limit(1))
+            .getSingleOrNull();
     return associatedTitle != null;
   }
 
@@ -223,7 +234,9 @@ class CategoryRepository {
     ];
 
     for (var i = 0; i < defaults.length; i++) {
-      await _db.into(_db.categories).insert(
+      await _db
+          .into(_db.categories)
+          .insert(
             CategoriesCompanion.insert(
               name: defaults[i].name,
               icon: Value(defaults[i].icon),

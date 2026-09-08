@@ -93,9 +93,9 @@ class _HoldingFormScreenState extends ConsumerState<HoldingFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_walletId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an account')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select an account')));
       return;
     }
     final now = DateTime.now();
@@ -167,7 +167,8 @@ class _HoldingFormScreenState extends ConsumerState<HoldingFormScreen> {
                   }
                   setState(() {
                     _walletId = value;
-                    _currencyCode = selected?.currencyCode ??
+                    _currencyCode =
+                        selected?.currencyCode ??
                         MoneyUtils.defaultCurrencyCode;
                   });
                 },

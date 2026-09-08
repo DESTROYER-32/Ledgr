@@ -5,14 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ledgr/features/budgets/budgets_screen.dart';
 
 void main() {
-  testWidgets('Budget screen renders month navigation',
-      (WidgetTester tester) async {
+  testWidgets('Budget screen renders month navigation', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
-          home: BudgetsScreen(),
-        ),
-      ),
+      const ProviderScope(child: MaterialApp(home: BudgetsScreen())),
     );
     await tester.pump();
 
@@ -30,11 +27,8 @@ void main() {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
-    expect(
-      find.text('${months[now.month - 1]} ${now.year}'),
-      findsOneWidget,
-    );
+    expect(find.text('${months[now.month - 1]} ${now.year}'), findsOneWidget);
   });
 }
