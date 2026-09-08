@@ -127,8 +127,8 @@ class _TransactionList extends StatelessWidget {
         final category = t.categoryId != null ? 'Cat #${t.categoryId}' : null;
         final subtitleParts = [
           MoneyUtils.formatDate(t.date),
-          if (frequency != null) frequency,
-          if (category != null) category,
+          ?frequency,
+          ?category,
         ];
 
         return Card(
