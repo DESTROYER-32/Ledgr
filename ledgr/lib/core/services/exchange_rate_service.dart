@@ -255,7 +255,9 @@ class ExchangeRateService {
     ]);
     final toRate = rates[0];
     final fromRate = rates[1];
-    if (fromRate == 0) return 1.0;
+    if (fromRate == 0) {
+      throw ExchangeRateException('Invalid zero exchange rate for $from');
+    }
     return toRate * (1 / fromRate);
   }
 

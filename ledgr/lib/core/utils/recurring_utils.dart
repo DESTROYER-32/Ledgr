@@ -106,9 +106,9 @@ class RecurringUtils {
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   static DateTime _addMonthsClamped(DateTime date, int months) {
-    final targetMonthIndex = date.month - 1 + months;
-    final targetYear = date.year + targetMonthIndex ~/ 12;
-    final targetMonth = targetMonthIndex % 12 + 1;
+    final totalMonths = date.year * 12 + (date.month - 1) + months;
+    final targetYear = totalMonths ~/ 12;
+    final targetMonth = totalMonths % 12 + 1;
     final lastDay = DateTime(targetYear, targetMonth + 1, 0).day;
     return DateTime(
       targetYear,

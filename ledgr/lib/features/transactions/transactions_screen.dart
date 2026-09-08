@@ -165,11 +165,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   void _animateTo(int page) {
-    _pageController.animateToPage(
-      page,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-    );
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        page,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   List<_LedgerEntry> _buildLedgerEntries(

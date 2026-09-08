@@ -91,7 +91,13 @@ class _HoldingFormScreenState extends ConsumerState<HoldingFormScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate() || _walletId == null) return;
+    if (!_formKey.currentState!.validate()) return;
+    if (_walletId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an account')),
+      );
+      return;
+    }
     final now = DateTime.now();
     final companion = InvestmentHoldingsCompanion(
       walletId: Value(_walletId!),
