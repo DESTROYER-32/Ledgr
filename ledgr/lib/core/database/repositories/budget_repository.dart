@@ -15,11 +15,11 @@ class BudgetRepository {
       (_db.budgets.select()..where((b) => b.id.equals(id))).getSingleOrNull();
 
   Future<Budget?> getForPeriod(DateTime start, DateTime end) async {
-    final results =
-        await (_db.budgets.select()..where(
-              (b) => b.periodStart.equals(start) & b.periodEnd.equals(end),
-            ))
-            .get();
+    final results = await (_db.budgets.select()
+          ..where(
+            (b) => b.periodStart.equals(start) & b.periodEnd.equals(end),
+          ))
+        .get();
     return results.isNotEmpty ? results.first : null;
   }
 
@@ -56,29 +56,27 @@ class BudgetRepository {
     int? walletId,
     required int amount,
   }) async {
-    final existing =
-        await (_db.budgetCategoryLimits.select()..where(
-              (l) =>
-                  l.budgetId.equals(budgetId) &
-                  l.categoryId.equals(categoryId) &
-                  (walletId == null
-                      ? l.walletId.isNull()
-                      : l.walletId.equals(walletId)),
-            ))
-            .get();
+    final existing = await (_db.budgetCategoryLimits.select()
+          ..where(
+            (l) =>
+                l.budgetId.equals(budgetId) &
+                l.categoryId.equals(categoryId) &
+                (walletId == null
+                    ? l.walletId.isNull()
+                    : l.walletId.equals(walletId)),
+          ))
+        .get();
     if (existing.isNotEmpty) {
       await (_db.budgetCategoryLimits.update()
             ..where((l) => l.id.equals(existing.first.id)))
           .write(
-            BudgetCategoryLimitsCompanion(
-              plannedAmountMinor: Value(amount),
-              walletId: walletId != null ? Value(walletId) : const Value(null),
-            ),
-          );
+        BudgetCategoryLimitsCompanion(
+          plannedAmountMinor: Value(amount),
+          walletId: walletId != null ? Value(walletId) : const Value(null),
+        ),
+      );
     } else {
-      await _db
-          .into(_db.budgetCategoryLimits)
-          .insert(
+      await _db.into(_db.budgetCategoryLimits).insert(
             BudgetCategoryLimitsCompanion.insert(
               budgetId: budgetId,
               categoryId: categoryId,
@@ -94,16 +92,16 @@ class BudgetRepository {
     int categoryId, {
     int? walletId,
   }) async {
-    final existing =
-        await (_db.budgetCategoryLimits.select()..where(
-              (l) =>
-                  l.budgetId.equals(budgetId) &
-                  l.categoryId.equals(categoryId) &
-                  (walletId == null
-                      ? l.walletId.isNull()
-                      : l.walletId.equals(walletId)),
-            ))
-            .get();
+    final existing = await (_db.budgetCategoryLimits.select()
+          ..where(
+            (l) =>
+                l.budgetId.equals(budgetId) &
+                l.categoryId.equals(categoryId) &
+                (walletId == null
+                    ? l.walletId.isNull()
+                    : l.walletId.equals(walletId)),
+          ))
+        .get();
     if (existing.isNotEmpty) {
       await (_db.budgetCategoryLimits.delete()
             ..where((l) => l.id.equals(existing.first.id)))
@@ -117,18 +115,17 @@ class BudgetRepository {
           .watch();
 
   Future<void> addWalletToBudget(int budgetId, int walletId) async {
-    await _db
-        .into(_db.budgetWallets)
-        .insert(
+    await _db.into(_db.budgetWallets).insert(
           BudgetWalletsCompanion.insert(budgetId: budgetId, walletId: walletId),
           mode: InsertMode.insertOrIgnore,
         );
   }
 
   Future<void> removeWalletFromBudget(int budgetId, int walletId) async {
-    await (_db.budgetWallets.delete()..where(
-          (w) => w.budgetId.equals(budgetId) & w.walletId.equals(walletId),
-        ))
+    await (_db.budgetWallets.delete()
+          ..where(
+            (w) => w.budgetId.equals(budgetId) & w.walletId.equals(walletId),
+          ))
         .go();
   }
 
@@ -140,10 +137,9 @@ class BudgetRepository {
     final budget = await getById(budgetId);
     if (budget == null) return {};
 
-    final wallets =
-        await (_db.budgetWallets.select()
-              ..where((w) => w.budgetId.equals(budgetId)))
-            .get();
+    final wallets = await (_db.budgetWallets.select()
+          ..where((w) => w.budgetId.equals(budgetId)))
+        .get();
 
     final q = _db.transactions.select();
     q.where((t) {
@@ -170,10 +166,9 @@ class BudgetRepository {
 
     Set<int>? explicitTransactionIds;
     if (budget.specificMode) {
-      final rows =
-          await (_db.transactionBudgets.select()
-                ..where((tb) => tb.budgetId.equals(budgetId)))
-              .get();
+      final rows = await (_db.transactionBudgets.select()
+            ..where((tb) => tb.budgetId.equals(budgetId)))
+          .get();
       explicitTransactionIds = rows.map((row) => row.transactionId).toSet();
       if (explicitTransactionIds.isEmpty) return {};
       q.where((t) => t.id.isIn(explicitTransactionIds!));

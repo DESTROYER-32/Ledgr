@@ -36,9 +36,8 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
   }
 
   Future<void> _loadAttemptState() async {
-    final attemptState = await ref
-        .read(appLockControllerProvider)
-        .loadAttemptState();
+    final attemptState =
+        await ref.read(appLockControllerProvider).loadAttemptState();
     if (!mounted) return;
     setState(() {
       _lockedUntil = attemptState.lockedUntil;
@@ -60,9 +59,8 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
       _verifying = true;
       _error = null;
     });
-    final ok = await ref
-        .read(appLockControllerProvider)
-        .verifyPin(_controller.text);
+    final ok =
+        await ref.read(appLockControllerProvider).verifyPin(_controller.text);
     if (!mounted) return;
     if (ok) {
       await ref.read(appLockControllerProvider).clearAttemptState();
@@ -73,9 +71,8 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
       return;
     }
 
-    final attemptState = await ref
-        .read(appLockControllerProvider)
-        .recordFailedAttempt();
+    final attemptState =
+        await ref.read(appLockControllerProvider).recordFailedAttempt();
     _lockedUntil = attemptState.lockedUntil;
     final until = _lockedUntil;
     setState(() {

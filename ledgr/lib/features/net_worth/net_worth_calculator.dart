@@ -55,8 +55,7 @@ class NetWorthCalculator {
         displayCurrency,
       );
       final normalizedType = wallet.type.toLowerCase().replaceAll(' ', '_');
-      final isCredit =
-          normalizedType == 'credit_card' ||
+      final isCredit = normalizedType == 'credit_card' ||
           normalizedType == 'credit' ||
           normalizedType == 'loan';
 

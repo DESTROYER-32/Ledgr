@@ -31,18 +31,18 @@ enum AutoBackupFrequency {
   monthly;
 
   String get label => switch (this) {
-    AutoBackupFrequency.off => 'Off',
-    AutoBackupFrequency.daily => 'Daily',
-    AutoBackupFrequency.weekly => 'Weekly',
-    AutoBackupFrequency.monthly => 'Monthly',
-  };
+        AutoBackupFrequency.off => 'Off',
+        AutoBackupFrequency.daily => 'Daily',
+        AutoBackupFrequency.weekly => 'Weekly',
+        AutoBackupFrequency.monthly => 'Monthly',
+      };
 
   Duration? get interval => switch (this) {
-    AutoBackupFrequency.off => null,
-    AutoBackupFrequency.daily => const Duration(days: 1),
-    AutoBackupFrequency.weekly => const Duration(days: 7),
-    AutoBackupFrequency.monthly => const Duration(days: 30),
-  };
+        AutoBackupFrequency.off => null,
+        AutoBackupFrequency.daily => const Duration(days: 1),
+        AutoBackupFrequency.weekly => const Duration(days: 7),
+        AutoBackupFrequency.monthly => const Duration(days: 30),
+      };
 }
 
 class BackupScheduleConfig {
@@ -196,10 +196,9 @@ class BackupService {
       (value) => value.name == rawFrequency,
       orElse: () => BackupScheduleConfig.defaults.frequency,
     );
-    final slotCount =
-        (int.tryParse(await _settings.get(_slotCountKey) ?? '') ??
-                BackupScheduleConfig.defaults.slotCount)
-            .clamp(minSlots, maxSlots);
+    final slotCount = (int.tryParse(await _settings.get(_slotCountKey) ?? '') ??
+            BackupScheduleConfig.defaults.slotCount)
+        .clamp(minSlots, maxSlots);
     final lastRunRaw = await _settings.get(_lastRunKey);
     final nextSlotIndex =
         (int.tryParse(await _settings.get(_nextSlotKey) ?? '') ??

@@ -64,9 +64,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
 
     setState(() => _saving = true);
     try {
-      await ref
-          .read(transactionRepositoryProvider)
-          .insert(
+      await ref.read(transactionRepositoryProvider).insert(
             TransactionsCompanion.insert(
               type: 'transfer',
               specialType: const Value('none'),

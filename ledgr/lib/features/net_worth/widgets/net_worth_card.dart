@@ -58,8 +58,8 @@ class NetWorthCard extends ConsumerWidget {
                             color: delta == null
                                 ? null
                                 : delta.amountMinor >= 0
-                                ? Colors.green
-                                : cs.error,
+                                    ? Colors.green
+                                    : cs.error,
                           ),
                         ),
                         orElse: () => Text(

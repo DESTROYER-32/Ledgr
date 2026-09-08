@@ -92,8 +92,7 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
               }
               if (index - 1 >= wallets.length) return const SizedBox.shrink();
               final wallet = wallets[index - 1];
-              final balance =
-                  balancesAsync.valueOrNull?[wallet.id] ??
+              final balance = balancesAsync.valueOrNull?[wallet.id] ??
                   wallet.initialBalanceMinor;
               return _buildWalletCard(
                 Key('wallet_${wallet.id}'),

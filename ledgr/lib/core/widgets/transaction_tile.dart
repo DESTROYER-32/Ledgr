@@ -49,8 +49,7 @@ class TransactionTile extends StatelessWidget {
     final transactionCurrency = currencyCode ?? MoneyUtils.defaultCurrencyCode;
     final defaultCurrency = displayCurrencyCode ?? transactionCurrency;
     final defaultAmount = displayAmountMinor ?? amountMinor;
-    final showDefaultCurrency =
-        showDisplayCurrency &&
+    final showDefaultCurrency = showDisplayCurrency &&
         transactionCurrency.toUpperCase() != defaultCurrency.toUpperCase();
 
     return Card(
@@ -72,8 +71,8 @@ class TransactionTile extends StatelessWidget {
                   categoryIcon != null
                       ? materialCategoryIcon(categoryIcon)
                       : (isExpense || isIncome
-                            ? Icons.category_outlined
-                            : Icons.swap_horiz),
+                          ? Icons.category_outlined
+                          : Icons.swap_horiz),
                   color: iconColor,
                   size: 18,
                 ),
@@ -118,8 +117,7 @@ class TransactionTile extends StatelessWidget {
                             categoryName!,
                             style: TextStyle(
                               fontSize: AppTextSizes.small,
-                              color:
-                                  categoryColor ??
+                              color: categoryColor ??
                                   theme.colorScheme.onSurfaceVariant,
                             ),
                           ),

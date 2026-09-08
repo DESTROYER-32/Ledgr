@@ -92,9 +92,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (mounted) {
       setState(() {
         _notifications = notifications == 'true';
-        _defaultWalletId = defaultWalletId == null
-            ? null
-            : int.tryParse(defaultWalletId);
+        _defaultWalletId =
+            defaultWalletId == null ? null : int.tryParse(defaultWalletId);
         _themeMode = themeMode ?? 'system';
         _themeSeed = int.tryParse(themeSeed ?? '') ?? 0xFF1A6D4A;
         _displayCurrency = displayCurrency ?? MoneyUtils.defaultCurrencyCode;
@@ -102,9 +101,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _favoriteCurrencies = _decodeFavoriteCurrencies(favoriteCurrencies);
         _demoMode = demoMode == 'true';
         final trimmedName = userName?.trim();
-        _userName = trimmedName == null || trimmedName.isEmpty
-            ? null
-            : trimmedName;
+        _userName =
+            trimmedName == null || trimmedName.isEmpty ? null : trimmedName;
         _isLoading = false;
       });
     }
@@ -319,12 +317,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   IconData _walletIcon(String type) => switch (type) {
-    'savings' => Icons.savings_outlined,
-    'cash' => Icons.payments_outlined,
-    'credit_card' => Icons.credit_card_outlined,
-    'loan' => Icons.account_balance_wallet_outlined,
-    _ => Icons.account_balance_outlined,
-  };
+        'savings' => Icons.savings_outlined,
+        'cash' => Icons.payments_outlined,
+        'credit_card' => Icons.credit_card_outlined,
+        'loan' => Icons.account_balance_wallet_outlined,
+        _ => Icons.account_balance_outlined,
+      };
 
   List<String> _decodeFavoriteCurrencies(String? raw) {
     if (raw == null || raw.isEmpty) return CurrencyUtils.codes;
@@ -350,15 +348,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _setFavoriteCurrencies(List<String> codes) async {
-    final favorites = codes
-        .where(CurrencyUtils.codes.contains)
-        .toSet()
-        .toList();
+    final favorites =
+        codes.where(CurrencyUtils.codes.contains).toSet().toList();
     final repo = ref.read(settingsRepositoryProvider);
     setState(
-      () => _favoriteCurrencies = favorites.isEmpty
-          ? CurrencyUtils.codes
-          : favorites,
+      () => _favoriteCurrencies =
+          favorites.isEmpty ? CurrencyUtils.codes : favorites,
     );
     if (favorites.isEmpty || favorites.length == CurrencyUtils.codes.length) {
       await repo.remove('favorite_currencies');
@@ -483,12 +478,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  backgroundColor: isSelected
-                                      ? cs.primary
-                                      : cs.surface,
-                                  foregroundColor: isSelected
-                                      ? cs.onPrimary
-                                      : cs.primary,
+                                  backgroundColor:
+                                      isSelected ? cs.primary : cs.surface,
+                                  foregroundColor:
+                                      isSelected ? cs.onPrimary : cs.primary,
                                   child: Text(
                                     currency.symbol,
                                     style: const TextStyle(
@@ -506,16 +499,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                         currency.code,
                                         style: theme.textTheme.titleSmall
                                             ?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                            ),
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         currency.name,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: cs.onSurfaceVariant,
-                                            ),
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: cs.onSurfaceVariant,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -686,9 +679,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _toggleBiometrics(bool enabled) async {
     setState(() => _securityBusy = true);
-    final ok = await ref
-        .read(appLockControllerProvider)
-        .setBiometricsEnabled(enabled);
+    final ok =
+        await ref.read(appLockControllerProvider).setBiometricsEnabled(enabled);
     if (mounted) {
       setState(() => _securityBusy = false);
       if (!ok) {
@@ -887,21 +879,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: 'Default Currency',
                 value: _displayCurrency,
                 leadingIcon: Icons.monetization_on_outlined,
-                items:
-                    currencyOptionsWithSelection(
-                          _favoriteCurrencies,
-                          _displayCurrency,
-                        )
-                        .map(
-                          (c) => ModernSelectionItem(
-                            value: c,
-                            title: c,
-                            subtitle: _currencyName(c),
-                            icon: Icons.monetization_on_outlined,
-                            badge: CurrencyUtils.symbolFor(c),
-                          ),
-                        )
-                        .toList(),
+                items: currencyOptionsWithSelection(
+                  _favoriteCurrencies,
+                  _displayCurrency,
+                )
+                    .map(
+                      (c) => ModernSelectionItem(
+                        value: c,
+                        title: c,
+                        subtitle: _currencyName(c),
+                        icon: Icons.monetization_on_outlined,
+                        badge: CurrencyUtils.symbolFor(c),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (v) {
                   if (v != null) _setDisplayCurrency(v);
                 },

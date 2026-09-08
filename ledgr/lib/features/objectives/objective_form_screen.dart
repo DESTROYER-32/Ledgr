@@ -117,22 +117,21 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
               label: 'Currency',
               value: _currencyCode,
               leadingIcon: Icons.monetization_on_outlined,
-              items:
-                  currencyOptionsWithSelection(
-                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
-                            CurrencyUtils.codes,
-                        _currencyCode,
-                      )
-                      .map(
-                        (c) => ModernSelectionItem(
-                          value: c,
-                          title: c,
-                          subtitle: _currencyName(c),
-                          icon: Icons.monetization_on_outlined,
-                          badge: CurrencyUtils.symbolFor(c),
-                        ),
-                      )
-                      .toList(),
+              items: currencyOptionsWithSelection(
+                ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                    CurrencyUtils.codes,
+                _currencyCode,
+              )
+                  .map(
+                    (c) => ModernSelectionItem(
+                      value: c,
+                      title: c,
+                      subtitle: _currencyName(c),
+                      icon: Icons.monetization_on_outlined,
+                      badge: CurrencyUtils.symbolFor(c),
+                    ),
+                  )
+                  .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _currencyCode = v);
               },
@@ -166,34 +165,33 @@ class _ObjectiveFormScreenState extends ConsumerState<ObjectiveFormScreen> {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children:
-                  [
-                        0xFF43A047,
-                        0xFFE53935,
-                        0xFF1E88E5,
-                        0xFFFF8F00,
-                        0xFF8E24AA,
-                        0xFF00ACC1,
-                        0xFFD81B60,
-                        0xFF546E7A,
-                      ]
-                      .map(
-                        (c) => GestureDetector(
-                          onTap: () => setState(() => _color = c),
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: Color(c),
-                              shape: BoxShape.circle,
-                              border: _color == c
-                                  ? Border.all(color: Colors.white, width: 3)
-                                  : null,
-                            ),
-                          ),
+              children: [
+                0xFF43A047,
+                0xFFE53935,
+                0xFF1E88E5,
+                0xFFFF8F00,
+                0xFF8E24AA,
+                0xFF00ACC1,
+                0xFFD81B60,
+                0xFF546E7A,
+              ]
+                  .map(
+                    (c) => GestureDetector(
+                      onTap: () => setState(() => _color = c),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Color(c),
+                          shape: BoxShape.circle,
+                          border: _color == c
+                              ? Border.all(color: Colors.white, width: 3)
+                              : null,
                         ),
-                      )
-                      .toList(),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
             const SizedBox(height: 24),
             FilledButton(

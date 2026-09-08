@@ -78,9 +78,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   Future<void> _loadDefaultWallet() async {
     final defaultWalletId = await ref.read(defaultWalletIdProvider.future);
     if (defaultWalletId != null && mounted && _walletId == null) {
-      final wallet = await ref
-          .read(walletRepositoryProvider)
-          .getById(defaultWalletId);
+      final wallet =
+          await ref.read(walletRepositoryProvider).getById(defaultWalletId);
       if (wallet != null && !wallet.archived && mounted) {
         setState(() => _walletId = defaultWalletId);
       }
@@ -227,9 +226,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ),
       note: Value(_noteController.text.isEmpty ? null : _noteController.text),
       tags: Value(_tagsController.text.isEmpty ? null : _tagsController.text),
-      objectiveFk: _objectiveId != null
-          ? Value(_objectiveId!)
-          : const Value(null),
+      objectiveFk:
+          _objectiveId != null ? Value(_objectiveId!) : const Value(null),
     );
 
     if (_isEditing) {
@@ -259,9 +257,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           tags: Value(
             _tagsController.text.isEmpty ? null : _tagsController.text,
           ),
-          objectiveFk: _objectiveId != null
-              ? Value(_objectiveId!)
-              : const Value(null),
+          objectiveFk:
+              _objectiveId != null ? Value(_objectiveId!) : const Value(null),
         ),
         _budgetIds,
       );
@@ -281,8 +278,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final theme = Theme.of(context);
     final wallets = walletsAsync.valueOrNull ?? [];
     final selectedWallet = wallets.where((w) => w.id == _walletId).firstOrNull;
-    final defaultCurrency =
-        ref.watch(displayCurrencyProvider).valueOrNull ??
+    final defaultCurrency = ref.watch(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
     final walletCurrency = selectedWallet?.currencyCode ?? defaultCurrency;
     final displayCurrency = _currencyCode ?? walletCurrency;
@@ -437,8 +433,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   onTap: () async {
                     final picked = await showDatePicker(
                       context: context,
-                      initialDate:
-                          _repeatUntilDate ??
+                      initialDate: _repeatUntilDate ??
                           DateTime(_date.year + 1, _date.month, _date.day),
                       firstDate: _date,
                       lastDate: DateTime(2100),
@@ -532,22 +527,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               label: 'Currency',
               value: displayCurrency,
               leadingIcon: Icons.payments_outlined,
-              items:
-                  currencyOptionsWithSelection(
-                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
-                            CurrencyUtils.codes,
-                        displayCurrency,
-                      )
-                      .map(
-                        (c) => ModernSelectionItem(
-                          value: c,
-                          title: c,
-                          subtitle: _currencyName(c),
-                          icon: Icons.monetization_on_outlined,
-                          badge: CurrencyUtils.symbolFor(c),
-                        ),
-                      )
-                      .toList(),
+              items: currencyOptionsWithSelection(
+                ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                    CurrencyUtils.codes,
+                displayCurrency,
+              )
+                  .map(
+                    (c) => ModernSelectionItem(
+                      value: c,
+                      title: c,
+                      subtitle: _currencyName(c),
+                      icon: Icons.monetization_on_outlined,
+                      badge: CurrencyUtils.symbolFor(c),
+                    ),
+                  )
+                  .toList(),
               onChanged: (v) async {
                 if (v != null) {
                   final oldCurrency = displayCurrency;
@@ -646,9 +640,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               loading: () => const LinearProgressIndicator(),
             ),
             const SizedBox(height: 16),
-            ref
-                .watch(allBudgetsProvider)
-                .when(
+            ref.watch(allBudgetsProvider).when(
                   data: (allBudgets) {
                     final active = allBudgets
                         .where(
@@ -718,18 +710,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   IconData _walletIcon(String type) => switch (type) {
-    'savings' => Icons.savings_outlined,
-    'cash' => Icons.payments_outlined,
-    'credit_card' => Icons.credit_card_outlined,
-    'loan' => Icons.account_balance_wallet_outlined,
-    _ => Icons.account_balance_outlined,
-  };
+        'savings' => Icons.savings_outlined,
+        'cash' => Icons.payments_outlined,
+        'credit_card' => Icons.credit_card_outlined,
+        'loan' => Icons.account_balance_wallet_outlined,
+        _ => Icons.account_balance_outlined,
+      };
 
   String _walletTypeLabel(String type) => switch (type) {
-    'credit_card' => 'Credit card',
-    'loan' => 'Loan account',
-    _ => '${type[0].toUpperCase()}${type.substring(1)} account',
-  };
+        'credit_card' => 'Credit card',
+        'loan' => 'Loan account',
+        _ => '${type[0].toUpperCase()}${type.substring(1)} account',
+      };
 
   String? _currencyName(String code) {
     for (final currency in CurrencyUtils.currencies) {

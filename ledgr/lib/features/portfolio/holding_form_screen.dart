@@ -167,8 +167,7 @@ class _HoldingFormScreenState extends ConsumerState<HoldingFormScreen> {
                   }
                   setState(() {
                     _walletId = value;
-                    _currencyCode =
-                        selected?.currencyCode ??
+                    _currencyCode = selected?.currencyCode ??
                         MoneyUtils.defaultCurrencyCode;
                   });
                 },

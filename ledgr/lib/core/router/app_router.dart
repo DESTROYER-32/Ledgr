@@ -50,9 +50,9 @@ Map<String, dynamic>? _extraMap(GoRouterState state) {
 }
 
 Widget _invalidRoute(String message) => Scaffold(
-  appBar: AppBar(title: const Text('Invalid link')),
-  body: Center(child: Text(message)),
-);
+      appBar: AppBar(title: const Text('Invalid link')),
+      body: Center(child: Text(message)),
+    );
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(

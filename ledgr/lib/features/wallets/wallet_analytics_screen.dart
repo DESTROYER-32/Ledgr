@@ -33,8 +33,7 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(wallet?.name ?? 'Account analytics')),
-      body:
-          walletsAsync.isLoading ||
+      body: walletsAsync.isLoading ||
               transactionsAsync.isLoading ||
               categoriesAsync.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -150,15 +149,13 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
     }).toList();
     final firstChartMonth =
         _range == _Range.all && visibleTransactions.isNotEmpty
-        ? visibleTransactions
-              .map((t) => DateTime(t.date.year, t.date.month))
-              .reduce((a, b) => a.isBefore(b) ? a : b)
-        : DateTime(now.year, now.month - _chartMonthsForRange(_range) + 1);
-    for (
-      var d = firstChartMonth;
-      !d.isAfter(DateTime(now.year, now.month));
-      d = DateTime(d.year, d.month + 1)
-    ) {
+            ? visibleTransactions
+                .map((t) => DateTime(t.date.year, t.date.month))
+                .reduce((a, b) => a.isBefore(b) ? a : b)
+            : DateTime(now.year, now.month - _chartMonthsForRange(_range) + 1);
+    for (var d = firstChartMonth;
+        !d.isAfter(DateTime(now.year, now.month));
+        d = DateTime(d.year, d.month + 1)) {
       incoming[_monthKey(d)] = 0;
       outgoing[_monthKey(d)] = 0;
     }
@@ -170,11 +167,9 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
       if (start != null && t.date.isBefore(start)) continue;
       if (t.type == 'transfer' && !_includeTransfers) continue;
 
-      final isIncoming =
-          t.type == 'income' ||
+      final isIncoming = t.type == 'income' ||
           (t.type == 'transfer' && t.transferWalletId == wallet.id);
-      final isOutgoing =
-          t.type == 'expense' ||
+      final isOutgoing = t.type == 'expense' ||
           (t.type == 'transfer' && t.walletId == wallet.id);
       if (!isIncoming && !isOutgoing) continue;
 
@@ -218,10 +213,10 @@ class _WalletAnalyticsScreenState extends ConsumerState<WalletAnalyticsScreen> {
 enum _Range { month, threeMonths, year, all }
 
 int _chartMonthsForRange(_Range range) => switch (range) {
-  _Range.month => 1,
-  _Range.threeMonths => 3,
-  _Range.year || _Range.all => 12,
-};
+      _Range.month => 1,
+      _Range.threeMonths => 3,
+      _Range.year || _Range.all => 12,
+    };
 
 extension on _Range {
   DateTime? startDate() {
@@ -323,27 +318,28 @@ class _CountCard extends StatelessWidget {
   const _CountCard({required this.count});
   @override
   Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            color: Theme.of(context).colorScheme.primary,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(
+                Icons.receipt_long_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              Text('Transactions',
+                  style: Theme.of(context).textTheme.labelMedium),
+              Text(
+                '$count',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          Text('Transactions', style: Theme.of(context).textTheme.labelMedium),
-          Text(
-            '$count',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _CashflowCard extends StatelessWidget {
@@ -460,8 +456,8 @@ class _BreakdownCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),

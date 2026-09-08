@@ -8,24 +8,21 @@ class WalletRepository {
   final ExchangeRateService _exchangeRates;
   WalletRepository(this._db, this._exchangeRates);
 
-  Stream<List<Wallet>> watchAll() =>
-      (_db.wallets.select()
-            ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
-          .watch();
+  Stream<List<Wallet>> watchAll() => (_db.wallets.select()
+        ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
+      .watch();
 
   Future<List<Wallet>> getAll() => _db.wallets.select().get();
 
-  Stream<List<Wallet>> watchActive() =>
-      (_db.wallets.select()
-            ..where((w) => w.archived.equals(false))
-            ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
-          .watch();
+  Stream<List<Wallet>> watchActive() => (_db.wallets.select()
+        ..where((w) => w.archived.equals(false))
+        ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
+      .watch();
 
-  Future<List<Wallet>> getActive() =>
-      (_db.wallets.select()
-            ..where((w) => w.archived.equals(false))
-            ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
-          .get();
+  Future<List<Wallet>> getActive() => (_db.wallets.select()
+        ..where((w) => w.archived.equals(false))
+        ..orderBy([(w) => OrderingTerm(expression: w.sortOrder)]))
+      .get();
 
   Future<Wallet?> getById(int id) =>
       (_db.wallets.select()..where((w) => w.id.equals(id))).getSingleOrNull();
@@ -70,46 +67,40 @@ class WalletRepository {
   }
 
   Future<bool> _hasReferences(int id) async {
-    final transaction =
-        await (_db.transactions.select()
-              ..where(
-                (t) => t.walletId.equals(id) | t.transferWalletId.equals(id),
-              )
-              ..limit(1))
-            .getSingleOrNull();
+    final transaction = await (_db.transactions.select()
+          ..where(
+            (t) => t.walletId.equals(id) | t.transferWalletId.equals(id),
+          )
+          ..limit(1))
+        .getSingleOrNull();
     if (transaction != null) return true;
-    final recurring =
-        await (_db.recurringTransactions.select()
-              ..where(
-                (r) => r.walletId.equals(id) | r.transferWalletId.equals(id),
-              )
-              ..limit(1))
-            .getSingleOrNull();
+    final recurring = await (_db.recurringTransactions.select()
+          ..where(
+            (r) => r.walletId.equals(id) | r.transferWalletId.equals(id),
+          )
+          ..limit(1))
+        .getSingleOrNull();
     if (recurring != null) return true;
-    final budgetWallet =
-        await (_db.budgetWallets.select()
-              ..where((w) => w.walletId.equals(id))
-              ..limit(1))
-            .getSingleOrNull();
+    final budgetWallet = await (_db.budgetWallets.select()
+          ..where((w) => w.walletId.equals(id))
+          ..limit(1))
+        .getSingleOrNull();
     if (budgetWallet != null) return true;
-    final budgetLimit =
-        await (_db.budgetCategoryLimits.select()
-              ..where((l) => l.walletId.equals(id))
-              ..limit(1))
-            .getSingleOrNull();
+    final budgetLimit = await (_db.budgetCategoryLimits.select()
+          ..where((l) => l.walletId.equals(id))
+          ..limit(1))
+        .getSingleOrNull();
     if (budgetLimit != null) return true;
-    final objective =
-        await (_db.objectives.select()
-              ..where((o) => o.walletId.equals(id))
-              ..limit(1))
-            .getSingleOrNull();
+    final objective = await (_db.objectives.select()
+          ..where((o) => o.walletId.equals(id))
+          ..limit(1))
+        .getSingleOrNull();
     return objective != null;
   }
 
   Future<int> totalBalance({required String currencyCode}) async {
-    final wallets = (await _db.wallets.select().get())
-        .where((w) => !w.archived)
-        .toList();
+    final wallets =
+        (await _db.wallets.select().get()).where((w) => !w.archived).toList();
     final balances = await balancesForWallets(wallets);
     var total = 0;
     for (final wallet in wallets) {
@@ -128,13 +119,13 @@ class WalletRepository {
     final walletById = {for (final wallet in walletList) wallet.id: wallet};
     final ids = walletById.keys.toList();
     final now = DateTime.now();
-    final txns =
-        await (_db.transactions.select()..where(
-              (t) =>
-                  (t.walletId.isIn(ids) | t.transferWalletId.isIn(ids)) &
-                  t.date.isSmallerOrEqualValue(now),
-            ))
-            .get();
+    final txns = await (_db.transactions.select()
+          ..where(
+            (t) =>
+                (t.walletId.isIn(ids) | t.transferWalletId.isIn(ids)) &
+                t.date.isSmallerOrEqualValue(now),
+          ))
+        .get();
 
     final balances = {
       for (final wallet in walletList) wallet.id: wallet.initialBalanceMinor,
@@ -145,8 +136,7 @@ class WalletRepository {
       final sourceWallet = walletById[t.walletId];
       if ((t.type == 'expense' || t.type == 'transfer') &&
           sourceWallet != null) {
-        balances[t.walletId] =
-            balances[t.walletId]! -
+        balances[t.walletId] = balances[t.walletId]! -
             await _exchangeRates.convert(
               amount,
               t.currencyCode,
@@ -154,8 +144,7 @@ class WalletRepository {
               onDate: t.date,
             );
       } else if (t.type == 'income' && sourceWallet != null) {
-        balances[t.walletId] =
-            balances[t.walletId]! +
+        balances[t.walletId] = balances[t.walletId]! +
             await _exchangeRates.convert(
               amount,
               t.currencyCode,
@@ -165,14 +154,12 @@ class WalletRepository {
       }
 
       final destinationWalletId = t.transferWalletId;
-      final destinationWallet = destinationWalletId == null
-          ? null
-          : walletById[destinationWalletId];
+      final destinationWallet =
+          destinationWalletId == null ? null : walletById[destinationWalletId];
       if (t.type == 'transfer' &&
           destinationWalletId != null &&
           destinationWallet != null) {
-        balances[destinationWalletId] =
-            balances[destinationWalletId]! +
+        balances[destinationWalletId] = balances[destinationWalletId]! +
             await _exchangeRates.convert(
               amount,
               t.currencyCode,
@@ -186,19 +173,19 @@ class WalletRepository {
   }
 
   Future<int> balanceForWallet(int walletId) async {
-    final wallet =
-        await (_db.wallets.select()..where((w) => w.id.equals(walletId)))
-            .getSingle();
+    final wallet = await (_db.wallets.select()
+          ..where((w) => w.id.equals(walletId)))
+        .getSingle();
 
     final now = DateTime.now();
-    final txns =
-        await (_db.transactions.select()..where(
-              (t) =>
-                  (t.walletId.equals(walletId) |
-                      t.transferWalletId.equals(walletId)) &
-                  t.date.isSmallerOrEqualValue(now),
-            ))
-            .get();
+    final txns = await (_db.transactions.select()
+          ..where(
+            (t) =>
+                (t.walletId.equals(walletId) |
+                    t.transferWalletId.equals(walletId)) &
+                t.date.isSmallerOrEqualValue(now),
+          ))
+        .get();
 
     int balance = wallet.initialBalanceMinor;
     for (final t in txns) {

@@ -208,9 +208,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
 
     final budget = _budget!;
     final color = AppColors.fromStored(budget.color, cs.primary);
-    final pct = _totalPlanned > 0
-        ? (_totalSpent / _totalPlanned).clamp(0.0, 1.0)
-        : 0.0;
+    final pct =
+        _totalPlanned > 0 ? (_totalSpent / _totalPlanned).clamp(0.0, 1.0) : 0.0;
     final remaining = _totalPlanned - _totalSpent;
     final isOver = _totalSpent > _totalPlanned;
 
@@ -400,9 +399,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
 
   Widget _buildHistoryCard(ThemeData theme, ColorScheme cs, Budget budget) {
     final diff = _totalSpent - _prevTotalSpent;
-    final pctChange = _prevTotalSpent > 0
-        ? ((diff / _prevTotalSpent) * 100).round()
-        : 0;
+    final pctChange =
+        _prevTotalSpent > 0 ? ((diff / _prevTotalSpent) * 100).round() : 0;
     final increased = diff > 0;
     final isIncome = budget.isIncome;
 
@@ -711,7 +709,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
           return _limits.any((l) => l.categoryId == t.categoryId);
         }
         return true;
-      }).toList()..sort((a, b) => b.date.compareTo(a.date));
+      }).toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
 
       if (filtered.isEmpty) return const SizedBox.shrink();
 
@@ -724,9 +723,8 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
             onAction: null,
           ),
           ...filtered.take(10).map((t) {
-            final category = t.categoryId == null
-                ? null
-                : categoriesById[t.categoryId];
+            final category =
+                t.categoryId == null ? null : categoriesById[t.categoryId];
             return TransactionTile(
               id: t.id,
               type: t.type,
@@ -748,9 +746,7 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
 
     if (budget.specificMode) {
       return FutureBuilder<List<Transaction>>(
-        future: ref
-            .read(transactionRepositoryProvider)
-            .getByBudget(
+        future: ref.read(transactionRepositoryProvider).getByBudget(
               budgetId: budget.id,
               start: budget.periodStart,
               end: budget.periodEnd,
@@ -763,13 +759,10 @@ class _BudgetDetailScreenState extends ConsumerState<BudgetDetailScreen> {
       );
     }
 
-    return ref
-        .watch(allTransactionsProvider)
-        .when(
+    return ref.watch(allTransactionsProvider).when(
           data: (txns) {
             final filtered = txns.where((t) {
-              final inDateRange =
-                  !t.date.isBefore(budget.periodStart) &&
+              final inDateRange = !t.date.isBefore(budget.periodStart) &&
                   !t.date.isAfter(budget.periodEnd);
               final matchesType =
                   t.type == (budget.isIncome ? 'income' : 'expense');
