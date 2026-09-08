@@ -85,17 +85,14 @@ class MoneyUtils {
     if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
       return amountMinor;
     }
-    final fromRate =
-        rates[fromCurrency.toLowerCase()] ??
+    final fromRate = rates[fromCurrency.toLowerCase()] ??
         (fromCurrency.toLowerCase() == 'usd' ? 1.0 : null);
-    final toRate =
-        rates[toCurrency.toLowerCase()] ??
+    final toRate = rates[toCurrency.toLowerCase()] ??
         (toCurrency.toLowerCase() == 'usd' ? 1.0 : null);
     if (fromRate == null || toRate == null || fromRate == 0) {
       return null;
     }
-    final convertedMajor =
-        toMajor(amountMinor, currencyCode: fromCurrency) *
+    final convertedMajor = toMajor(amountMinor, currencyCode: fromCurrency) *
         toRate *
         (1 / fromRate);
     return toMinor(convertedMajor, currencyCode: toCurrency);

@@ -99,8 +99,8 @@ class TransactionBudgets extends Table {
 
   @override
   List<Set<Column<Object>>>? get uniqueKeys => [
-    {transactionId, budgetId},
-  ];
+        {transactionId, budgetId},
+      ];
 }
 
 @DataClassName('BudgetCategoryLimit')
@@ -117,8 +117,8 @@ class BudgetCategoryLimits extends Table {
 
   @override
   List<Set<Column<Object>>>? get uniqueKeys => [
-    {budgetId, categoryId, walletId},
-  ];
+        {budgetId, categoryId, walletId},
+      ];
 }
 
 @DataClassName('BudgetWallet')
@@ -131,8 +131,8 @@ class BudgetWallets extends Table {
 
   @override
   List<Set<Column<Object>>>? get uniqueKeys => [
-    {budgetId, walletId},
-  ];
+        {budgetId, walletId},
+      ];
 }
 
 @DataClassName('RecurringTransaction')
@@ -240,10 +240,10 @@ class InvestmentHoldings extends Table {
 class PortfolioTransactions extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get holdingId => integer().references(
-    InvestmentHoldings,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+        InvestmentHoldings,
+        #id,
+        onDelete: KeyAction.cascade,
+      )();
   DateTimeColumn get date => dateTime()();
   TextColumn get type => text()();
   RealColumn get shares => real()();

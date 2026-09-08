@@ -154,8 +154,7 @@ class _CashFlowScreenState extends ConsumerState<CashFlowScreen> {
                                       return const SizedBox.shrink();
                                     }
                                     final tickInterval = bottomInterval.round();
-                                    final isTick =
-                                        index == 0 ||
+                                    final isTick = index == 0 ||
                                         index == projection.points.length - 1 ||
                                         (tickInterval > 0 &&
                                             index % tickInterval == 0);
@@ -186,8 +185,7 @@ class _CashFlowScreenState extends ConsumerState<CashFlowScreen> {
                                     .map(
                                       (spot) => LineTooltipItem(
                                         MoneyUtils.format(
-                                          projection
-                                              .points[spot.x.toInt()]
+                                          projection.points[spot.x.toInt()]
                                               .balanceMinor,
                                           currencyCode: projection.currencyCode,
                                         ),

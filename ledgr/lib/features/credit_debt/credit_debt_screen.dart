@@ -18,12 +18,10 @@ class CreditDebtScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Credit & Debt')),
       body: transactionsAsync.when(
         data: (transactions) {
-          final credit = transactions
-              .where((t) => t.specialType == 'credit')
-              .toList();
-          final debt = transactions
-              .where((t) => t.specialType == 'debt')
-              .toList();
+          final credit =
+              transactions.where((t) => t.specialType == 'credit').toList();
+          final debt =
+              transactions.where((t) => t.specialType == 'debt').toList();
 
           if (credit.isEmpty && debt.isEmpty) {
             return Center(

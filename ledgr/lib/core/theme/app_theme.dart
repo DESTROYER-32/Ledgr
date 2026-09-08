@@ -86,7 +86,6 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       brightness: colorScheme.brightness,
-
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
@@ -94,7 +93,6 @@ class AppTheme {
         scrolledUnderElevation: 1,
         centerTitle: true,
       ),
-
       cardTheme: CardThemeData(
         elevation: 0,
         shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
@@ -104,7 +102,6 @@ class AppTheme {
         ),
         clipBehavior: Clip.antiAlias,
       ),
-
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -128,14 +125,12 @@ class AppTheme {
         ),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
       ),
-
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
-
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           shape: RoundedRectangleBorder(
@@ -146,7 +141,6 @@ class AppTheme {
           ),
         ),
       ),
-
       navigationBarTheme: NavigationBarThemeData(
         elevation: 2,
         shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
@@ -155,12 +149,10 @@ class AppTheme {
         surfaceTintColor: colorScheme.surfaceTint,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
-
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
-
       dropdownMenuTheme: DropdownMenuThemeData(
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -168,33 +160,27 @@ class AppTheme {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
-
       dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
-
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-
       bottomSheetTheme: const BottomSheetThemeData(
         showDragHandle: true,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
-
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         thickness: 0.5,
       ),
-
       listTileTheme: ListTileThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
-
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colorScheme.primary,
         linearTrackColor: colorScheme.surfaceContainerHighest,

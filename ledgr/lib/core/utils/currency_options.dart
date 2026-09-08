@@ -4,10 +4,8 @@ List<String> currencyOptionsWithSelection(
   List<String> favoriteCurrencies,
   String? selectedCurrency,
 ) {
-  final options = favoriteCurrencies
-      .where(CurrencyUtils.codes.contains)
-      .toSet()
-      .toList();
+  final options =
+      favoriteCurrencies.where(CurrencyUtils.codes.contains).toSet().toList();
   if (selectedCurrency != null &&
       CurrencyUtils.codes.contains(selectedCurrency) &&
       !options.contains(selectedCurrency)) {

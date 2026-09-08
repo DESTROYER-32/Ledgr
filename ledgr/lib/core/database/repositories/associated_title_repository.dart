@@ -9,9 +9,9 @@ class AssociatedTitleRepository {
   Stream<List<AssociatedTitle>> watchAll() =>
       _db.associatedTitles.select().watch();
 
-  Future<AssociatedTitle?> getById(int id) => (_db.associatedTitles.select()
-        ..where((a) => a.id.equals(id)))
-      .getSingleOrNull();
+  Future<AssociatedTitle?> getById(int id) =>
+      (_db.associatedTitles.select()..where((a) => a.id.equals(id)))
+          .getSingleOrNull();
 
   Future<int?> findCategoryIdForTitle(String title) async {
     final all = await _db.associatedTitles.select().get();

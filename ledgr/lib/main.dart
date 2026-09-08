@@ -61,12 +61,20 @@ class _LedgrAppState extends ConsumerState<LedgrApp>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(recurringServiceProvider).processDueRecurrings().catchError((e, st) {
-        AppLogger.warning('Error processing recurrings on startup', error: e, stackTrace: st);
+      ref
+          .read(recurringServiceProvider)
+          .processDueRecurrings()
+          .catchError((e, st) {
+        AppLogger.warning('Error processing recurrings on startup',
+            error: e, stackTrace: st);
         return 0;
       });
-      ref.read(backupServiceProvider).runScheduledBackupIfDue().catchError((e, st) {
-        AppLogger.warning('Error running scheduled backup on startup', error: e, stackTrace: st);
+      ref
+          .read(backupServiceProvider)
+          .runScheduledBackupIfDue()
+          .catchError((e, st) {
+        AppLogger.warning('Error running scheduled backup on startup',
+            error: e, stackTrace: st);
         return false;
       });
     });
@@ -75,8 +83,12 @@ class _LedgrAppState extends ConsumerState<LedgrApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      ref.read(backupServiceProvider).runScheduledBackupIfDue().catchError((e, st) {
-        AppLogger.warning('Error running scheduled backup on resume', error: e, stackTrace: st);
+      ref
+          .read(backupServiceProvider)
+          .runScheduledBackupIfDue()
+          .catchError((e, st) {
+        AppLogger.warning('Error running scheduled backup on resume',
+            error: e, stackTrace: st);
         return false;
       });
       ref.read(appLockControllerProvider).handleAppResumed();

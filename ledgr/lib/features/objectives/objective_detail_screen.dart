@@ -21,9 +21,8 @@ class ObjectiveDetailScreen extends ConsumerWidget {
 
     return objectivesAsync.when(
       data: (objectives) {
-        final objective = objectives
-            .where((o) => o.id == objectiveId)
-            .firstOrNull;
+        final objective =
+            objectives.where((o) => o.id == objectiveId).firstOrNull;
         if (objective == null) {
           return const Center(child: Text('Not found'));
         }
@@ -204,9 +203,7 @@ Future<void> _addMoney(
   final wallet = await ref.read(walletRepositoryProvider).getById(walletId);
   if (wallet == null || !context.mounted) return;
 
-  await ref
-      .read(transactionRepositoryProvider)
-      .insert(
+  await ref.read(transactionRepositoryProvider).insert(
         TransactionsCompanion.insert(
           type: 'income',
           specialType: const Value('none'),

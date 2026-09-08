@@ -52,9 +52,8 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
   }
 
   Future<void> _loadWallet() async {
-    final wallet = await ref
-        .read(walletRepositoryProvider)
-        .getById(widget.walletId!);
+    final wallet =
+        await ref.read(walletRepositoryProvider).getById(widget.walletId!);
     if (wallet != null && mounted) {
       _nameController.text = wallet.name;
       _type = wallet.type;
@@ -146,25 +145,24 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               label: 'Currency',
               value: _currencyCode,
               leadingIcon: Icons.payments_outlined,
-              items:
-                  currencyOptionsWithSelection(
-                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
-                            CurrencyUtils.codes,
-                        _currencyCode,
-                      )
-                      .map(
-                        (c) => ModernSelectionItem(
-                          value: c,
-                          title: c,
-                          subtitle: CurrencyUtils.currencies
-                              .where((currency) => currency.code == c)
-                              .map((currency) => currency.name)
-                              .firstOrNull,
-                          icon: Icons.monetization_on_outlined,
-                          badge: CurrencyUtils.symbolFor(c),
-                        ),
-                      )
-                      .toList(),
+              items: currencyOptionsWithSelection(
+                ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                    CurrencyUtils.codes,
+                _currencyCode,
+              )
+                  .map(
+                    (c) => ModernSelectionItem(
+                      value: c,
+                      title: c,
+                      subtitle: CurrencyUtils.currencies
+                          .where((currency) => currency.code == c)
+                          .map((currency) => currency.name)
+                          .firstOrNull,
+                      icon: Icons.monetization_on_outlined,
+                      badge: CurrencyUtils.symbolFor(c),
+                    ),
+                  )
+                  .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _currencyCode = v);
               },

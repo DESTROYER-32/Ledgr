@@ -40,9 +40,8 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
   }
 
   Future<void> _loadCustom() async {
-    final raw = await ref
-        .read(settingsRepositoryProvider)
-        .get('custom_currencies');
+    final raw =
+        await ref.read(settingsRepositoryProvider).get('custom_currencies');
     if (raw != null) {
       try {
         final list = raw.split(',').where((s) => s.isNotEmpty).toList();
@@ -210,9 +209,8 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
             ...CurrencyUtils.codes,
             ..._customCurrencies,
           };
-          final customRatesFuture = ref
-              .read(exchangeRateServiceProvider)
-              .getCustomRates();
+          final customRatesFuture =
+              ref.read(exchangeRateServiceProvider).getCustomRates();
           final filtered = allCodes.where((code) {
             if (_search.isEmpty) return true;
             final q = _search.toLowerCase();
@@ -221,7 +219,8 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                 .firstOrNull;
             return code.toLowerCase().contains(q) ||
                 (info?.name.toLowerCase().contains(q) ?? false);
-          }).toList()..sort();
+          }).toList()
+            ..sort();
 
           if (filtered.isEmpty) {
             return Center(
@@ -339,15 +338,15 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                                     },
                                   )
                                 : isCustomCurrency
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.delete_outline,
-                                      color: theme.colorScheme.error,
-                                    ),
-                                    onPressed: () =>
-                                        _removeCustomCurrency(code),
-                                  )
-                                : null,
+                                    ? IconButton(
+                                        icon: Icon(
+                                          Icons.delete_outline,
+                                          color: theme.colorScheme.error,
+                                        ),
+                                        onPressed: () =>
+                                            _removeCustomCurrency(code),
+                                      )
+                                    : null,
                             onTap: () => _setCustomRate(code, rate),
                           );
                         },

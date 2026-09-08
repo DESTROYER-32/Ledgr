@@ -26,29 +26,27 @@ final cashFlowProjectorProvider = Provider<CashFlowProjector>((ref) {
 
 final cashFlowProjectionProvider =
     FutureProvider.family<CashFlowProjection, CashFlowRequest>((
-      ref,
-      request,
-    ) async {
-      ref.watch(activeWalletsProvider);
-      ref.watch(allTransactionsProvider);
-      ref.watch(activeRecurringProvider);
-      ref.watch(walletBalancesProvider);
-      ref.watch(exchangeRatesProvider);
+  ref,
+  request,
+) async {
+  ref.watch(activeWalletsProvider);
+  ref.watch(allTransactionsProvider);
+  ref.watch(activeRecurringProvider);
+  ref.watch(walletBalancesProvider);
+  ref.watch(exchangeRatesProvider);
 
-      return ref
-          .watch(cashFlowProjectorProvider)
-          .project(
-            wallets: await ref.watch(activeWalletsProvider.future),
-            walletBalances: await ref.watch(walletBalancesProvider.future),
-            transactions: await ref.watch(allTransactionsProvider.future),
-            recurringTransactions: await ref.watch(
-              activeRecurringProvider.future,
-            ),
-            displayCurrency: await ref.watch(displayCurrencyProvider.future),
-            days: request.days,
-            walletId: request.walletId,
-          );
-    });
+  return ref.watch(cashFlowProjectorProvider).project(
+        wallets: await ref.watch(activeWalletsProvider.future),
+        walletBalances: await ref.watch(walletBalancesProvider.future),
+        transactions: await ref.watch(allTransactionsProvider.future),
+        recurringTransactions: await ref.watch(
+          activeRecurringProvider.future,
+        ),
+        displayCurrency: await ref.watch(displayCurrencyProvider.future),
+        days: request.days,
+        walletId: request.walletId,
+      );
+});
 
 final overallCashFlowProvider = FutureProvider<CashFlowProjection>((ref) {
   return ref.watch(cashFlowProjectionProvider(const CashFlowRequest()).future);

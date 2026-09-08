@@ -13,9 +13,7 @@ class SettingsRepository {
   }
 
   Future<void> set(String key, String value) async {
-    await _db
-        .into(_db.settings)
-        .insertOnConflictUpdate(
+    await _db.into(_db.settings).insertOnConflictUpdate(
           SettingsCompanion.insert(key: key, value: value),
         );
   }

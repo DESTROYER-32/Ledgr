@@ -28,13 +28,12 @@ class TransactionRepository {
             ]))
           .watch();
 
-  Stream<List<Transaction>> watchUpcoming() =>
-      (_db.transactions.select()
-            ..where((t) => t.specialType.equals('upcoming'))
-            ..orderBy([
-              (t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc),
-            ]))
-          .watch();
+  Stream<List<Transaction>> watchUpcoming() => (_db.transactions.select()
+        ..where((t) => t.specialType.equals('upcoming'))
+        ..orderBy([
+          (t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc),
+        ]))
+      .watch();
 
   Stream<List<Transaction>> watchByWallet(int walletId) =>
       (_db.transactions.select()
@@ -83,10 +82,9 @@ class TransactionRepository {
   }
 
   Future<Set<int>> getBudgetIdsForTransaction(int transactionId) async {
-    final rows =
-        await (_db.transactionBudgets.select()
-              ..where((tb) => tb.transactionId.equals(transactionId)))
-            .get();
+    final rows = await (_db.transactionBudgets.select()
+          ..where((tb) => tb.transactionId.equals(transactionId)))
+        .get();
     return rows.map((row) => row.budgetId).toSet();
   }
 
@@ -99,9 +97,7 @@ class TransactionRepository {
           ..where((tb) => tb.transactionId.equals(transactionId)))
         .go();
     for (final budgetId in uniqueIds) {
-      await _db
-          .into(_db.transactionBudgets)
-          .insert(
+      await _db.into(_db.transactionBudgets).insert(
             TransactionBudgetsCompanion.insert(
               transactionId: transactionId,
               budgetId: budgetId,
@@ -115,9 +111,7 @@ class TransactionRepository {
     await _db.transaction(() async {
       final t = await getById(id);
       if (t != null) {
-        await _db
-            .into(_db.deleteLogs)
-            .insert(
+        await _db.into(_db.deleteLogs).insert(
               DeleteLogsCompanion.insert(
                 type: 'transaction',
                 jsonData: jsonEncode({
@@ -244,9 +238,8 @@ class TransactionRepository {
     required DateTime end,
     required String type,
   }) async {
-    final rows = await _db
-        .customSelect(
-          '''
+    final rows = await _db.customSelect(
+      '''
           SELECT t.*
           FROM transactions t
           INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
@@ -256,15 +249,14 @@ class TransactionRepository {
             AND t.type = ?
           ORDER BY t.date DESC
           ''',
-          readsFrom: {_db.transactions, _db.transactionBudgets},
-          variables: [
-            Variable.withInt(budgetId),
-            Variable.withDateTime(start),
-            Variable.withDateTime(end),
-            Variable.withString(type),
-          ],
-        )
-        .get();
+      readsFrom: {_db.transactions, _db.transactionBudgets},
+      variables: [
+        Variable.withInt(budgetId),
+        Variable.withDateTime(start),
+        Variable.withDateTime(end),
+        Variable.withString(type),
+      ],
+    ).get();
     return rows.map((row) => _db.transactions.map(row.data)).toList();
   }
 
@@ -274,9 +266,8 @@ class TransactionRepository {
     required DateTime end,
     required String type,
   }) async {
-    final row = await _db
-        .customSelect(
-          '''
+    final row = await _db.customSelect(
+      '''
           SELECT COALESCE(SUM(t.amount_minor), 0) AS total
           FROM transactions t
           INNER JOIN transaction_budgets tb ON tb.transaction_id = t.id
@@ -285,29 +276,26 @@ class TransactionRepository {
             AND t.date <= ?
             AND t.type = ?
           ''',
-          readsFrom: {_db.transactions, _db.transactionBudgets},
-          variables: [
-            Variable.withInt(budgetId),
-            Variable.withDateTime(start),
-            Variable.withDateTime(end),
-            Variable.withString(type),
-          ],
-        )
-        .getSingle();
+      readsFrom: {_db.transactions, _db.transactionBudgets},
+      variables: [
+        Variable.withInt(budgetId),
+        Variable.withDateTime(start),
+        Variable.withDateTime(end),
+        Variable.withString(type),
+      ],
+    ).getSingle();
     return (row.data['total'] as num).toInt();
   }
 
   Future<int> totalByObjective(int objectiveId) async {
-    final row = await _db
-        .customSelect(
-          '''
+    final row = await _db.customSelect(
+      '''
           SELECT COALESCE(SUM(amount_minor), 0) AS total
           FROM transactions
           WHERE objective_fk = ?
           ''',
-          variables: [Variable.withInt(objectiveId)],
-        )
-        .getSingle();
+      variables: [Variable.withInt(objectiveId)],
+    ).getSingle();
     return (row.data['total'] as num).toInt();
   }
 

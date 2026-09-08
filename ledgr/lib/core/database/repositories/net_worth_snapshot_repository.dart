@@ -13,25 +13,24 @@ class NetWorthSnapshotRepository {
       (_db.netWorthSnapshots.select()
             ..orderBy([
               (snapshot) => OrderingTerm(
-                expression: snapshot.date,
-                mode: OrderingMode.desc,
-              ),
+                    expression: snapshot.date,
+                    mode: OrderingMode.desc,
+                  ),
             ])
             ..limit(limit))
           .watch()
           .map((rows) => rows.reversed.toList());
 
   Future<List<NetWorthSnapshot>> getRecent({int limit = 36}) async {
-    final rows =
-        await (_db.netWorthSnapshots.select()
-              ..orderBy([
-                (snapshot) => OrderingTerm(
+    final rows = await (_db.netWorthSnapshots.select()
+          ..orderBy([
+            (snapshot) => OrderingTerm(
                   expression: snapshot.date,
                   mode: OrderingMode.desc,
                 ),
-              ])
-              ..limit(limit))
-            .get();
+          ])
+          ..limit(limit))
+        .get();
     return rows.reversed.toList();
   }
 
@@ -40,9 +39,9 @@ class NetWorthSnapshotRepository {
             ..where((snapshot) => snapshot.date.isSmallerThanValue(date))
             ..orderBy([
               (snapshot) => OrderingTerm(
-                expression: snapshot.date,
-                mode: OrderingMode.desc,
-              ),
+                    expression: snapshot.date,
+                    mode: OrderingMode.desc,
+                  ),
             ])
             ..limit(1))
           .getSingleOrNull();
@@ -57,15 +56,14 @@ class NetWorthSnapshotRepository {
   }) async {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
-    final existing =
-        await (_db.netWorthSnapshots.select()
-              ..where(
-                (snapshot) =>
-                    snapshot.date.isBiggerOrEqualValue(start) &
-                    snapshot.date.isSmallerThanValue(end),
-              )
-              ..limit(1))
-            .getSingleOrNull();
+    final existing = await (_db.netWorthSnapshots.select()
+          ..where(
+            (snapshot) =>
+                snapshot.date.isBiggerOrEqualValue(start) &
+                snapshot.date.isSmallerThanValue(end),
+          )
+          ..limit(1))
+        .getSingleOrNull();
 
     final companion = NetWorthSnapshotsCompanion(
       date: Value(date),

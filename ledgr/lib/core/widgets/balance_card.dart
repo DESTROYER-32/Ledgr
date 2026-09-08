@@ -55,9 +55,9 @@ class BalanceCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(label,
                     style: theme.textTheme.titleSmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                )),
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    )),
                 const Spacer(),
                 ...?actions,
               ],
@@ -65,7 +65,10 @@ class BalanceCard extends StatelessWidget {
             const SizedBox(height: 16),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 300),
-              style: (theme.textTheme.headlineLarge ?? theme.textTheme.headlineMedium ?? const TextStyle()).copyWith(
+              style: (theme.textTheme.headlineLarge ??
+                      theme.textTheme.headlineMedium ??
+                      const TextStyle())
+                  .copyWith(
                 fontWeight: FontWeight.bold,
                 color: cs.onSurface,
                 height: 1.1,

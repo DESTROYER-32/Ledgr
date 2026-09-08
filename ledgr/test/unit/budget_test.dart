@@ -69,9 +69,7 @@ void main() {
         db,
         ExchangeRateService(SettingsRepository(db)),
       );
-      final budgetId = await db
-          .into(db.budgets)
-          .insert(
+      final budgetId = await db.into(db.budgets).insert(
             BudgetsCompanion.insert(
               name: 'Groceries',
               periodStart: DateTime(2024, 1),
@@ -82,9 +80,7 @@ void main() {
       final categoryId = await db
           .into(db.categories)
           .insert(CategoriesCompanion.insert(name: 'Food', kind: 'expense'));
-      final wallet1 = await db
-          .into(db.wallets)
-          .insert(
+      final wallet1 = await db.into(db.wallets).insert(
             WalletsCompanion.insert(
               name: 'Checking',
               type: 'checking',
@@ -92,9 +88,7 @@ void main() {
               initialBalanceMinor: 0,
             ),
           );
-      final wallet2 = await db
-          .into(db.wallets)
-          .insert(
+      final wallet2 = await db.into(db.wallets).insert(
             WalletsCompanion.insert(
               name: 'Cash',
               type: 'cash',
@@ -128,9 +122,7 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
 
-      final budgetId = await db
-          .into(db.budgets)
-          .insert(
+      final budgetId = await db.into(db.budgets).insert(
             BudgetsCompanion.insert(
               name: 'Groceries',
               periodStart: DateTime(2024, 1),
@@ -142,9 +134,7 @@ void main() {
           .into(db.categories)
           .insert(CategoriesCompanion.insert(name: 'Food', kind: 'expense'));
 
-      await db
-          .into(db.budgetCategoryLimits)
-          .insert(
+      await db.into(db.budgetCategoryLimits).insert(
             BudgetCategoryLimitsCompanion.insert(
               budgetId: budgetId,
               categoryId: categoryId,
@@ -153,9 +143,7 @@ void main() {
           );
 
       await expectLater(
-        db
-            .into(db.budgetCategoryLimits)
-            .insert(
+        db.into(db.budgetCategoryLimits).insert(
               BudgetCategoryLimitsCompanion.insert(
                 budgetId: budgetId,
                 categoryId: categoryId,
@@ -179,9 +167,7 @@ void main() {
         final categoryId = await db
             .into(db.categories)
             .insert(CategoriesCompanion.insert(name: 'Food', kind: 'expense'));
-        final walletId = await db
-            .into(db.wallets)
-            .insert(
+        final walletId = await db.into(db.wallets).insert(
               WalletsCompanion.insert(
                 name: 'Checking',
                 type: 'checking',
@@ -191,9 +177,7 @@ void main() {
             );
         final start = DateTime(2024, 1);
         final end = DateTime(2024, 1, 31);
-        final excludedIncomeBudget = await db
-            .into(db.budgets)
-            .insert(
+        final excludedIncomeBudget = await db.into(db.budgets).insert(
               BudgetsCompanion.insert(
                 name: 'Expenses only',
                 periodStart: start,
@@ -202,9 +186,7 @@ void main() {
                 includeIncome: const Value(false),
               ),
             );
-        final includedIncomeBudget = await db
-            .into(db.budgets)
-            .insert(
+        final includedIncomeBudget = await db.into(db.budgets).insert(
               BudgetsCompanion.insert(
                 name: 'Net budget',
                 periodStart: start,
@@ -214,9 +196,7 @@ void main() {
               ),
             );
 
-        await db
-            .into(db.transactions)
-            .insert(
+        await db.into(db.transactions).insert(
               TransactionsCompanion.insert(
                 type: 'expense',
                 amountMinor: 1000,
@@ -226,9 +206,7 @@ void main() {
                 categoryId: Value(categoryId),
               ),
             );
-        await db
-            .into(db.transactions)
-            .insert(
+        await db.into(db.transactions).insert(
               TransactionsCompanion.insert(
                 type: 'income',
                 amountMinor: 500,
