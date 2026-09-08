@@ -142,8 +142,9 @@ final exchangeRatesProvider = FutureProvider<Map<String, double>>((ref) async {
 });
 
 final favoriteCurrenciesProvider = FutureProvider<List<String>>((ref) async {
-  final raw =
-      await ref.watch(settingsRepositoryProvider).get('favorite_currencies');
+  final raw = await ref
+      .watch(settingsRepositoryProvider)
+      .get('favorite_currencies');
   if (raw == null || raw.isEmpty) return CurrencyUtils.codes;
 
   try {
@@ -170,15 +171,17 @@ final favoriteCurrenciesProvider = FutureProvider<List<String>>((ref) async {
 });
 
 final displayCurrencyProvider = FutureProvider<String>((ref) async {
-  final setting =
-      await ref.watch(settingsRepositoryProvider).get('display_currency');
+  final setting = await ref
+      .watch(settingsRepositoryProvider)
+      .get('display_currency');
   if (setting != null) return setting;
   return MoneyUtils.defaultCurrencyCode;
 });
 
 final showDefaultCurrencyProvider = FutureProvider<bool>((ref) async {
-  final setting =
-      await ref.watch(settingsRepositoryProvider).get('show_default_currency');
+  final setting = await ref
+      .watch(settingsRepositoryProvider)
+      .get('show_default_currency');
   return setting != 'false';
 });
 

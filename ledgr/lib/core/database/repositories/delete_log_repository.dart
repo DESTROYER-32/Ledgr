@@ -9,27 +9,32 @@ class DeleteLogRepository {
   final AppDatabase _db;
   DeleteLogRepository(this._db);
 
-  Stream<List<DeleteLog>> watchAll() => (_db.deleteLogs.select()
-        ..orderBy([
-          (d) => OrderingTerm(expression: d.deletedAt, mode: OrderingMode.desc),
-        ]))
-      .watch();
+  Stream<List<DeleteLog>> watchAll() =>
+      (_db.deleteLogs.select()..orderBy([
+            (d) =>
+                OrderingTerm(expression: d.deletedAt, mode: OrderingMode.desc),
+          ]))
+          .watch();
 
-  Future<void> logDelete(String type, Map<String, dynamic> data) =>
-      _db.into(_db.deleteLogs).insert(
-            DeleteLogsCompanion.insert(type: type, jsonData: jsonEncode(data)),
-          );
+  Future<void> logDelete(String type, Map<String, dynamic> data) => _db
+      .into(_db.deleteLogs)
+      .insert(
+        DeleteLogsCompanion.insert(type: type, jsonData: jsonEncode(data)),
+      );
 
   Future<void> restoreTransaction(int deleteLogId) async {
-    final log = await (_db.deleteLogs.select()
-          ..where((d) => d.id.equals(deleteLogId)))
-        .getSingle();
+    final log =
+        await (_db.deleteLogs.select()..where((d) => d.id.equals(deleteLogId)))
+            .getSingle();
     final data = jsonDecode(log.jsonData) as Map<String, dynamic>;
-    await _db.into(_db.transactions).insert(
+    await _db
+        .into(_db.transactions)
+        .insert(
           TransactionsCompanion.insert(
             type: data['type'] as String,
             amountMinor: data['amountMinor'] as int,
-            currencyCode: data['currencyCode'] as String? ??
+            currencyCode:
+                data['currencyCode'] as String? ??
                 MoneyUtils.defaultCurrencyCode,
             date: DateTime.parse(data['date'] as String),
             walletId: data['walletId'] as int,

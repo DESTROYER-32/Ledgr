@@ -32,213 +32,216 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final service = ref.watch(backupServiceProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Backup & Restore')),
-      body: FutureBuilder<
-          ({BackupScheduleConfig config, List<BackupSlot> slots})>(
-        key: ValueKey(_reloadToken),
-        future: _loadBackupState(service),
-        builder: (context, snapshot) {
-          final config = snapshot.data?.config ?? BackupScheduleConfig.defaults;
-          final slots = snapshot.data?.slots ?? const <BackupSlot>[];
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _manualBackupCard(context),
-              const SizedBox(height: 16),
-              _automaticBackupCard(context, config),
-              const SizedBox(height: 16),
-              _slotCard(context, slots, config),
-            ],
-          );
-        },
-      ),
+      body:
+          FutureBuilder<
+            ({BackupScheduleConfig config, List<BackupSlot> slots})
+          >(
+            key: ValueKey(_reloadToken),
+            future: _loadBackupState(service),
+            builder: (context, snapshot) {
+              final config =
+                  snapshot.data?.config ?? BackupScheduleConfig.defaults;
+              final slots = snapshot.data?.slots ?? const <BackupSlot>[];
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _manualBackupCard(context),
+                  const SizedBox(height: 16),
+                  _automaticBackupCard(context, config),
+                  const SizedBox(height: 16),
+                  _slotCard(context, slots, config),
+                ],
+              );
+            },
+          ),
     );
   }
 
   Future<({BackupScheduleConfig config, List<BackupSlot> slots})>
-      _loadBackupState(BackupService service) async {
+  _loadBackupState(BackupService service) async {
     final config = await service.scheduleConfig();
     final slots = await service.slots();
     return (config: config, slots: slots);
   }
 
   Widget _manualBackupCard(BuildContext context) => Card(
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.upload_file),
-              title: const Text('Export Full Backup'),
-              subtitle: const Text('Share a full JSON backup file'),
-              onTap: () => _exportBackup(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('Restore Full Backup'),
-              subtitle: const Text('Restore all data from a Ledgr backup file'),
-              onTap: () => _importBackup(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.file_upload),
-              title: const Text('Export Transactions CSV'),
-              subtitle: const Text('Export transactions to CSV'),
-              onTap: () => _exportCsv(context, ref),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.file_download),
-              title: const Text('Import Transactions CSV'),
-              subtitle: const Text(
-                'Import transactions only. Requires accounts to already exist.',
-              ),
-              onTap: () => _importCsv(context, ref),
-            ),
-          ],
+    child: Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.upload_file),
+          title: const Text('Export Full Backup'),
+          subtitle: const Text('Share a full JSON backup file'),
+          onTap: () => _exportBackup(context),
         ),
-      );
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.download),
+          title: const Text('Restore Full Backup'),
+          subtitle: const Text('Restore all data from a Ledgr backup file'),
+          onTap: () => _importBackup(context),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.file_upload),
+          title: const Text('Export Transactions CSV'),
+          subtitle: const Text('Export transactions to CSV'),
+          onTap: () => _exportCsv(context, ref),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.file_download),
+          title: const Text('Import Transactions CSV'),
+          subtitle: const Text(
+            'Import transactions only. Requires accounts to already exist.',
+          ),
+          onTap: () => _importCsv(context, ref),
+        ),
+      ],
+    ),
+  );
 
   Widget _automaticBackupCard(
     BuildContext context,
     BackupScheduleConfig config,
-  ) =>
-      Card(
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.schedule),
-              title: const Text('Automatic backup schedule'),
-              subtitle: Text(
-                config.lastRunAt == null
-                    ? 'No automatic backup has run yet'
-                    : 'Last run: ${_formatDate(config.lastRunAt!)}',
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: ModernSelectionField<AutoBackupFrequency>(
-                label: 'Frequency',
-                value: config.frequency,
-                leadingIcon: Icons.schedule_outlined,
-                searchEnabled: false,
-                items: AutoBackupFrequency.values
-                    .map(
-                      (f) => ModernSelectionItem(
-                        value: f,
-                        title: f.label,
-                        subtitle: f == AutoBackupFrequency.off
-                            ? 'Automatic backups disabled'
-                            : 'Run ${f.label.toLowerCase()} and rotate through saved slots',
-                        icon: f == AutoBackupFrequency.off
-                            ? Icons.pause_circle_outline
-                            : Icons.event_repeat_outlined,
-                      ),
-                    )
-                    .toList(),
-                onChanged: (frequency) async {
-                  if (frequency == null) return;
-                  try {
-                    await ref.read(backupServiceProvider).saveScheduleConfig(
-                          frequency: frequency,
-                          slotCount: config.slotCount,
-                        );
-                    _reload();
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('Failed to save backup schedule: $e')),
-                    );
-                  }
-                },
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.storage),
-              title: Text('Backup slots: ${config.slotCount}'),
-              subtitle: const Text('Oldest slots are overwritten in rotation'),
-              trailing: SizedBox(
-                width: 140,
-                child: Slider(
-                  value: config.slotCount.toDouble(),
-                  min: BackupService.minSlots.toDouble(),
-                  max: BackupService.maxSlots.toDouble(),
-                  divisions: BackupService.maxSlots - BackupService.minSlots,
-                  label: config.slotCount.toString(),
-                  onChanged: (value) async {
-                    try {
-                      await ref.read(backupServiceProvider).saveScheduleConfig(
-                            frequency: config.frequency,
-                            slotCount: value.round(),
-                          );
-                      _reload();
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Failed to save backup slots: $e')),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.backup),
-              title: const Text('Run automatic backup now'),
-              subtitle: const Text('Writes the next rotating slot immediately'),
-              onTap: () => _runAutoBackupNow(context),
-            ),
-          ],
+  ) => Card(
+    child: Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.schedule),
+          title: const Text('Automatic backup schedule'),
+          subtitle: Text(
+            config.lastRunAt == null
+                ? 'No automatic backup has run yet'
+                : 'Last run: ${_formatDate(config.lastRunAt!)}',
+          ),
         ),
-      );
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: ModernSelectionField<AutoBackupFrequency>(
+            label: 'Frequency',
+            value: config.frequency,
+            leadingIcon: Icons.schedule_outlined,
+            searchEnabled: false,
+            items: AutoBackupFrequency.values
+                .map(
+                  (f) => ModernSelectionItem(
+                    value: f,
+                    title: f.label,
+                    subtitle: f == AutoBackupFrequency.off
+                        ? 'Automatic backups disabled'
+                        : 'Run ${f.label.toLowerCase()} and rotate through saved slots',
+                    icon: f == AutoBackupFrequency.off
+                        ? Icons.pause_circle_outline
+                        : Icons.event_repeat_outlined,
+                  ),
+                )
+                .toList(),
+            onChanged: (frequency) async {
+              if (frequency == null) return;
+              try {
+                await ref
+                    .read(backupServiceProvider)
+                    .saveScheduleConfig(
+                      frequency: frequency,
+                      slotCount: config.slotCount,
+                    );
+                _reload();
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to save backup schedule: $e')),
+                );
+              }
+            },
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.storage),
+          title: Text('Backup slots: ${config.slotCount}'),
+          subtitle: const Text('Oldest slots are overwritten in rotation'),
+          trailing: SizedBox(
+            width: 140,
+            child: Slider(
+              value: config.slotCount.toDouble(),
+              min: BackupService.minSlots.toDouble(),
+              max: BackupService.maxSlots.toDouble(),
+              divisions: BackupService.maxSlots - BackupService.minSlots,
+              label: config.slotCount.toString(),
+              onChanged: (value) async {
+                try {
+                  await ref
+                      .read(backupServiceProvider)
+                      .saveScheduleConfig(
+                        frequency: config.frequency,
+                        slotCount: value.round(),
+                      );
+                  _reload();
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to save backup slots: $e')),
+                  );
+                }
+              },
+            ),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.backup),
+          title: const Text('Run automatic backup now'),
+          subtitle: const Text('Writes the next rotating slot immediately'),
+          onTap: () => _runAutoBackupNow(context),
+        ),
+      ],
+    ),
+  );
 
   Widget _slotCard(
     BuildContext context,
     List<BackupSlot> slots,
     BackupScheduleConfig config,
-  ) =>
-      Card(
-        child: Column(
-          children: [
-            const ListTile(
-              leading: Icon(Icons.inventory_2_outlined),
-              title: Text('Backup slots'),
-              subtitle: Text('Restore or share any saved automatic backup'),
-            ),
-            if (slots.isEmpty)
-              const ListTile(title: Text('Loading slots...'))
-            else
-              for (final slot in slots) ...[
-                const Divider(height: 1),
-                ListTile(
-                  leading: CircleAvatar(child: Text('${slot.index + 1}')),
-                  title: Text(
-                    slot.exists ? _formatDate(slot.createdAt!) : 'Empty slot',
-                  ),
-                  subtitle: Text(_slotSubtitle(slot, config.nextSlotIndex)),
-                  trailing: slot.exists
-                      ? PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'restore') _restoreSlot(context, slot);
-                            if (value == 'share') _shareSlot(context, slot);
-                          },
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(
-                                value: 'restore', child: Text('Restore')),
-                            PopupMenuItem(value: 'share', child: Text('Share')),
-                          ],
-                        )
-                      : null,
-                ),
-              ],
-          ],
+  ) => Card(
+    child: Column(
+      children: [
+        const ListTile(
+          leading: Icon(Icons.inventory_2_outlined),
+          title: Text('Backup slots'),
+          subtitle: Text('Restore or share any saved automatic backup'),
         ),
-      );
+        if (slots.isEmpty)
+          const ListTile(title: Text('Loading slots...'))
+        else
+          for (final slot in slots) ...[
+            const Divider(height: 1),
+            ListTile(
+              leading: CircleAvatar(child: Text('${slot.index + 1}')),
+              title: Text(
+                slot.exists ? _formatDate(slot.createdAt!) : 'Empty slot',
+              ),
+              subtitle: Text(_slotSubtitle(slot, config.nextSlotIndex)),
+              trailing: slot.exists
+                  ? PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'restore') _restoreSlot(context, slot);
+                        if (value == 'share') _shareSlot(context, slot);
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(value: 'restore', child: Text('Restore')),
+                        PopupMenuItem(value: 'share', child: Text('Share')),
+                      ],
+                    )
+                  : null,
+            ),
+          ],
+      ],
+    ),
+  );
 
   Future<void> _exportBackup(BuildContext context) async {
     try {
-      final backupFile =
-          await ref.read(backupServiceProvider).writeTemporaryShareBackup();
+      final backupFile = await ref
+          .read(backupServiceProvider)
+          .writeTemporaryShareBackup();
       await Share.shareXFiles([
         XFile(backupFile.path),
       ], text: 'Ledgr Full Backup');
@@ -362,9 +365,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/ledgr_transactions.csv');
       await file.writeAsString(csv);
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: 'Ledgr Transactions');
+      await Share.shareXFiles([XFile(file.path)], text: 'Ledgr Transactions');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -391,8 +392,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       }
       final repo = ref.read(transactionRepositoryProvider);
       final labelRepo = ref.read(associatedTitleRepositoryProvider);
-      final wallets =
-          await ref.read(walletRepositoryProvider).watchActive().first;
+      final wallets = await ref
+          .read(walletRepositoryProvider)
+          .watchActive()
+          .first;
       if (wallets.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -437,35 +440,40 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         try {
           final date = DateTime.parse(_cell(row, dateIndex));
           final rawAmount = double.tryParse(_cell(row, amountIndex)) ?? 0;
-          final rawType =
-              typeIndex == null ? '' : _cell(row, typeIndex).toLowerCase();
-          final type =
-              rawType == 'income' || rawAmount > 0 ? 'income' : 'expense';
+          final rawType = typeIndex == null
+              ? ''
+              : _cell(row, typeIndex).toLowerCase();
+          final type = rawType == 'income' || rawAmount > 0
+              ? 'income'
+              : 'expense';
           final rowCurrency = currencyIndex == null
               ? wallets.first.currencyCode
               : (_emptyToNull(_cell(row, currencyIndex)) ??
-                      wallets.first.currencyCode)
-                  .toUpperCase();
+                        wallets.first.currencyCode)
+                    .toUpperCase();
           final amountMinor = MoneyUtils.toMinor(
             rawAmount.abs(),
             currencyCode: rowCurrency,
           );
-          final title =
-              titleIndex == null ? null : _emptyToNull(_cell(row, titleIndex));
-          final note =
-              noteIndex == null ? null : _emptyToNull(_cell(row, noteIndex));
+          final title = titleIndex == null
+              ? null
+              : _emptyToNull(_cell(row, titleIndex));
+          final note = noteIndex == null
+              ? null
+              : _emptyToNull(_cell(row, noteIndex));
           final currency = rowCurrency;
           final parsedWalletId = walletIndex == null
               ? null
               : int.tryParse(_cell(row, walletIndex));
           final walletId =
               parsedWalletId != null && walletIds.contains(parsedWalletId)
-                  ? parsedWalletId
-                  : wallets.first.id;
+              ? parsedWalletId
+              : wallets.first.id;
           final parsedCategoryId = categoryIndex == null
               ? null
               : int.tryParse(_cell(row, categoryIndex));
-          final categoryId = parsedCategoryId ??
+          final categoryId =
+              parsedCategoryId ??
               (title == null
                   ? null
                   : await labelRepo.findCategoryIdForTitle(title));
@@ -478,8 +486,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               walletId: walletId,
               title: Value(title),
               note: Value(note),
-              categoryId:
-                  categoryId == null ? const Value.absent() : Value(categoryId),
+              categoryId: categoryId == null
+                  ? const Value.absent()
+                  : Value(categoryId),
             ),
           );
           count++;
@@ -534,8 +543,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   String _slotSubtitle(BackupSlot slot, int nextSlotIndex) {
     if (slot.exists) {
-      final overwriteLabel =
-          slot.index == nextSlotIndex ? ' • next overwrite' : '';
+      final overwriteLabel = slot.index == nextSlotIndex
+          ? ' • next overwrite'
+          : '';
       return '${_formatBytes(slot.sizeBytes)}$overwriteLabel';
     }
     if (slot.index == nextSlotIndex) return 'Next backup will be saved here';

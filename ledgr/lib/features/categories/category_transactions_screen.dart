@@ -74,13 +74,14 @@ class _CategoryTransactionsScreenState
     if (_categoryIds.isEmpty) return;
 
     setState(() => _loadingMore = true);
-    final page =
-        await ref.read(transactionRepositoryProvider).searchByCategoriesPaged(
-              categoryIds: _categoryIds,
-              query: _query,
-              limit: _pageSize,
-              offset: reset ? 0 : _transactions.length,
-            );
+    final page = await ref
+        .read(transactionRepositoryProvider)
+        .searchByCategoriesPaged(
+          categoryIds: _categoryIds,
+          query: _query,
+          limit: _pageSize,
+          offset: reset ? 0 : _transactions.length,
+        );
     if (!mounted) return;
     setState(() {
       if (reset) _transactions.clear();
@@ -106,7 +107,8 @@ class _CategoryTransactionsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final displayCurrency = ref.watch(displayCurrencyProvider).valueOrNull ??
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
     final showDefaultCurrency =
         ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;

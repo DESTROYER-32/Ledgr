@@ -63,8 +63,9 @@ class CashFlowProjector {
               !wallet.archived && (walletId == null || wallet.id == walletId),
         )
         .toList();
-    final includedWalletIds =
-        includedWallets.map((wallet) => wallet.id).toSet();
+    final includedWalletIds = includedWallets
+        .map((wallet) => wallet.id)
+        .toSet();
 
     for (final wallet in includedWallets) {
       runningBalance += await _exchangeRates.convert(
@@ -92,7 +93,8 @@ class CashFlowProjector {
         transaction.currencyCode,
         displayCurrency,
         sourceIncluded: includedWalletIds.contains(transaction.walletId),
-        destinationIncluded: transaction.transferWalletId != null &&
+        destinationIncluded:
+            transaction.transferWalletId != null &&
             includedWalletIds.contains(transaction.transferWalletId),
       );
       if (amountMinor == 0) continue;
@@ -136,7 +138,8 @@ class CashFlowProjector {
           recurring.currencyCode,
           displayCurrency,
           sourceIncluded: includedWalletIds.contains(recurring.walletId),
-          destinationIncluded: recurring.transferWalletId != null &&
+          destinationIncluded:
+              recurring.transferWalletId != null &&
               includedWalletIds.contains(recurring.transferWalletId),
         );
         if (amountMinor == 0) continue;

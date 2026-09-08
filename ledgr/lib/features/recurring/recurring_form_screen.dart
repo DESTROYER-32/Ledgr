@@ -155,9 +155,11 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
       scheduleRule: Value(_effectiveSchedule),
       startDate: Value(_startDate),
       endDate: Value(_endDate),
-      nextDueDate: Value((_isEditing && _existingNextDueDate != null)
-          ? _existingNextDueDate!
-          : _startDate),
+      nextDueDate: Value(
+        (_isEditing && _existingNextDueDate != null)
+            ? _existingNextDueDate!
+            : _startDate,
+      ),
     );
 
     if (_isEditing) {
@@ -175,7 +177,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
     final catsAsync = ref.watch(expenseCategoriesProvider);
     final theme = Theme.of(context);
     final wallets = walletsAsync.valueOrNull ?? const <Wallet>[];
-    final displayCurrency = ref.watch(displayCurrencyProvider).valueOrNull ??
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
     final selectedCurrency = _selectedCurrency(wallets, displayCurrency);
 
@@ -289,7 +292,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen>
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: _endDate ??
+                    initialDate:
+                        _endDate ??
                         DateTime(
                           _startDate.year + 1,
                           _startDate.month,

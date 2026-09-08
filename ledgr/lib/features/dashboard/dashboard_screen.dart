@@ -17,28 +17,32 @@ import '../cash_flow/widgets/cash_flow_mini_card.dart';
 import '../net_worth/widgets/net_worth_card.dart';
 import '../portfolio/widgets/portfolio_mini_card.dart';
 
-final _dashboardObjectiveTotalProvider =
-    FutureProvider.autoDispose.family<int, int>((ref, objectiveId) {
-  return ref.watch(transactionRepositoryProvider).totalByObjective(objectiveId);
-});
+final _dashboardObjectiveTotalProvider = FutureProvider.autoDispose
+    .family<int, int>((ref, objectiveId) {
+      return ref
+          .watch(transactionRepositoryProvider)
+          .totalByObjective(objectiveId);
+    });
 
-final _dashboardBudgetPreviewProvider =
-    FutureProvider.autoDispose.family<int, Budget>((ref, budget) {
-  return DashboardScreen._getBudgetPreviewTotal(
-    ref.watch(transactionRepositoryProvider),
-    budget,
-    budget.isIncome,
-  );
-});
+final _dashboardBudgetPreviewProvider = FutureProvider.autoDispose
+    .family<int, Budget>((ref, budget) {
+      return DashboardScreen._getBudgetPreviewTotal(
+        ref.watch(transactionRepositoryProvider),
+        budget,
+        budget.isIncome,
+      );
+    });
 
 final _dashboardInsightsProvider =
     FutureProvider.autoDispose<_DashboardInsights>((ref) async {
-  ref.watch(allTransactionsProvider);
-  final budgets = await ref.watch(allBudgetsProvider.future);
-  final now = DateTime.now();
-  final activeBudgets = budgets.where((b) => b.periodEnd.isAfter(now)).toList();
-  return DashboardScreen._loadInsights(ref, activeBudgets);
-});
+      ref.watch(allTransactionsProvider);
+      final budgets = await ref.watch(allBudgetsProvider.future);
+      final now = DateTime.now();
+      final activeBudgets = budgets
+          .where((b) => b.periodEnd.isAfter(now))
+          .toList();
+      return DashboardScreen._loadInsights(ref, activeBudgets);
+    });
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -58,7 +62,8 @@ class DashboardScreen extends ConsumerWidget {
     final walletBalancesAsync = ref.watch(walletBalancesProvider);
     final userNameAsync = ref.watch(userNameProvider);
     final budgetsAsync = ref.watch(allBudgetsProvider);
-    final activeBudgets = budgetsAsync.valueOrNull
+    final activeBudgets =
+        budgetsAsync.valueOrNull
             ?.where((b) => b.periodEnd.isAfter(DateTime.now()))
             .toList() ??
         [];
@@ -346,10 +351,10 @@ class DashboardScreen extends ConsumerWidget {
                   final icon = w.type == 'cash'
                       ? Icons.money
                       : w.type == 'credit_card'
-                          ? Icons.credit_card
-                          : w.type == 'savings'
-                              ? Icons.savings
-                              : Icons.account_balance;
+                      ? Icons.credit_card
+                      : w.type == 'savings'
+                      ? Icons.savings
+                      : Icons.account_balance;
                   return _miniWalletCard(context, cs, w, icon, balance);
                 },
               ),
@@ -491,7 +496,8 @@ class DashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Consumer(
             builder: (context, ref, _) {
-              final total = ref
+              final total =
+                  ref
                       .watch(_dashboardObjectiveTotalProvider(objective.id))
                       .valueOrNull ??
                   0;
@@ -663,7 +669,8 @@ class DashboardScreen extends ConsumerWidget {
               const Spacer(),
               Consumer(
                 builder: (context, ref, _) {
-                  final total = ref
+                  final total =
+                      ref
                           .watch(_dashboardBudgetPreviewProvider(budget))
                           .valueOrNull ??
                       0;
@@ -1265,8 +1272,8 @@ class DashboardScreen extends ConsumerWidget {
                             isExpense
                                 ? Icons.arrow_upward
                                 : (isIncome
-                                    ? Icons.arrow_downward
-                                    : Icons.swap_horiz),
+                                      ? Icons.arrow_downward
+                                      : Icons.swap_horiz),
                             color: color,
                             size: 14,
                           ),
@@ -1349,10 +1356,9 @@ class DashboardScreen extends ConsumerWidget {
               59,
               999,
             );
-            final visibleTransactions = transactions
-                .where((t) => !t.date.isAfter(todayEnd))
-                .toList()
-              ..sort((a, b) => b.date.compareTo(a.date));
+            final visibleTransactions =
+                transactions.where((t) => !t.date.isAfter(todayEnd)).toList()
+                  ..sort((a, b) => b.date.compareTo(a.date));
 
             if (visibleTransactions.isEmpty) {
               return Card(

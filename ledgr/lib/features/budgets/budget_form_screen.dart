@@ -209,21 +209,22 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               label: 'Currency',
               value: _currencyCode,
               leadingIcon: Icons.monetization_on_outlined,
-              items: currencyOptionsWithSelection(
-                ref.watch(favoriteCurrenciesProvider).valueOrNull ??
-                    CurrencyUtils.codes,
-                _currencyCode,
-              )
-                  .map(
-                    (c) => ModernSelectionItem(
-                      value: c,
-                      title: c,
-                      subtitle: _currencyName(c),
-                      icon: Icons.monetization_on_outlined,
-                      badge: CurrencyUtils.symbolFor(c),
-                    ),
-                  )
-                  .toList(),
+              items:
+                  currencyOptionsWithSelection(
+                        ref.watch(favoriteCurrenciesProvider).valueOrNull ??
+                            CurrencyUtils.codes,
+                        _currencyCode,
+                      )
+                      .map(
+                        (c) => ModernSelectionItem(
+                          value: c,
+                          title: c,
+                          subtitle: _currencyName(c),
+                          icon: Icons.monetization_on_outlined,
+                          badge: CurrencyUtils.symbolFor(c),
+                        ),
+                      )
+                      .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _currencyCode = v);
               },
@@ -258,10 +259,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 _periodDays == 7
                     ? '7'
                     : _periodDays == 14
-                        ? '14'
-                        : _periodDays == 30
-                            ? '30'
-                            : 'custom',
+                    ? '14'
+                    : _periodDays == 30
+                    ? '30'
+                    : 'custom',
               },
               onSelectionChanged: (v) {
                 final val = v.first;

@@ -62,7 +62,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Future<void> _runSearch() async {
     final query = _queryController.text;
-    final results = await ref.read(transactionRepositoryProvider).search(
+    final results = await ref
+        .read(transactionRepositoryProvider)
+        .search(
           query: query,
           type: _type,
           walletId: _walletId,
@@ -141,8 +143,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         label: _type == 'expense'
                             ? 'Expense'
                             : _type == 'income'
-                                ? 'Income'
-                                : 'Transfer',
+                            ? 'Income'
+                            : 'Transfer',
                         onRemove: () {
                           setState(() => _type = null);
                           _runSearch();
@@ -311,7 +313,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showFilterSheet() {
     final wallets = ref.read(activeWalletsProvider).valueOrNull ?? [];
     final cats = ref.read(activeCategoriesProvider).valueOrNull ?? [];
-    final displayCurrency = ref.read(displayCurrencyProvider).valueOrNull ??
+    final displayCurrency =
+        ref.read(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
 
     showModalBottomSheet(
@@ -361,8 +364,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   Text(
                     'Filters',
                     style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Text('Type', style: Theme.of(ctx).textTheme.labelMedium),
@@ -616,8 +619,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           isExpense
                               ? Icons.arrow_upward
                               : (isIncome
-                                  ? Icons.arrow_downward
-                                  : Icons.swap_horiz),
+                                    ? Icons.arrow_downward
+                                    : Icons.swap_horiz),
                           color: color,
                           size: 18,
                         ),

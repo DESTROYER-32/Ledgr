@@ -60,8 +60,9 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
   }
 
   Future<void> _load() async {
-    final c =
-        await ref.read(categoryRepositoryProvider).getById(widget.categoryId!);
+    final c = await ref
+        .read(categoryRepositoryProvider)
+        .getById(widget.categoryId!);
     if (c != null && mounted) {
       setState(() {
         _nameController.text = c.name;

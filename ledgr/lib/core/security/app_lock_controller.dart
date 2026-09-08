@@ -47,7 +47,7 @@ class AppLockState {
 
 class AppLockController extends ChangeNotifier {
   AppLockController(this._settings, {LocalAuthentication? localAuth})
-      : _localAuth = localAuth ?? LocalAuthentication() {
+    : _localAuth = localAuth ?? LocalAuthentication() {
     refresh();
   }
 
@@ -98,17 +98,18 @@ class AppLockController extends ChangeNotifier {
   }
 
   Future<({int failedAttempts, DateTime? lockedUntil})>
-      loadAttemptState() async {
+  loadAttemptState() async {
     final failedAttempts =
         int.tryParse(await _settings.get(_failedAttemptsKey) ?? '') ?? 0;
     final lockedUntilRaw = await _settings.get(_lockedUntilKey);
-    final lockedUntil =
-        lockedUntilRaw == null ? null : DateTime.tryParse(lockedUntilRaw);
+    final lockedUntil = lockedUntilRaw == null
+        ? null
+        : DateTime.tryParse(lockedUntilRaw);
     return (failedAttempts: failedAttempts, lockedUntil: lockedUntil);
   }
 
   Future<({int failedAttempts, DateTime? lockedUntil})>
-      recordFailedAttempt() async {
+  recordFailedAttempt() async {
     final current = await loadAttemptState();
     final failedAttempts = current.failedAttempts + 1;
     DateTime? lockedUntil;
@@ -193,7 +194,8 @@ class AppLockController extends ChangeNotifier {
   Future<bool> verifyPin(String pin) async {
     final salt = await _settings.get(_pinSaltKey);
     final expected = await _settings.get(_pinHashKey);
-    final ok = salt != null &&
+    final ok =
+        salt != null &&
         expected != null &&
         await Isolate.run(() => _verifyHash(pin, salt, expected));
     if (ok) {
@@ -324,11 +326,11 @@ class AppLockController extends ChangeNotifier {
   }
 
   List<int> _int32BigEndian(int value) => [
-        (value >> 24) & 0xff,
-        (value >> 16) & 0xff,
-        (value >> 8) & 0xff,
-        value & 0xff,
-      ];
+    (value >> 24) & 0xff,
+    (value >> 16) & 0xff,
+    (value >> 8) & 0xff,
+    value & 0xff,
+  ];
 
   bool _constantTimeEquals(String a, String b) {
     if (a.length != b.length) return false;
@@ -340,6 +342,6 @@ class AppLockController extends ChangeNotifier {
   }
 
   String _randomSalt() => base64UrlEncode(
-        List<int>.generate(24, (_) => Random.secure().nextInt(256)),
-      );
+    List<int>.generate(24, (_) => Random.secure().nextInt(256)),
+  );
 }

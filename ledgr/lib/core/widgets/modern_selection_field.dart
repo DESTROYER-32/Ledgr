@@ -60,19 +60,19 @@ class ModernSelectionField<T> extends StatelessWidget {
               ? () async {
                   final result =
                       await showModalBottomSheet<_SelectionResult<T>>(
-                    context: context,
-                    useSafeArea: true,
-                    showDragHandle: true,
-                    enableDrag: false,
-                    isScrollControlled: true,
-                    builder: (_) => _ModernSelectionSheet<T>(
-                      title: label,
-                      value: value,
-                      items: items,
-                      allowClear: allowClear,
-                      searchEnabled: searchEnabled,
-                    ),
-                  );
+                        context: context,
+                        useSafeArea: true,
+                        showDragHandle: true,
+                        enableDrag: false,
+                        isScrollControlled: true,
+                        builder: (_) => _ModernSelectionSheet<T>(
+                          title: label,
+                          value: value,
+                          items: items,
+                          allowClear: allowClear,
+                          searchEnabled: searchEnabled,
+                        ),
+                      );
                   if (result != null) {
                     state.didChange(result.value);
                     onChanged(result.value);

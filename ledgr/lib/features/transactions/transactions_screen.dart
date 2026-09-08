@@ -43,7 +43,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final transactionsAsync = ref.watch(allTransactionsProvider);
     final recurringAsync = ref.watch(activeRecurringProvider);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
-    final displayCurrency = ref.watch(displayCurrencyProvider).valueOrNull ??
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
     final showDefaultCurrency =
         ref.watch(showDefaultCurrencyProvider).valueOrNull ?? true;
@@ -55,8 +56,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         actions: [
           if (!widget.calendarOnly)
             IconButton(
-              tooltip:
-                  _showCalendar ? 'Show transaction list' : 'Show calendar',
+              tooltip: _showCalendar
+                  ? 'Show transaction list'
+                  : 'Show calendar',
               icon: Icon(
                 _showCalendar ? Icons.view_list : Icons.calendar_month,
               ),
@@ -92,8 +94,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           final currentMonthIndex = months.indexWhere(
             (month) => _isSameMonth(month, currentMonth),
           );
-          final initialPage =
-              currentMonthIndex == -1 ? months.length - 1 : currentMonthIndex;
+          final initialPage = currentMonthIndex == -1
+              ? months.length - 1
+              : currentMonthIndex;
           if (_page == null) {
             _page = initialPage;
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -446,7 +449,8 @@ class _MonthCalendarPageState extends State<_MonthCalendarPage> {
                       date: date,
                       summary: daySummaries[key],
                       isToday: _isSameDay(date, DateTime.now()),
-                      selected: _selectedDate != null &&
+                      selected:
+                          _selectedDate != null &&
                           _isSameDay(date, _selectedDate!),
                       onTap: daySummaries[key] == null
                           ? null
@@ -517,9 +521,9 @@ class _WeekdayLabel extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w800,
-            ),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w800,
+        ),
         textAlign: TextAlign.center,
       ),
     );
@@ -562,17 +566,17 @@ class _CalendarDayCell extends StatelessWidget {
             color: isToday
                 ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
                 : hasTransactions
-                    ? theme.colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.55,
-                      )
-                    : theme.colorScheme.surface,
+                ? theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.55,
+                  )
+                : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
                   ? theme.colorScheme.primary
                   : isToday
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
               width: selected ? 2 : 1,
             ),
           ),
@@ -739,8 +743,8 @@ class _DateTransactionRow extends StatelessWidget {
     final color = isExpense
         ? AppColors.expense
         : isIncome
-            ? AppColors.income
-            : AppColors.transfer;
+        ? AppColors.income
+        : AppColors.transfer;
     final sign = _transactionSign(entry.type);
     final isPlanned = entry.transaction == null;
     final originalCurrency =
@@ -751,7 +755,8 @@ class _DateTransactionRow extends StatelessWidget {
       displayCurrency,
       exchangeRates,
     );
-    final showConverted = showDefaultCurrency &&
+    final showConverted =
+        showDefaultCurrency &&
         originalCurrency.toUpperCase() != displayCurrency.toUpperCase();
 
     return Card(
@@ -997,7 +1002,8 @@ class _PlannedTransactionTile extends StatelessWidget {
                             categoryName!,
                             style: TextStyle(
                               fontSize: AppTextSizes.small,
-                              color: categoryColor ??
+                              color:
+                                  categoryColor ??
                                   theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
@@ -1171,9 +1177,11 @@ int _convertAmountMinor(
   if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
     return amountMinor;
   }
-  final fromRate = rates[fromCurrency.toLowerCase()] ??
+  final fromRate =
+      rates[fromCurrency.toLowerCase()] ??
       (fromCurrency.toLowerCase() == 'usd' ? 1.0 : null);
-  final toRate = rates[toCurrency.toLowerCase()] ??
+  final toRate =
+      rates[toCurrency.toLowerCase()] ??
       (toCurrency.toLowerCase() == 'usd' ? 1.0 : null);
   if (fromRate == null || toRate == null || fromRate == 0) {
     return amountMinor;
@@ -1245,38 +1253,36 @@ class _LedgerEntry {
   bool get isPlanned => transaction == null;
 
   factory _LedgerEntry.transaction(Transaction transaction) => _LedgerEntry._(
-        type: transaction.type,
-        amountMinor: transaction.amountMinor,
-        date: transaction.date,
-        title: transaction.title,
-        categoryId: transaction.categoryId,
-        currencyCode: transaction.currencyCode,
-        transaction: transaction,
-      );
+    type: transaction.type,
+    amountMinor: transaction.amountMinor,
+    date: transaction.date,
+    title: transaction.title,
+    categoryId: transaction.categoryId,
+    currencyCode: transaction.currencyCode,
+    transaction: transaction,
+  );
 
   factory _LedgerEntry.recurring(
     RecurringTransaction recurring,
     DateTime date,
-  ) =>
-      _LedgerEntry._(
-        type: recurring.transactionType,
-        amountMinor: recurring.amountMinor,
-        date: date,
-        title: recurring.title,
-        categoryId: recurring.categoryId,
-        recurring: recurring,
-      );
+  ) => _LedgerEntry._(
+    type: recurring.transactionType,
+    amountMinor: recurring.amountMinor,
+    date: date,
+    title: recurring.title,
+    categoryId: recurring.categoryId,
+    recurring: recurring,
+  );
 
   factory _LedgerEntry.recurringTransaction(
     Transaction transaction,
     DateTime date,
-  ) =>
-      _LedgerEntry._(
-        type: transaction.type,
-        amountMinor: transaction.amountMinor,
-        date: date,
-        title: transaction.title,
-        categoryId: transaction.categoryId,
-        currencyCode: transaction.currencyCode,
-      );
+  ) => _LedgerEntry._(
+    type: transaction.type,
+    amountMinor: transaction.amountMinor,
+    date: date,
+    title: transaction.title,
+    categoryId: transaction.categoryId,
+    currencyCode: transaction.currencyCode,
+  );
 }

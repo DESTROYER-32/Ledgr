@@ -47,104 +47,95 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ];
 
   List<_OnboardingStep> get _steps => const [
-        _OnboardingStep(
-          icon: Icons.account_balance_wallet,
-          title: 'Welcome to Ledgr',
-          subtitle:
-              'A calmer way to understand money, plan ahead, and keep every account in sync.',
-          bullets: [
-            'Private by default',
-            'Budgets, goals, subscriptions',
-            'Multi-wallet tracking',
-          ],
-          accent: Color(0xFF1A6D4A),
-        ),
-        _OnboardingStep(
-          icon: Icons.auto_graph,
-          title: 'See your month at a glance',
-          subtitle:
-              'Dashboard cards surface balance, cashflow, recent activity, and what needs attention.',
-          bullets: [
-            'Income vs expenses',
-            'Recent transactions',
-            'Upcoming bills'
-          ],
-          accent: Color(0xFF1976D2),
-        ),
-        _OnboardingStep(
-          icon: Icons.savings,
-          title: 'Plan with budgets and goals',
-          subtitle:
-              'Create limits for categories, pin important goals, and spot overspending before it hurts.',
-          bullets: [
-            'Category limits',
-            'Savings objectives',
-            'Pinned priorities'
-          ],
-          accent: Color(0xFFFF8F00),
-        ),
-        _OnboardingStep(
-          icon: Icons.repeat,
-          title: 'Never miss recurring money',
-          subtitle:
-              'Track rent, subscriptions, paychecks, and transfers as repeating items.',
-          bullets: ['Recurring expenses', 'Subscriptions', 'Scheduled income'],
-          accent: Color(0xFF8E24AA),
-        ),
-        _OnboardingStep(
-          icon: Icons.query_stats,
-          title: 'Understand spending patterns',
-          subtitle:
-              'Analytics, search, smart labels, and activity history help you find where money goes.',
-          bullets: ['Analytics', 'Search', 'Smart labels'],
-          accent: Color(0xFFD81B60),
-        ),
-        _OnboardingStep(
-          icon: Icons.waving_hand,
-          title: 'What should we call you?',
-          subtitle:
-              'Add a name for a friendlier dashboard greeting, or skip it if you prefer.',
-          accent: Color(0xFF5E35B1),
-          custom: _StepCustom.name,
-        ),
-        _OnboardingStep(
-          icon: Icons.currency_exchange,
-          title: 'Pick your currency',
-          subtitle:
-              'Choose the display currency Ledgr should use first. You can add more later.',
-          accent: Color(0xFF00897B),
-          custom: _StepCustom.currency,
-        ),
-        _OnboardingStep(
-          icon: Icons.account_balance,
-          title: 'Create your first account',
-          subtitle:
-              'Start with a wallet, bank account, card, or savings account.',
-          accent: Color(0xFF3949AB),
-          custom: _StepCustom.wallet,
-        ),
-        _OnboardingStep(
-          icon: Icons.science,
-          title: 'Try test mode first',
-          subtitle:
-              'Not ready to enter real data? Load a Cashew-style demo workspace with realistic dummy data.',
-          bullets: [
-            'Sample wallets',
-            'Budgets and goals',
-            'Transactions and subscriptions',
-          ],
-          accent: Color(0xFF6D4C41),
-          custom: _StepCustom.demo,
-        ),
-        _OnboardingStep(
-          icon: Icons.rocket_launch,
-          title: 'You are ready',
-          subtitle:
-              'Ledgr will seed helpful categories and open your dashboard. You can change everything later.',
-          bullets: ['Local data', 'Editable setup', 'No account required'],
-          accent: Color(0xFF2E7D32),
-        ),
-      ];
+    _OnboardingStep(
+      icon: Icons.account_balance_wallet,
+      title: 'Welcome to Ledgr',
+      subtitle:
+          'A calmer way to understand money, plan ahead, and keep every account in sync.',
+      bullets: [
+        'Private by default',
+        'Budgets, goals, subscriptions',
+        'Multi-wallet tracking',
+      ],
+      accent: Color(0xFF1A6D4A),
+    ),
+    _OnboardingStep(
+      icon: Icons.auto_graph,
+      title: 'See your month at a glance',
+      subtitle:
+          'Dashboard cards surface balance, cashflow, recent activity, and what needs attention.',
+      bullets: ['Income vs expenses', 'Recent transactions', 'Upcoming bills'],
+      accent: Color(0xFF1976D2),
+    ),
+    _OnboardingStep(
+      icon: Icons.savings,
+      title: 'Plan with budgets and goals',
+      subtitle:
+          'Create limits for categories, pin important goals, and spot overspending before it hurts.',
+      bullets: ['Category limits', 'Savings objectives', 'Pinned priorities'],
+      accent: Color(0xFFFF8F00),
+    ),
+    _OnboardingStep(
+      icon: Icons.repeat,
+      title: 'Never miss recurring money',
+      subtitle:
+          'Track rent, subscriptions, paychecks, and transfers as repeating items.',
+      bullets: ['Recurring expenses', 'Subscriptions', 'Scheduled income'],
+      accent: Color(0xFF8E24AA),
+    ),
+    _OnboardingStep(
+      icon: Icons.query_stats,
+      title: 'Understand spending patterns',
+      subtitle:
+          'Analytics, search, smart labels, and activity history help you find where money goes.',
+      bullets: ['Analytics', 'Search', 'Smart labels'],
+      accent: Color(0xFFD81B60),
+    ),
+    _OnboardingStep(
+      icon: Icons.waving_hand,
+      title: 'What should we call you?',
+      subtitle:
+          'Add a name for a friendlier dashboard greeting, or skip it if you prefer.',
+      accent: Color(0xFF5E35B1),
+      custom: _StepCustom.name,
+    ),
+    _OnboardingStep(
+      icon: Icons.currency_exchange,
+      title: 'Pick your currency',
+      subtitle:
+          'Choose the display currency Ledgr should use first. You can add more later.',
+      accent: Color(0xFF00897B),
+      custom: _StepCustom.currency,
+    ),
+    _OnboardingStep(
+      icon: Icons.account_balance,
+      title: 'Create your first account',
+      subtitle: 'Start with a wallet, bank account, card, or savings account.',
+      accent: Color(0xFF3949AB),
+      custom: _StepCustom.wallet,
+    ),
+    _OnboardingStep(
+      icon: Icons.science,
+      title: 'Try test mode first',
+      subtitle:
+          'Not ready to enter real data? Load a Cashew-style demo workspace with realistic dummy data.',
+      bullets: [
+        'Sample wallets',
+        'Budgets and goals',
+        'Transactions and subscriptions',
+      ],
+      accent: Color(0xFF6D4C41),
+      custom: _StepCustom.demo,
+    ),
+    _OnboardingStep(
+      icon: Icons.rocket_launch,
+      title: 'You are ready',
+      subtitle:
+          'Ledgr will seed helpful categories and open your dashboard. You can change everything later.',
+      bullets: ['Local data', 'Editable setup', 'No account required'],
+      accent: Color(0xFF2E7D32),
+    ),
+  ];
 
   @override
   void dispose() {
@@ -175,7 +166,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await settings.set('ledgr_demo_mode', 'true');
       } else if (_createWallet) {
         final balance = double.tryParse(_balanceController.text.trim()) ?? 0;
-        final walletId = await ref.read(walletRepositoryProvider).insert(
+        final walletId = await ref
+            .read(walletRepositoryProvider)
+            .insert(
               WalletsCompanion.insert(
                 name: _walletNameController.text.trim().isEmpty
                     ? 'Main Wallet'
@@ -329,111 +322,110 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildCurrencyPicker(ThemeData theme) => Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: _currencies.map((currency) {
-          final selected = _selectedCurrency == currency;
-          return ChoiceChip(
-            label: Text(currency),
-            selected: selected,
-            onSelected: (_) => setState(() => _selectedCurrency = currency),
-          );
-        }).toList(),
+    spacing: 10,
+    runSpacing: 10,
+    children: _currencies.map((currency) {
+      final selected = _selectedCurrency == currency;
+      return ChoiceChip(
+        label: Text(currency),
+        selected: selected,
+        onSelected: (_) => setState(() => _selectedCurrency = currency),
       );
+    }).toList(),
+  );
 
   Widget _buildNameStep(ThemeData theme) => TextField(
-        controller: _nameController,
-        decoration: const InputDecoration(
-          labelText: 'Name',
-          hintText: 'Alex',
-          helperText: 'Optional. Used only to personalize your home screen.',
-          prefixIcon: Icon(Icons.person_outline),
-        ),
-        textCapitalization: TextCapitalization.words,
-        textInputAction: TextInputAction.done,
-      );
+    controller: _nameController,
+    decoration: const InputDecoration(
+      labelText: 'Name',
+      hintText: 'Alex',
+      helperText: 'Optional. Used only to personalize your home screen.',
+      prefixIcon: Icon(Icons.person_outline),
+    ),
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.done,
+  );
 
   Widget _buildWalletSetup(ThemeData theme) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Create a starter account now'),
-            subtitle: const Text('Turn this off to set up accounts later.'),
-            value: _createWallet,
-            onChanged: (value) => setState(() => _createWallet = value),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Create a starter account now'),
+        subtitle: const Text('Turn this off to set up accounts later.'),
+        value: _createWallet,
+        onChanged: (value) => setState(() => _createWallet = value),
+      ),
+      if (!_createWallet)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'No problem. Ledgr will still save your currency and open the dashboard.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-          if (!_createWallet)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                'No problem. Ledgr will still save your currency and open the dashboard.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+        ),
+      if (_createWallet) ...[
+        TextField(
+          controller: _walletNameController,
+          decoration: const InputDecoration(
+            labelText: 'Account name',
+            hintText: 'Main Checking',
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text('Account type', style: theme.textTheme.titleSmall),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _walletTypes
+              .map(
+                (wt) => ChoiceChip(
+                  label: Text(wt.$2),
+                  avatar: Icon(wt.$3, size: 18),
+                  selected: _walletType == wt.$1,
+                  onSelected: (_) => setState(() => _walletType = wt.$1),
                 ),
-              ),
-            ),
-          if (_createWallet) ...[
-            TextField(
-              controller: _walletNameController,
-              decoration: const InputDecoration(
-                labelText: 'Account name',
-                hintText: 'Main Checking',
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Account type', style: theme.textTheme.titleSmall),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _walletTypes
-                  .map(
-                    (wt) => ChoiceChip(
-                      label: Text(wt.$2),
-                      avatar: Icon(wt.$3, size: 18),
-                      selected: _walletType == wt.$1,
-                      onSelected: (_) => setState(() => _walletType = wt.$1),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _balanceController,
-              decoration: InputDecoration(
-                labelText: 'Current balance',
-                hintText: '0.00',
-                prefixText: '$_selectedCurrency ',
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
-          ],
-        ],
-      );
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _balanceController,
+          decoration: InputDecoration(
+            labelText: 'Current balance',
+            hintText: '0.00',
+            prefixText: '$_selectedCurrency ',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ],
+    ],
+  );
 
   Widget _buildDemoToggle(ThemeData theme) => Column(
-        children: [
-          _ModeCard(
-            selected: !_demoMode,
-            icon: Icons.edit_note,
-            title: 'Use my own data',
-            subtitle:
-                'Create one starter account and begin from a clean workspace.',
-            onTap: () => setState(() => _demoMode = false),
-          ),
-          const SizedBox(height: 12),
-          _ModeCard(
-            selected: _demoMode,
-            icon: Icons.auto_awesome,
-            title: 'Use test mode with dummy data',
-            subtitle:
-                'Explore Ledgr instantly with sample accounts, budgets, goals, and transactions.',
-            onTap: () => setState(() => _demoMode = true),
-          ),
-        ],
-      );
+    children: [
+      _ModeCard(
+        selected: !_demoMode,
+        icon: Icons.edit_note,
+        title: 'Use my own data',
+        subtitle:
+            'Create one starter account and begin from a clean workspace.',
+        onTap: () => setState(() => _demoMode = false),
+      ),
+      const SizedBox(height: 12),
+      _ModeCard(
+        selected: _demoMode,
+        icon: Icons.auto_awesome,
+        title: 'Use test mode with dummy data',
+        subtitle:
+            'Explore Ledgr instantly with sample accounts, budgets, goals, and transactions.',
+        onTap: () => setState(() => _demoMode = true),
+      ),
+    ],
+  );
 
   Widget _buildBottomBar(ThemeData theme) {
     final isLast = _currentPage == _steps.length - 1;
@@ -445,9 +437,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             onPressed: _currentPage == 0 || _busy
                 ? null
                 : () => _pageController.previousPage(
-                      duration: const Duration(milliseconds: 260),
-                      curve: Curves.easeOut,
-                    ),
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOut,
+                  ),
             child: const Text('Back'),
           ),
           const Spacer(),
@@ -509,21 +501,21 @@ class _ProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: LinearProgressIndicator(
-              value: (current + 1) / total,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(99),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            '${current + 1}/$total',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ],
-      );
+    children: [
+      Expanded(
+        child: LinearProgressIndicator(
+          value: (current + 1) / total,
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(99),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Text(
+        '${current + 1}/$total',
+        style: Theme.of(context).textTheme.labelLarge,
+      ),
+    ],
+  );
 }
 
 class _FeatureBullet extends StatelessWidget {
@@ -533,21 +525,21 @@ class _FeatureBullet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 13,
-              backgroundColor: color.withValues(alpha: .14),
-              child: Icon(Icons.check, size: 16, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
-            ),
-          ],
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      children: [
+        CircleAvatar(
+          radius: 13,
+          backgroundColor: color.withValues(alpha: .14),
+          child: Icon(Icons.check, size: 16, color: color),
         ),
-      );
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ModeCard extends StatelessWidget {
@@ -623,7 +615,9 @@ class _DemoDataSeeder {
     final existing = await _db.wallets.select().get();
     if (existing.isNotEmpty) return;
 
-    final checkingId = await _db.into(_db.wallets).insert(
+    final checkingId = await _db
+        .into(_db.wallets)
+        .insert(
           WalletsCompanion.insert(
             name: 'Demo Checking',
             type: 'checking',
@@ -634,7 +628,9 @@ class _DemoDataSeeder {
             icon: const Value('account_balance'),
           ),
         );
-    final savingsId = await _db.into(_db.wallets).insert(
+    final savingsId = await _db
+        .into(_db.wallets)
+        .insert(
           WalletsCompanion.insert(
             name: 'Emergency Savings',
             type: 'savings',
@@ -645,7 +641,9 @@ class _DemoDataSeeder {
             icon: const Value('savings'),
           ),
         );
-    final cashId = await _db.into(_db.wallets).insert(
+    final cashId = await _db
+        .into(_db.wallets)
+        .insert(
           WalletsCompanion.insert(
             name: 'Cash Wallet',
             type: 'cash',
@@ -665,7 +663,9 @@ class _DemoDataSeeder {
     final monthStart = DateTime(now.year, now.month, 1);
     final monthEnd = DateTime(now.year, now.month + 1, 0, 23, 59);
 
-    final budgetId = await _db.into(_db.budgets).insert(
+    final budgetId = await _db
+        .into(_db.budgets)
+        .insert(
           BudgetsCompanion.insert(
             name: 'Demo Monthly Budget',
             periodStart: monthStart,
@@ -676,7 +676,9 @@ class _DemoDataSeeder {
             color: const Value(0xFF1A6D4A),
           ),
         );
-    await _db.into(_db.budgetWallets).insert(
+    await _db
+        .into(_db.budgetWallets)
+        .insert(
           BudgetWalletsCompanion.insert(
             budgetId: budgetId,
             walletId: checkingId,
@@ -691,7 +693,9 @@ class _DemoDataSeeder {
     ]) {
       final id = cat(item.$1);
       if (id != null) {
-        await _db.into(_db.budgetCategoryLimits).insert(
+        await _db
+            .into(_db.budgetCategoryLimits)
+            .insert(
               BudgetCategoryLimitsCompanion.insert(
                 budgetId: budgetId,
                 categoryId: id,
@@ -701,7 +705,9 @@ class _DemoDataSeeder {
       }
     }
 
-    await _db.into(_db.objectives).insert(
+    await _db
+        .into(_db.objectives)
+        .insert(
           ObjectivesCompanion.insert(
             name: 'Vacation fund',
             type: 'goal',
@@ -714,7 +720,9 @@ class _DemoDataSeeder {
             icon: const Value('flight_takeoff'),
           ),
         );
-    await _db.into(_db.objectives).insert(
+    await _db
+        .into(_db.objectives)
+        .insert(
           ObjectivesCompanion.insert(
             name: 'Pay down credit card',
             type: 'debt',
@@ -737,7 +745,9 @@ class _DemoDataSeeder {
       int? transferWallet,
       String specialType = 'none',
     }) async {
-      await _db.into(_db.transactions).insert(
+      await _db
+          .into(_db.transactions)
+          .insert(
             TransactionsCompanion.insert(
               type: type,
               specialType: Value(specialType),
@@ -881,7 +891,9 @@ class _DemoDataSeeder {
       specialType: 'subscription',
     );
 
-    await _db.into(_db.recurringTransactions).insert(
+    await _db
+        .into(_db.recurringTransactions)
+        .insert(
           RecurringTransactionsCompanion.insert(
             transactionType: 'expense',
             amountMinor: 145000,
@@ -894,7 +906,9 @@ class _DemoDataSeeder {
             nextDueDate: Value(DateTime(now.year, now.month + 1, 1)),
           ),
         );
-    await _db.into(_db.recurringTransactions).insert(
+    await _db
+        .into(_db.recurringTransactions)
+        .insert(
           RecurringTransactionsCompanion.insert(
             transactionType: 'income',
             amountMinor: 420000,
@@ -908,13 +922,17 @@ class _DemoDataSeeder {
           ),
         );
 
-    await _db.into(_db.associatedTitles).insert(
+    await _db
+        .into(_db.associatedTitles)
+        .insert(
           AssociatedTitlesCompanion.insert(
             title: 'Fresh Market',
             categoryId: cat('Groceries') ?? cats.values.first,
           ),
         );
-    await _db.into(_db.settings).insertOnConflictUpdate(
+    await _db
+        .into(_db.settings)
+        .insertOnConflictUpdate(
           SettingsCompanion.insert(
             key: 'default_wallet_id',
             value: checkingId.toString(),

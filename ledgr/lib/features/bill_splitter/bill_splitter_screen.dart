@@ -33,7 +33,8 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final wallets = ref.watch(activeWalletsProvider).valueOrNull;
-    final displayCurrency = ref.watch(displayCurrencyProvider).valueOrNull ??
+    final displayCurrency =
+        ref.watch(displayCurrencyProvider).valueOrNull ??
         MoneyUtils.defaultCurrencyCode;
     final splitCurrency = wallets != null && wallets.isNotEmpty
         ? wallets.first.currencyCode
@@ -215,8 +216,10 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
 
   Future<void> _createTransactions() async {
     final repo = ref.read(transactionRepositoryProvider);
-    final wallets =
-        await ref.read(walletRepositoryProvider).watchActive().first;
+    final wallets = await ref
+        .read(walletRepositoryProvider)
+        .watchActive()
+        .first;
     if (wallets.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -248,7 +251,8 @@ class _BillSplitterScreenState extends ConsumerState<BillSplitterScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Created transaction for your share of the bill')),
+          content: Text('Created transaction for your share of the bill'),
+        ),
       );
       context.pop();
     }
