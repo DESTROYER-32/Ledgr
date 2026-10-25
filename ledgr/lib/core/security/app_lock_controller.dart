@@ -1,8 +1,5 @@
-import 'dart:convert';
-import 'dart:isolate';
-import 'dart:math';
+import 'dart:async';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -12,33 +9,52 @@ import '../utils/app_logger.dart';
 class AppLockState {
   final bool isEnabled;
   final bool isLocked;
-  final bool biometricsEnabled;
-  final bool biometricsAvailable;
+  final bool isDeviceSupported;
+  final List<BiometricType> availableBiometrics;
   final int lockTimeoutSeconds;
   final bool isLoading;
 
   const AppLockState({
     this.isEnabled = false,
     this.isLocked = false,
-    this.biometricsEnabled = false,
-    this.biometricsAvailable = false,
+    this.isDeviceSupported = false,
+    this.availableBiometrics = const [],
     this.lockTimeoutSeconds = -1,
     this.isLoading = true,
   });
 
+  bool get biometricsEnabled => isEnabled && isDeviceSupported;
+  bool get biometricsAvailable => isDeviceSupported;
+
+  bool get hasFingerprint =>
+      availableBiometrics.contains(BiometricType.fingerprint) ||
+      availableBiometrics.contains(BiometricType.strong);
+
+  bool get hasFace => availableBiometrics.contains(BiometricType.face);
+
+  bool get hasBiometrics => availableBiometrics.isNotEmpty;
+
+  String get lockTypeDescription {
+    if (hasFingerprint && hasFace) return 'fingerprint, face, or device lock';
+    if (hasFingerprint) return 'fingerprint or device lock';
+    if (hasFace) return 'face or device lock';
+    if (hasBiometrics) return 'biometrics or device lock';
+    return 'device lock (PIN, pattern, or passcode)';
+  }
+
   AppLockState copyWith({
     bool? isEnabled,
     bool? isLocked,
-    bool? biometricsEnabled,
-    bool? biometricsAvailable,
+    bool? isDeviceSupported,
+    List<BiometricType>? availableBiometrics,
     int? lockTimeoutSeconds,
     bool? isLoading,
   }) {
     return AppLockState(
       isEnabled: isEnabled ?? this.isEnabled,
       isLocked: isLocked ?? this.isLocked,
-      biometricsEnabled: biometricsEnabled ?? this.biometricsEnabled,
-      biometricsAvailable: biometricsAvailable ?? this.biometricsAvailable,
+      isDeviceSupported: isDeviceSupported ?? this.isDeviceSupported,
+      availableBiometrics: availableBiometrics ?? this.availableBiometrics,
       lockTimeoutSeconds: lockTimeoutSeconds ?? this.lockTimeoutSeconds,
       isLoading: isLoading ?? this.isLoading,
     );
@@ -51,22 +67,25 @@ class AppLockController extends ChangeNotifier {
     refresh();
   }
 
-  static const _pinHashKey = 'app_lock_pin_hash';
-  static const _pinSaltKey = 'app_lock_pin_salt';
-  static const _biometricKey = 'app_lock_biometrics_enabled';
+  static const _enabledKey = 'app_lock_enabled';
   static const _timeoutKey = 'app_lock_timeout_seconds';
-  static const _failedAttemptsKey = 'app_lock_failed_attempts';
-  static const _lockedUntilKey = 'app_lock_locked_until';
-  static const _pbkdf2Iterations = 100000;
-  static const _pbkdf2Prefix = 'pbkdf2-sha256';
+
+  // Legacy keys for migration from custom PIN lock
+  static const _legacyPinHashKey = 'app_lock_pin_hash';
+  static const _legacyPinSaltKey = 'app_lock_pin_salt';
+  static const _legacyBiometricKey = 'app_lock_biometrics_enabled';
+  static const _legacyFailedAttemptsKey = 'app_lock_failed_attempts';
+  static const _legacyLockedUntilKey = 'app_lock_locked_until';
 
   final SettingsRepository _settings;
   final LocalAuthentication _localAuth;
   AppLockState _state = const AppLockState();
   DateTime? _leftAppAt;
   Future<void>? _refreshInFlight;
+  bool _isAuthenticating = false;
 
   AppLockState get state => _state;
+  bool get isAuthenticating => _isAuthenticating;
 
   Future<void> refresh({bool preserveLockState = false}) async {
     final inFlight = _refreshInFlight;
@@ -81,54 +100,43 @@ class AppLockController extends ChangeNotifier {
   }
 
   Future<void> _refresh({required bool preserveLockState}) async {
-    final pinHash = await _settings.get(_pinHashKey);
-    final biometricsEnabled = await _settings.get(_biometricKey) == 'true';
+    final enabledValue = await _settings.get(_enabledKey);
+    final legacyPinHash = await _settings.get(_legacyPinHashKey);
+
+    // If enabled via new key OR if user previously had PIN lock enabled
+    final isEnabled =
+        enabledValue == 'true' ||
+        (enabledValue == null && legacyPinHash != null);
+
     final timeoutSeconds =
         int.tryParse(await _settings.get(_timeoutKey) ?? '') ?? -1;
-    final biometricsAvailable = await _canUseBiometrics();
+
+    bool supported = false;
+    List<BiometricType> biometrics = const [];
+    try {
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      supported = isDeviceSupported || canCheckBiometrics;
+      if (canCheckBiometrics) {
+        biometrics = await _localAuth.getAvailableBiometrics();
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Failed to query local authentication capabilities',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
     _state = AppLockState(
-      isEnabled: pinHash != null,
-      isLocked: preserveLockState ? _state.isLocked : pinHash != null,
-      biometricsEnabled: biometricsEnabled && biometricsAvailable,
-      biometricsAvailable: biometricsAvailable,
+      isEnabled: isEnabled,
+      isLocked: preserveLockState ? _state.isLocked : isEnabled,
+      isDeviceSupported: supported,
+      availableBiometrics: biometrics,
       lockTimeoutSeconds: timeoutSeconds,
       isLoading: false,
     );
     notifyListeners();
-  }
-
-  Future<({int failedAttempts, DateTime? lockedUntil})>
-  loadAttemptState() async {
-    final failedAttempts =
-        int.tryParse(await _settings.get(_failedAttemptsKey) ?? '') ?? 0;
-    final lockedUntilRaw = await _settings.get(_lockedUntilKey);
-    final lockedUntil = lockedUntilRaw == null
-        ? null
-        : DateTime.tryParse(lockedUntilRaw);
-    return (failedAttempts: failedAttempts, lockedUntil: lockedUntil);
-  }
-
-  Future<({int failedAttempts, DateTime? lockedUntil})>
-  recordFailedAttempt() async {
-    final current = await loadAttemptState();
-    final failedAttempts = current.failedAttempts + 1;
-    DateTime? lockedUntil;
-    if (failedAttempts >= 5) {
-      final delaySeconds = (failedAttempts - 4).clamp(1, 6) * 5;
-      lockedUntil = DateTime.now().add(Duration(seconds: delaySeconds));
-    }
-    await _settings.set(_failedAttemptsKey, failedAttempts.toString());
-    if (lockedUntil == null) {
-      await _settings.remove(_lockedUntilKey);
-    } else {
-      await _settings.set(_lockedUntilKey, lockedUntil.toIso8601String());
-    }
-    return (failedAttempts: failedAttempts, lockedUntil: lockedUntil);
-  }
-
-  Future<void> clearAttemptState() async {
-    await _settings.remove(_failedAttemptsKey);
-    await _settings.remove(_lockedUntilKey);
   }
 
   void lock() {
@@ -137,37 +145,99 @@ class AppLockController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void unlockDirectlyForTesting() {
+    _state = _state.copyWith(isLocked: false);
+    notifyListeners();
+  }
+
   void markAppLeft() {
-    if (!_state.isEnabled || _state.isLocked) return;
+    if (!_state.isEnabled || _state.isLocked || _isAuthenticating) return;
     _leftAppAt = DateTime.now();
   }
 
   void handleAppResumed() {
-    if (!_state.isEnabled || _state.isLocked) return;
+    if (!_state.isEnabled || _state.isLocked || _isAuthenticating) return;
     final timeoutSeconds = _state.lockTimeoutSeconds;
     final leftAt = _leftAppAt;
     _leftAppAt = null;
 
-    // -1 means the default Cashew-like behavior: lock on initial app open only,
-    // not when quickly switching away and back.
     if (timeoutSeconds < 0 || leftAt == null) return;
     final elapsed = DateTime.now().difference(leftAt).inSeconds;
     if (elapsed >= timeoutSeconds) lock();
   }
 
-  Future<void> setPin(String pin) async {
-    final salt = _randomSalt();
-    await _settings.set(_pinSaltKey, salt);
-    final hash = await Isolate.run(() => _hashPin(pin, salt));
-    await _settings.set(_pinHashKey, hash);
-    await clearAttemptState();
-    _state = _state.copyWith(
-      isEnabled: true,
-      isLocked: false,
-      isLoading: false,
-    );
+  Future<bool> authenticate({
+    String reason = 'Unlock Ledgr',
+    bool force = false,
+  }) async {
+    if (!_state.isEnabled && !force) {
+      _state = _state.copyWith(isLocked: false);
+      notifyListeners();
+      return true;
+    }
+
+    if (_isAuthenticating) return false;
+    _isAuthenticating = true;
+
+    try {
+      final ok = await _localAuth.authenticate(
+        localizedReason: reason,
+        options: const AuthenticationOptions(
+          biometricOnly:
+              false, // Allows fingerprint, face, pattern, PIN, or passcode
+          stickyAuth: true,
+        ),
+      );
+      if (ok) {
+        _state = _state.copyWith(isLocked: false);
+        notifyListeners();
+      }
+      return ok;
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'Authentication failed or cancelled',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    } finally {
+      _isAuthenticating = false;
+    }
+  }
+
+  Future<bool> authenticateWithBiometrics() => authenticate();
+
+  Future<bool> setEnabled(bool enabled) async {
+    if (enabled) {
+      final ok = await authenticate(
+        reason: 'Authenticate to enable App Lock',
+        force: true,
+      );
+      if (!ok) return false;
+      await _settings.set(_enabledKey, 'true');
+      await _cleanupLegacyKeys();
+      _state = _state.copyWith(isEnabled: true, isLocked: false);
+      notifyListeners();
+      return true;
+    } else {
+      await _settings.set(_enabledKey, 'false');
+      await _cleanupLegacyKeys();
+      _leftAppAt = null;
+      _state = _state.copyWith(isEnabled: false, isLocked: false);
+      notifyListeners();
+      return true;
+    }
+  }
+
+  Future<void> disableWithoutAuth() async {
+    await _settings.set(_enabledKey, 'false');
+    await _cleanupLegacyKeys();
+    _leftAppAt = null;
+    _state = _state.copyWith(isEnabled: false, isLocked: false);
     notifyListeners();
   }
+
+  Future<void> disable() => disableWithoutAuth();
 
   Future<void> setLockTimeoutSeconds(int seconds) async {
     await _settings.set(_timeoutKey, seconds.toString());
@@ -175,173 +245,11 @@ class AppLockController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> disable() async {
-    await _settings.remove(_pinHashKey);
-    await _settings.remove(_pinSaltKey);
-    await _settings.remove(_biometricKey);
-    await _settings.remove(_timeoutKey);
-    await clearAttemptState();
-    _leftAppAt = null;
-    _state = _state.copyWith(
-      isEnabled: false,
-      isLocked: false,
-      biometricsEnabled: false,
-      isLoading: false,
-    );
-    notifyListeners();
+  Future<void> _cleanupLegacyKeys() async {
+    await _settings.remove(_legacyPinHashKey);
+    await _settings.remove(_legacyPinSaltKey);
+    await _settings.remove(_legacyBiometricKey);
+    await _settings.remove(_legacyFailedAttemptsKey);
+    await _settings.remove(_legacyLockedUntilKey);
   }
-
-  Future<bool> verifyPin(String pin) async {
-    final salt = await _settings.get(_pinSaltKey);
-    final expected = await _settings.get(_pinHashKey);
-    final ok =
-        salt != null &&
-        expected != null &&
-        await Isolate.run(() => _verifyHash(pin, salt, expected));
-    if (ok) {
-      if (!expected.startsWith('$_pbkdf2Prefix\$')) {
-        final rehashed = await Isolate.run(() => _hashPin(pin, salt));
-        await _settings.set(_pinHashKey, rehashed);
-      }
-      await clearAttemptState();
-      _state = _state.copyWith(isLocked: false);
-      notifyListeners();
-    }
-    return ok;
-  }
-
-  Future<bool> authenticateWithBiometrics() async {
-    if (!_state.biometricsEnabled) return false;
-    try {
-      final ok = await _localAuth.authenticate(
-        localizedReason: 'Unlock Ledgr',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
-      if (ok) {
-        await clearAttemptState();
-        _state = _state.copyWith(isLocked: false);
-        notifyListeners();
-      }
-      return ok;
-    } catch (error, stackTrace) {
-      AppLogger.warning(
-        'Biometric unlock failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      return false;
-    }
-  }
-
-  Future<bool> setBiometricsEnabled(bool enabled) async {
-    if (enabled) {
-      final available = await _canUseBiometrics();
-      if (!available) return false;
-      final ok = await _localAuth.authenticate(
-        localizedReason: 'Enable biometric unlock for Ledgr',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
-      if (!ok) return false;
-    }
-    await _settings.set(_biometricKey, enabled.toString());
-    _state = _state.copyWith(biometricsEnabled: enabled);
-    notifyListeners();
-    return true;
-  }
-
-  Future<bool> _canUseBiometrics() async {
-    try {
-      return await _localAuth.canCheckBiometrics &&
-          await _localAuth.isDeviceSupported() &&
-          (await _localAuth.getAvailableBiometrics()).isNotEmpty;
-    } catch (error, stackTrace) {
-      AppLogger.warning(
-        'Failed to check biometric availability',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      return false;
-    }
-  }
-
-  String _hashPin(String pin, String salt) {
-    final hash = _pbkdf2Sha256(
-      password: utf8.encode(pin),
-      salt: utf8.encode(salt),
-      iterations: _pbkdf2Iterations,
-      length: 32,
-    );
-    return '$_pbkdf2Prefix\$$_pbkdf2Iterations\$$salt\$${base64UrlEncode(hash)}';
-  }
-
-  bool _verifyHash(String pin, String salt, String expected) {
-    if (expected.startsWith('$_pbkdf2Prefix\$')) {
-      final parts = expected.split('\$');
-      if (parts.length != 4) return false;
-      final iterations = int.tryParse(parts[1]);
-      if (iterations == null || iterations <= 0) return false;
-      final hash = _pbkdf2Sha256(
-        password: utf8.encode(pin),
-        salt: utf8.encode(parts[2]),
-        iterations: iterations,
-        length: 32,
-      );
-      return _constantTimeEquals(base64UrlEncode(hash), parts[3]);
-    }
-
-    final legacy = sha256.convert(utf8.encode('$salt:$pin')).toString();
-    return _constantTimeEquals(legacy, expected);
-  }
-
-  List<int> _pbkdf2Sha256({
-    required List<int> password,
-    required List<int> salt,
-    required int iterations,
-    required int length,
-  }) {
-    final hmac = Hmac(sha256, password);
-    final result = <int>[];
-    var block = 1;
-
-    while (result.length < length) {
-      var u = hmac.convert([...salt, ..._int32BigEndian(block)]).bytes;
-      final output = List<int>.from(u);
-      for (var i = 1; i < iterations; i++) {
-        u = hmac.convert(u).bytes;
-        for (var j = 0; j < output.length; j++) {
-          output[j] ^= u[j];
-        }
-      }
-      result.addAll(output);
-      block++;
-    }
-
-    return result.take(length).toList(growable: false);
-  }
-
-  List<int> _int32BigEndian(int value) => [
-    (value >> 24) & 0xff,
-    (value >> 16) & 0xff,
-    (value >> 8) & 0xff,
-    value & 0xff,
-  ];
-
-  bool _constantTimeEquals(String a, String b) {
-    if (a.length != b.length) return false;
-    var diff = 0;
-    for (var i = 0; i < a.length; i++) {
-      diff |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
-    }
-    return diff == 0;
-  }
-
-  String _randomSalt() => base64UrlEncode(
-    List<int>.generate(24, (_) => Random.secure().nextInt(256)),
-  );
 }

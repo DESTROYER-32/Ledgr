@@ -584,120 +584,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.invalidate(themeConfigProvider);
   }
 
-  Future<String?> _askForPin({required String title}) async {
-    final first = TextEditingController();
-    final second = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: first,
-                autofocus: true,
-                obscureText: true,
-                keyboardType: TextInputType.number,
-                maxLength: 12,
-                decoration: const InputDecoration(
-                  labelText: 'PIN',
-                  counterText: '',
-                ),
-                validator: (value) {
-                  if (value == null || value.length < 4) {
-                    return 'Use at least 4 digits';
-                  }
-                  if (int.tryParse(value) == null) return 'Digits only';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: second,
-                obscureText: true,
-                keyboardType: TextInputType.number,
-                maxLength: 12,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm PIN',
-                  counterText: '',
-                ),
-                validator: (value) =>
-                    value == first.text ? null : 'PINs do not match',
-              ),
-            ],
+  Future<void> _toggleAppLock(bool enable) async {
+    final lockState = ref.read(appLockStateProvider);
+    if (enable && !lockState.isDeviceSupported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Device lock is not set up on this device. Please set up fingerprint, PIN, or pattern lock in your device settings first.',
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                Navigator.pop(context, first.text);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    first.dispose();
-    second.dispose();
-    return result;
-  }
+      );
+      return;
+    }
 
-  Future<void> _setPin({bool changing = false}) async {
-    final pin = await _askForPin(title: changing ? 'Change PIN' : 'Create PIN');
-    if (pin == null) return;
-    setState(() => _securityBusy = true);
-    await ref.read(appLockControllerProvider).setPin(pin);
-    if (mounted) setState(() => _securityBusy = false);
-  }
-
-  Future<void> _disableLock() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Disable app lock?'),
-        content: const Text('Ledgr will open without a PIN or biometrics.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+    if (!enable) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Disable App Lock?'),
+          content: const Text(
+            'Ledgr will open without biometric or device authentication.',
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Disable'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    setState(() => _securityBusy = true);
-    await ref.read(appLockControllerProvider).disable();
-    if (mounted) setState(() => _securityBusy = false);
-  }
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Disable'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
 
-  Future<void> _toggleBiometrics(bool enabled) async {
     setState(() => _securityBusy = true);
-    final ok = await ref
-        .read(appLockControllerProvider)
-        .setBiometricsEnabled(enabled);
-    if (mounted) {
-      setState(() => _securityBusy = false);
-      if (!ok) {
+    try {
+      final success =
+          await ref.read(appLockControllerProvider).setEnabled(enable);
+      if (!mounted) return;
+      if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Biometric unlock is not available or was cancelled'),
+          SnackBar(
+            content: Text(
+              enable
+                  ? 'Could not enable App Lock. Authentication was cancelled or failed.'
+                  : 'Authentication was cancelled. App Lock remains enabled.',
+            ),
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _securityBusy = false);
     }
   }
 
@@ -763,28 +703,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _section(theme, 'Privacy & Security', [
             SwitchListTile(
               secondary: Icon(
-                Icons.lock_outline,
+                Icons.fingerprint,
                 color: lockState.isEnabled ? theme.colorScheme.primary : null,
               ),
-              title: const Text('PIN Lock'),
+              title: const Text('App Lock'),
               subtitle: Text(
-                lockState.isEnabled
-                    ? 'Require a PIN when opening Ledgr'
-                    : 'Protect Ledgr with a PIN',
+                !lockState.isDeviceSupported
+                    ? 'Device lock not configured or supported'
+                    : lockState.isEnabled
+                        ? 'Protected with ${lockState.lockTypeDescription}'
+                        : 'Require fingerprint or device lock to open Ledgr',
               ),
               value: lockState.isEnabled,
-              onChanged: _securityBusy
-                  ? null
-                  : (value) => value ? _setPin() : _disableLock(),
+              onChanged: _securityBusy ? null : (value) => _toggleAppLock(value),
             ),
             if (lockState.isEnabled) ...[
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.pin_outlined),
-                title: const Text('Change PIN'),
-                subtitle: const Text('Update your Ledgr unlock PIN'),
-                onTap: _securityBusy ? null : () => _setPin(changing: true),
-              ),
               const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -798,25 +731,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     if (!_securityBusy) _setLockTimeout(value);
                   },
                 ),
-              ),
-              const Divider(height: 1),
-              SwitchListTile(
-                secondary: Icon(
-                  Icons.fingerprint,
-                  color: lockState.biometricsEnabled
-                      ? theme.colorScheme.primary
-                      : null,
-                ),
-                title: const Text('Biometric Unlock'),
-                subtitle: Text(
-                  lockState.biometricsAvailable
-                      ? 'Use fingerprint, face, or device biometrics like Cashew'
-                      : 'No enrolled biometrics found on this device',
-                ),
-                value: lockState.biometricsEnabled,
-                onChanged: _securityBusy || !lockState.biometricsAvailable
-                    ? null
-                    : _toggleBiometrics,
               ),
             ],
           ]),
