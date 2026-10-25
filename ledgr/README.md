@@ -70,6 +70,10 @@ If `android/key.properties` is absent, the Gradle config falls back to debug sig
 
 GitHub Actions validate formatting, generated code, static analysis, tests, and Android release APK generation. Workflow artifacts are uploaded to GitHub Actions. Optional Telegram delivery is only attempted when the required secrets are configured.
 
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](../LICENSE) file for details.
+
 ## Contributing
 
 1. Fork the repository and create a feature branch.

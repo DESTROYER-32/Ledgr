@@ -1,0 +1,8 @@
+Initial release of Ledgr (v1.0.0):
+• Multi-wallet and transaction tracking with category management
+• Budget limits and visual progress tracking
+• Cash flow projections and upcoming bill reminders
+• Investment portfolio and net worth trend analysis
+• Full 15-table local backup and CSV import/export
+• Biometric and PIN app lock
+• AMOLED, dark, and light Material 3 themes
