@@ -33,7 +33,7 @@ final cashFlowProjectionProvider =
       ref.watch(allTransactionsProvider);
       ref.watch(activeRecurringProvider);
       ref.watch(walletBalancesProvider);
-      ref.watch(exchangeRatesProvider);
+      ref.watch(exchangeRatesProvider.select((a) => a.valueOrNull));
 
       return ref
           .watch(cashFlowProjectorProvider)

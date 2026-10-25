@@ -14,6 +14,8 @@ import '../../core/services/backup_service.dart';
 import '../../core/utils/app_logger.dart';
 import '../../core/utils/money_utils.dart';
 import '../../core/widgets/modern_selection_field.dart';
+import '../net_worth/net_worth_providers.dart';
+import '../portfolio/portfolio_providers.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -569,5 +571,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     ref.invalidate(totalBalanceProvider);
     ref.invalidate(walletBalancesProvider);
     ref.invalidate(allObjectivesProvider);
+    ref.invalidate(deleteLogsProvider);
+    ref.invalidate(portfolioHoldingsProvider);
+    ref.invalidate(portfolioSummaryProvider);
+    ref.invalidate(currentNetWorthProvider);
+    ref.invalidate(netWorthHistoryProvider);
+    ref.invalidate(netWorthMonthlyDeltaProvider);
   }
 }

@@ -80,9 +80,28 @@ class ActivityScreen extends ConsumerWidget {
                     icon: const Icon(Icons.restore, color: AppColors.income),
                     tooltip: 'Restore',
                     onPressed: () async {
-                      await ref
-                          .read(deleteLogRepositoryProvider)
-                          .restoreTransaction(log.id);
+                      try {
+                        await ref
+                            .read(deleteLogRepositoryProvider)
+                            .restoreTransaction(log.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Transaction restored'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to restore: $e'),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      }
                     },
                   ),
                 ),

@@ -1,8 +1,11 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
-  plugins:
-    - custom_lint
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
 
 linter:
   rules:
@@ -11,6 +14,3 @@ linter:
     avoid_print: true
     prefer_single_quotes: true
 
-custom_lint:
-  rules:
-    - riverpod_lint.riverpod_avoid_manual_refresh: false

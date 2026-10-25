@@ -19,7 +19,7 @@ final currentNetWorthProvider = FutureProvider<NetWorthSummary>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allObjectivesProvider);
   ref.watch(walletBalancesProvider);
-  ref.watch(exchangeRatesProvider);
+  ref.watch(exchangeRatesProvider.select((a) => a.valueOrNull));
 
   final wallets = await ref.watch(activeWalletsProvider.future);
   final objectives = await ref.watch(allObjectivesProvider.future);

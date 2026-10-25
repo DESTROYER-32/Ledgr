@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,6 +17,7 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
   String? _error;
   bool _verifying = false;
   DateTime? _lockedUntil;
+  Timer? _countdownTimer;
 
   @override
   void initState() {
@@ -27,8 +30,41 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _startCountdownIfNeeded() {
+    _countdownTimer?.cancel();
+    final until = _lockedUntil;
+    if (until == null) return;
+    final remaining = until.difference(DateTime.now()).inSeconds;
+    if (remaining <= 0) {
+      setState(() {
+        _lockedUntil = null;
+        _error = null;
+      });
+      return;
+    }
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      final rem = _lockedUntil?.difference(DateTime.now()).inSeconds ?? 0;
+      if (rem <= 0) {
+        timer.cancel();
+        setState(() {
+          _lockedUntil = null;
+          _error = null;
+        });
+      } else {
+        setState(() {
+          _error = 'Too many attempts. Try again in ${rem + 1}s';
+        });
+      }
+    });
   }
 
   Future<void> _tryBiometrics() async {
@@ -43,6 +79,9 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
     setState(() {
       _lockedUntil = attemptState.lockedUntil;
     });
+    if (_lockedUntil != null) {
+      _startCountdownIfNeeded();
+    }
   }
 
   Future<void> _verify() async {
@@ -53,6 +92,7 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
         _error =
             'Too many attempts. Try again in ${lockedUntil.difference(now).inSeconds + 1}s';
       });
+      _startCountdownIfNeeded();
       return;
     }
     if (_verifying) return;
@@ -65,6 +105,7 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
         .verifyPin(_controller.text);
     if (!mounted) return;
     if (ok) {
+      _countdownTimer?.cancel();
       await ref.read(appLockControllerProvider).clearAttemptState();
       setState(() {
         _verifying = false;
@@ -85,6 +126,9 @@ class _AppLockScreenState extends ConsumerState<AppLockScreen> {
           : 'Too many attempts. Try again in ${until.difference(DateTime.now()).inSeconds + 1}s';
       _controller.clear();
     });
+    if (until != null) {
+      _startCountdownIfNeeded();
+    }
   }
 
   @override

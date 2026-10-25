@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/database/app_database.dart';
+import '../../core/database/repositories/budget_repository.dart';
 import '../../core/database/repositories/transaction_repository.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/app_theme.dart';
@@ -283,27 +284,39 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   Future<int> _budgetTotal(
-    TransactionRepository repo,
+    BudgetRepository budgetRepo,
+    TransactionRepository txRepo,
     Budget budget,
     bool isGoal,
   ) async {
     if (budget.specificMode) {
-      return repo.totalByBudget(
+      return txRepo.totalByBudget(
         budgetId: budget.id,
         start: budget.periodStart,
         end: budget.periodEnd,
         type: isGoal ? 'income' : 'expense',
       );
     }
-    return isGoal
-        ? repo.totalIncome(budget.periodStart, budget.periodEnd)
-        : repo.totalExpenses(budget.periodStart, budget.periodEnd);
+    final limits = await budgetRepo.watchLimits(budget.id).first;
+    final spentByCategory = await budgetRepo.spentForBudget(
+      budget.id,
+      budget.periodStart,
+      budget.periodEnd,
+    );
+    if (limits.isNotEmpty) {
+      final categoryIds = limits.map((l) => l.categoryId).toSet();
+      return spentByCategory.entries
+          .where((e) => categoryIds.contains(e.key))
+          .fold<int>(0, (s, e) => s + e.value);
+    }
+    return spentByCategory.values.fold<int>(0, (s, v) => s + v);
   }
 
   Widget _buildProgressBar(Budget budget, bool isGoal, ColorScheme cs) {
     final repo = ref.read(transactionRepositoryProvider);
+    final budgetRepo = ref.read(budgetRepositoryProvider);
     return FutureBuilder<int>(
-      future: _budgetTotal(repo, budget, isGoal),
+      future: _budgetTotal(budgetRepo, repo, budget, isGoal),
       builder: (context, snapshot) {
         if (!snapshot.hasData || budget.plannedAmountMinor == 0) {
           return const SizedBox(height: 4);

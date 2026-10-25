@@ -268,7 +268,7 @@ final themeConfigProvider = FutureProvider<ThemeConfig>((ref) async {
 final totalBalanceProvider = FutureProvider<int>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allTransactionsProvider);
-  ref.watch(exchangeRatesProvider);
+  ref.watch(exchangeRatesProvider.select((a) => a.valueOrNull));
   final repo = ref.watch(walletRepositoryProvider);
   final displayCurrency = await ref.watch(displayCurrencyProvider.future);
   return repo.totalBalance(currencyCode: displayCurrency);
@@ -277,7 +277,7 @@ final totalBalanceProvider = FutureProvider<int>((ref) async {
 final walletBalancesProvider = FutureProvider<Map<int, int>>((ref) async {
   ref.watch(activeWalletsProvider);
   ref.watch(allTransactionsProvider);
-  ref.watch(exchangeRatesProvider);
+  ref.watch(exchangeRatesProvider.select((a) => a.valueOrNull));
   final repo = ref.watch(walletRepositoryProvider);
   return walletBalancesByWalletCurrency(repo);
 });

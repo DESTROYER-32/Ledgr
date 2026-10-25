@@ -34,7 +34,7 @@ final holdingsByWalletProvider =
 
 final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
   final holdings = await ref.watch(portfolioHoldingsProvider.future);
-  ref.watch(exchangeRatesProvider);
+  ref.watch(exchangeRatesProvider.select((a) => a.valueOrNull));
   final displayCurrency = await ref.watch(displayCurrencyProvider.future);
 
   var totalValue = 0;
