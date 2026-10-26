@@ -62,13 +62,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
-            cat <<EOF > android/key.properties
-            storePassword=$KEYSTORE_PASSWORD
-            keyPassword=$KEY_PASSWORD
-            keyAlias=$KEY_ALIAS
-            storeFile=release.jks
-          EOF
+            python3 -c "import base64, os; open('android/app/release.jks', 'wb').write(base64.b64decode(os.environ['KEYSTORE_BASE64']))"
+            printf "storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=release.jks\n" \
+              "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
             echo "Release keystore configured successfully."
           else
             echo "KEYSTORE_BASE64 secret not found; building with debug signing fallback."
