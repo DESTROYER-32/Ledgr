@@ -10,3 +10,5 @@ Key features:
 • App security: Protect your financial records with biometric authentication (fingerprint / Face Unlock) or secure PBKDF2-hashed PIN.
 • Local backups & CSV: Export and restore full encrypted backups, or import and export transactions via CSV.
 • Clean Material 3 design: Supports light, dark, and true AMOLED dark modes with customizable theme accents.
+
+Note on permissions: INTERNET permission is used solely for optional live fiat currency exchange rate updates. All personal accounting and financial records remain 100% offline on your device.
