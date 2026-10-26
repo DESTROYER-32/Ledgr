@@ -2,6 +2,7 @@
 
 [![Build APK](https://github.com/DESTROYER-32/Ledgr/actions/workflows/build.yml/badge.svg)](https://github.com/DESTROYER-32/Ledgr/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Development-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/DESTROYER32)
 
 Ledgr is a privacy-first, local-first personal budget and finance tracking app built with Flutter. All financial data is kept securely on your device in a local SQLite database via Drift. No cloud account required, no ads, and zero trackers.
 
@@ -44,6 +45,14 @@ flutter run
 ```
 
 See [ledgr/README.md](ledgr/README.md) for additional development, release signing, and CI details.
+
+---
+
+## Support & Donate
+
+If you find Ledgr helpful and want to support ongoing development, consider buying a coffee:
+
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20on%20Ko--fi-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/DESTROYER32)
 
 ---
 
