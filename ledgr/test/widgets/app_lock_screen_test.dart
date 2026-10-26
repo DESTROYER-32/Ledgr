@@ -99,33 +99,34 @@ void main() {
     );
   });
 
-  testWidgets('shows disable emergency button when device lock is not supported', (
-    tester,
-  ) async {
-    when(() => mockAuth.isDeviceSupported()).thenAnswer((_) async => false);
-    when(() => mockAuth.canCheckBiometrics).thenAnswer((_) async => false);
+  testWidgets(
+    'shows disable emergency button when device lock is not supported',
+    (tester) async {
+      when(() => mockAuth.isDeviceSupported()).thenAnswer((_) async => false);
+      when(() => mockAuth.canCheckBiometrics).thenAnswer((_) async => false);
 
-    await settings.set('app_lock_enabled', 'true');
-    final controller = AppLockController(settings, localAuth: mockAuth);
-    await controller.refresh();
-    controller.lock();
+      await settings.set('app_lock_enabled', 'true');
+      final controller = AppLockController(settings, localAuth: mockAuth);
+      await controller.refresh();
+      controller.lock();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appLockControllerProvider.overrideWith((ref) => controller),
-        ],
-        child: const MaterialApp(home: AppLockScreen()),
-      ),
-    );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appLockControllerProvider.overrideWith((ref) => controller),
+          ],
+          child: const MaterialApp(home: AppLockScreen()),
+        ),
+      );
 
-    await tester.pump();
-    await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Disable App Lock'), findsOneWidget);
-    expect(
-      find.text('Device lock is not detected on this device'),
-      findsOneWidget,
-    );
-  });
+      expect(find.text('Disable App Lock'), findsOneWidget);
+      expect(
+        find.text('Device lock is not detected on this device'),
+        findsOneWidget,
+      );
+    },
+  );
 }

@@ -622,8 +622,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _securityBusy = true);
     try {
-      final success =
-          await ref.read(appLockControllerProvider).setEnabled(enable);
+      final success = await ref
+          .read(appLockControllerProvider)
+          .setEnabled(enable);
       if (!mounted) return;
       if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -711,11 +712,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 !lockState.isDeviceSupported
                     ? 'Device lock not configured or supported'
                     : lockState.isEnabled
-                        ? 'Protected with ${lockState.lockTypeDescription}'
-                        : 'Require fingerprint or device lock to open Ledgr',
+                    ? 'Protected with ${lockState.lockTypeDescription}'
+                    : 'Require fingerprint or device lock to open Ledgr',
               ),
               value: lockState.isEnabled,
-              onChanged: _securityBusy ? null : (value) => _toggleAppLock(value),
+              onChanged: _securityBusy
+                  ? null
+                  : (value) => _toggleAppLock(value),
             ),
             if (lockState.isEnabled) ...[
               const Divider(height: 1),
