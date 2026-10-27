@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,7 +11,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test(
-    'BackupService includes all 15 tables including portfolio and net worth',
+    'BackupService includes all 13 tables including net worth',
     () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
@@ -20,7 +19,7 @@ void main() {
       final settingsRepo = SettingsRepository(db);
       final service = BackupService(db, settingsRepo);
 
-      // Verify all 15 database tables are covered in BackupService.tables
+      // Verify all 13 database tables are covered in BackupService.tables
       expect(
         BackupService.tables,
         containsAll([
@@ -37,14 +36,12 @@ void main() {
           'associated_titles',
           'delete_logs',
           'net_worth_snapshots',
-          'investment_holdings',
-          'portfolio_transactions',
         ]),
       );
-      expect(BackupService.tables.length, 15);
+      expect(BackupService.tables.length, 13);
 
       // Insert wallet
-      final walletId = await db
+      await db
           .into(db.wallets)
           .insert(
             WalletsCompanion.insert(
@@ -52,35 +49,6 @@ void main() {
               type: 'investment',
               currencyCode: 'USD',
               initialBalanceMinor: 500000,
-            ),
-          );
-
-      // Insert holding
-      final holdingId = await db
-          .into(db.investmentHoldings)
-          .insert(
-            InvestmentHoldingsCompanion.insert(
-              walletId: walletId,
-              tickerSymbol: 'AAPL',
-              assetName: 'Apple Inc.',
-              assetType: 'stock',
-              shares: 10.0,
-              avgCostBasisMinor: 15000,
-              currencyCode: 'USD',
-              currentPriceMinor: const Value(18000),
-            ),
-          );
-
-      // Insert trade
-      await db
-          .into(db.portfolioTransactions)
-          .insert(
-            PortfolioTransactionsCompanion.insert(
-              holdingId: holdingId,
-              date: DateTime(2024, 1, 15),
-              type: 'buy',
-              shares: 10.0,
-              pricePerShareMinor: 15000,
             ),
           );
 
@@ -100,8 +68,7 @@ void main() {
       final backupData = await service.buildBackupData();
       final tablesData = backupData['tables'] as Map<String, dynamic>;
 
-      expect(tablesData['investment_holdings'], hasLength(1));
-      expect(tablesData['portfolio_transactions'], hasLength(1));
+      expect(tablesData['wallets'], hasLength(1));
       expect(tablesData['net_worth_snapshots'], hasLength(1));
 
       // Test write and restore into fresh DB
@@ -122,18 +89,10 @@ void main() {
 
       await targetService.restoreFromFile(backupFile);
 
-      final restoredHoldings = await targetDb
-          .select(targetDb.investmentHoldings)
-          .get();
-      expect(restoredHoldings, hasLength(1));
-      expect(restoredHoldings.first.tickerSymbol, 'AAPL');
-      expect(restoredHoldings.first.shares, 10.0);
-
-      final restoredTrades = await targetDb
-          .select(targetDb.portfolioTransactions)
-          .get();
-      expect(restoredTrades, hasLength(1));
-      expect(restoredTrades.first.type, 'buy');
+      final restoredWallets = await targetDb.select(targetDb.wallets).get();
+      expect(restoredWallets, hasLength(1));
+      expect(restoredWallets.first.name, 'Investment Wallet');
+      expect(restoredWallets.first.type, 'investment');
 
       final restoredSnapshots = await targetDb
           .select(targetDb.netWorthSnapshots)

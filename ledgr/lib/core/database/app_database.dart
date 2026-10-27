@@ -24,8 +24,6 @@ part 'app_database.g.dart';
     AssociatedTitles,
     DeleteLogs,
     NetWorthSnapshots,
-    InvestmentHoldings,
-    PortfolioTransactions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -34,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration {
@@ -43,47 +41,32 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
         await _createIndexes();
       },
+      // Development safety valve: if an existing test database has a pre-release version,
+      // recreate clean tables rather than carrying legacy migration code into production.
       onUpgrade: (m, from, to) async {
-        // Pre-release safety valve: a short-lived build used schemaVersion 2.
-        // The app has not shipped, so downgrade by recreating the local schema
-        // instead of carrying a permanent migration path for test databases.
-        if (from > to) {
-          await customStatement('PRAGMA foreign_keys = OFF;');
-          for (final table in const [
-            'delete_logs',
-            'net_worth_snapshots',
-            'portfolio_transactions',
-            'investment_holdings',
-            'associated_titles',
-            'recurring_transactions',
-            'budget_wallets',
-            'budget_category_limits',
-            'transaction_budgets',
-            'transactions',
-            'objectives',
-            'budgets',
-            'settings',
-            'categories',
-            'wallets',
-          ]) {
-            await customStatement('DROP TABLE IF EXISTS $table;');
-          }
-          await m.createAll();
-          await _createIndexes();
-          await customStatement('PRAGMA foreign_keys = ON;');
-          return;
+        await customStatement('PRAGMA foreign_keys = OFF;');
+        for (final table in const [
+          'delete_logs',
+          'net_worth_snapshots',
+          'portfolio_transactions',
+          'investment_holdings',
+          'associated_titles',
+          'recurring_transactions',
+          'budget_wallets',
+          'budget_category_limits',
+          'transaction_budgets',
+          'transactions',
+          'objectives',
+          'budgets',
+          'settings',
+          'categories',
+          'wallets',
+        ]) {
+          await customStatement('DROP TABLE IF EXISTS $table;');
         }
-
-        if (from < 2) {
-          await m.createTable(netWorthSnapshots);
-        }
-
-        if (from < 3) {
-          await m.createTable(investmentHoldings);
-          await m.createTable(portfolioTransactions);
-        }
-
+        await m.createAll();
         await _createIndexes();
+        await customStatement('PRAGMA foreign_keys = ON;');
       },
     );
   }
@@ -125,12 +108,6 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_net_worth_snapshots_date ON net_worth_snapshots(date)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_investment_holdings_wallet_id ON investment_holdings(wallet_id)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_portfolio_transactions_holding_id ON portfolio_transactions(holding_id)',
     );
   }
 }

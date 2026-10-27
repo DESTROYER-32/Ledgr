@@ -13,10 +13,9 @@ Ledgr is a privacy-first, local-first personal budget and finance tracking app b
 - **Multi-wallet & accounts**: Cash, checking, savings, credit cards, loans, and investment accounts in one place with multi-currency support.
 - **Smart budgets**: Monthly, periodic, and category-specific spending limits with real-time indicators.
 - **Cash flow forecasting**: Project future wallet balances 30, 60, or 90 days ahead based on upcoming bills and recurring transactions.
-- **Investment portfolio**: Stock, ETF, and crypto tracking with cost basis, current valuations, and asset allocation breakdown.
 - **Net worth tracking**: Monitor assets minus liabilities over time with historical snapshots and trends.
 - **App security**: Protect financial data with biometric authentication (fingerprint / Face Unlock) or secure PBKDF2 PIN.
-- **Full local backup & CSV**: Encrypted 15-table JSON backup export/restore and CSV transaction import/export.
+- **Full local backup & CSV**: Full local JSON backup export/restore and CSV transaction import/export.
 - **Clean Material 3 UI**: Light, dark, and true AMOLED dark themes with customizable accent colors.
 
 ---

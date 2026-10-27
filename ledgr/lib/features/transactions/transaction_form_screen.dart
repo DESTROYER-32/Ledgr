@@ -719,6 +719,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   IconData _walletIcon(String type) => switch (type) {
     'savings' => Icons.savings_outlined,
+    'investment' => Icons.trending_up,
     'cash' => Icons.payments_outlined,
     'credit_card' => Icons.credit_card_outlined,
     'loan' => Icons.account_balance_wallet_outlined,
@@ -728,6 +729,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String _walletTypeLabel(String type) => switch (type) {
     'credit_card' => 'Credit card',
     'loan' => 'Loan account',
+    'investment' => 'Investment account',
     _ => '${type[0].toUpperCase()}${type.substring(1)} account',
   };
 

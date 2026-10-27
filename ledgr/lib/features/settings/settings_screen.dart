@@ -320,6 +320,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   IconData _walletIcon(String type) => switch (type) {
     'savings' => Icons.savings_outlined,
+    'investment' => Icons.trending_up,
     'cash' => Icons.payments_outlined,
     'credit_card' => Icons.credit_card_outlined,
     'loan' => Icons.account_balance_wallet_outlined,

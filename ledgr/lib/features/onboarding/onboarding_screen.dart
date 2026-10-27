@@ -41,6 +41,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _walletTypes = const [
     ('checking', 'Checking', Icons.account_balance),
     ('savings', 'Savings', Icons.savings),
+    ('investment', 'Investment', Icons.trending_up),
     ('cash', 'Cash', Icons.payments),
     ('credit_card', 'Credit Card', Icons.credit_card),
     ('loan', 'Loan', Icons.account_balance_wallet),

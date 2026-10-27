@@ -5,7 +5,6 @@ Key features:
 • Multi-wallet tracking: Manage cash, checking, savings, credit cards, loans, and investment accounts in one place with multi-currency support and live exchange rates.
 • Smart budgeting: Set monthly, periodic, or category-specific spending limits and monitor progress with real-time indicators.
 • Cash flow forecasting: Project future wallet balances 30, 60, or 90 days ahead based on scheduled bills, recurring subscriptions, and income.
-• Investment portfolio: Track stocks, ETFs, and crypto holdings with cost basis, current valuations, and asset allocation breakdown.
 • Net worth tracking: Monitor assets minus liabilities over time with historical snapshots and trends.
 • App security: Protect your financial records with biometric authentication (fingerprint / Face Unlock) or secure PBKDF2-hashed PIN.
 • Local backups & CSV: Export and restore full encrypted backups, or import and export transactions via CSV.

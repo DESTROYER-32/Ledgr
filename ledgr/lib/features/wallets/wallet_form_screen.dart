@@ -29,6 +29,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
   final _types = [
     ('checking', 'Checking', Icons.account_balance),
     ('savings', 'Savings', Icons.savings),
+    ('investment', 'Investment', Icons.trending_up),
     ('cash', 'Cash', Icons.money),
     ('credit_card', 'Credit Card', Icons.credit_card),
     ('loan', 'Loan', Icons.account_balance_wallet),

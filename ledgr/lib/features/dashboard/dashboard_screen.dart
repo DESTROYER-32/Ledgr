@@ -15,7 +15,6 @@ import '../../core/widgets/stat_tile.dart';
 import '../../core/widgets/transaction_tile.dart';
 import '../cash_flow/widgets/cash_flow_mini_card.dart';
 import '../net_worth/widgets/net_worth_card.dart';
-import '../portfolio/widgets/portfolio_mini_card.dart';
 
 final _dashboardObjectiveTotalProvider = FutureProvider.autoDispose
     .family<int, int>((ref, objectiveId) {
@@ -143,8 +142,6 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             const CashFlowMiniCard(),
-            const SizedBox(height: 12),
-            const PortfolioMiniCard(),
             const SizedBox(height: 24),
             _buildQuickActions(context, cs),
             const SizedBox(height: 24),

@@ -6,7 +6,7 @@ Ledgr is designed as a local-first personal finance app.
 
 ## Data stored by the app
 
-Ledgr may store the financial information you enter, including wallets, transactions, categories, budgets, recurring payments, objectives, portfolio holdings, net-worth snapshots, settings, and backup/export preferences.
+Ledgr may store the financial information you enter, including wallets, transactions, categories, budgets, recurring payments, objectives, net-worth snapshots, settings, and backup/export preferences.
 
 This data is stored locally on your device unless you choose to export, share, back up, or import files using platform-provided file and sharing tools.
 

@@ -16,10 +16,9 @@ dependencies:
 
   # State management
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # Database
-  drift: ^2.25.1
+  drift: ^2.31.0
   sqlite3_flutter_libs: ^0.5.28
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -60,11 +59,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # Code generation
-  drift_dev: ^2.25.1
+  drift_dev: ^2.31.0
   build_runner: ^2.4.15
-  riverpod_generator: ^2.6.3
-  riverpod_lint: ^2.6.5
-  custom_lint: ^0.7.5
 
   # Testing
   sqlite3: ^2.7.5

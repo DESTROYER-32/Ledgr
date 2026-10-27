@@ -1,13 +1,13 @@
 # Ledgr
 
-Ledgr is a privacy-first personal budget and finance tracking app built with Flutter. It helps track wallets, transactions, budgets, recurring payments, objectives, portfolio holdings, net worth, analytics, backups, and security settings from one mobile app.
+Ledgr is a privacy-first personal budget and finance tracking app built with Flutter. It helps track wallets, transactions, budgets, recurring payments, objectives, net worth, analytics, backups, and security settings from one mobile app.
 
 ## Features
 
 - Wallet and transaction tracking with category management
 - Budget monitoring and spending analytics
 - Recurring transaction processing and cash-flow projections
-- Objectives, net-worth snapshots, credit/debt, and portfolio tracking
+- Objectives, net-worth snapshots, and credit/debt tracking
 - CSV import/export and local backup tools
 - App lock support with local authentication
 - Light, dark, and AMOLED themes

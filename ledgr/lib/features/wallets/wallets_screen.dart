@@ -301,6 +301,8 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
         return AppColors.transfer;
       case 'savings':
         return AppColors.income;
+      case 'investment':
+        return const Color(0xFF3F51B5);
       case 'cash':
         return AppColors.income;
       case 'credit_card':
@@ -318,6 +320,8 @@ class _WalletsScreenState extends ConsumerState<WalletsScreen> {
         return Icons.account_balance;
       case 'savings':
         return Icons.savings;
+      case 'investment':
+        return Icons.trending_up;
       case 'cash':
         return Icons.money;
       case 'credit_card':

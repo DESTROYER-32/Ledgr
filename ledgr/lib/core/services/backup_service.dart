@@ -91,8 +91,6 @@ class BackupService {
     'associated_titles',
     'delete_logs',
     'net_worth_snapshots',
-    'investment_holdings',
-    'portfolio_transactions',
   ];
 
   static const dateColumnsByTable = <String, Set<String>>{
@@ -110,8 +108,6 @@ class BackupService {
     'associated_titles': {'created_at'},
     'delete_logs': {'deleted_at'},
     'net_worth_snapshots': {'date'},
-    'investment_holdings': {'last_price_update', 'created_at', 'updated_at'},
-    'portfolio_transactions': {'date'},
   };
 
   final AppDatabase _db;
