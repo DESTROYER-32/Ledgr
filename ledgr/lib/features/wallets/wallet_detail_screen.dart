@@ -90,7 +90,19 @@ class WalletDetailScreen extends ConsumerWidget {
                 );
                 if (confirm == true) {
                   await repo.delete(wallet.id);
-                  if (context.mounted) context.pop();
+                  final updated = await repo.getById(wallet.id);
+                  if (context.mounted) {
+                    if (updated?.archived == true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Account contains transactions and was archived to preserve your history.',
+                          ),
+                        ),
+                      );
+                    }
+                    context.pop();
+                  }
                 }
               }
             },

@@ -12,8 +12,11 @@ class RecurringService {
 
   RecurringService(this._db, this._recurringRepo, this._transactionRepo);
 
-  Future<int> processDueRecurrings() async {
-    final now = DateTime.now();
+  Future<int> processDueRecurrings({
+    DateTime? asOf,
+    int maxCatchUpPerRule = 50,
+  }) async {
+    final now = asOf ?? DateTime.now();
     final all = await _recurringRepo.getActive();
     final due = all
         .where((r) => r.nextDueDate != null && !r.nextDueDate!.isAfter(now))
@@ -23,38 +26,53 @@ class RecurringService {
 
     var count = 0;
     for (final r in due) {
-      await _db.transaction(() async {
-        await _transactionRepo.insert(
-          TransactionsCompanion(
-            type: Value(r.transactionType),
-            specialType: Value(r.specialType),
-            amountMinor: Value(r.amountMinor),
-            currencyCode: Value(r.currencyCode),
-            date: Value(r.nextDueDate!),
-            walletId: Value(r.walletId),
-            transferWalletId: Value(r.transferWalletId),
-            categoryId: Value(r.categoryId),
-            title: Value(r.title),
-            note: Value(r.note),
-          ),
-        );
+      var currentDueDate = r.nextDueDate!;
+      var iterations = 0;
 
-        final nextDate = _nextDate(r.nextDueDate!, r.scheduleRule);
-        if (nextDate != null &&
-            (r.endDate == null || !nextDate.isAfter(r.endDate!))) {
-          await _recurringRepo.update(
-            r.id,
-            RecurringTransactionsCompanion(nextDueDate: Value(nextDate)),
+      while (!currentDueDate.isAfter(now) && iterations < maxCatchUpPerRule) {
+        iterations++;
+        final dateToInsert = currentDueDate;
+        final nextDate = _nextDate(currentDueDate, r.scheduleRule);
+
+        await _db.transaction(() async {
+          await _transactionRepo.insert(
+            TransactionsCompanion(
+              type: Value(r.transactionType),
+              specialType: Value(r.specialType),
+              amountMinor: Value(r.amountMinor),
+              currencyCode: Value(r.currencyCode),
+              date: Value(dateToInsert),
+              walletId: Value(r.walletId),
+              transferWalletId: Value(r.transferWalletId),
+              categoryId: Value(r.categoryId),
+              title: Value(r.title),
+              note: Value(r.note),
+            ),
           );
-        } else {
-          await _recurringRepo.update(
-            r.id,
-            const RecurringTransactionsCompanion(active: Value(false)),
-          );
+
+          if (nextDate != null &&
+              (r.endDate == null || !nextDate.isAfter(r.endDate!))) {
+            await _recurringRepo.update(
+              r.id,
+              RecurringTransactionsCompanion(nextDueDate: Value(nextDate)),
+            );
+          } else {
+            await _recurringRepo.update(
+              r.id,
+              const RecurringTransactionsCompanion(active: Value(false)),
+            );
+          }
+        });
+
+        count++;
+
+        if (nextDate == null ||
+            (r.endDate != null && nextDate.isAfter(r.endDate!)) ||
+            !nextDate.isAfter(currentDueDate)) {
+          break;
         }
-      });
-
-      count++;
+        currentDueDate = nextDate;
+      }
     }
 
     return count;

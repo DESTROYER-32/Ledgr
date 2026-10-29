@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../app_database.dart';
 import '../../services/exchange_rate_service.dart';
+import '../../utils/app_logger.dart';
 
 class WalletRepository {
   final AppDatabase _db;
@@ -113,11 +114,26 @@ class WalletRepository {
     final balances = await balancesForWallets(wallets);
     var total = 0;
     for (final wallet in wallets) {
-      total += await _exchangeRates.convert(
-        balances[wallet.id] ?? wallet.initialBalanceMinor,
-        wallet.currencyCode,
-        currencyCode,
-      );
+      final balance = balances[wallet.id] ?? wallet.initialBalanceMinor;
+      if (wallet.currencyCode.toLowerCase() == currencyCode.toLowerCase()) {
+        total += balance;
+      } else {
+        try {
+          total += await _exchangeRates.convert(
+            balance,
+            wallet.currencyCode,
+            currencyCode,
+          );
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Failed to convert wallet total balance offline: $error',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          // Graceful offline fallback: include balance directly so total is never blank or crashed
+          total += balance;
+        }
+      }
     }
     return total;
   }
@@ -145,23 +161,41 @@ class WalletRepository {
       final sourceWallet = walletById[t.walletId];
       if ((t.type == 'expense' || t.type == 'transfer') &&
           sourceWallet != null) {
-        balances[t.walletId] =
-            balances[t.walletId]! -
-            await _exchangeRates.convert(
+        int converted;
+        if (t.currencyCode.toLowerCase() ==
+            sourceWallet.currencyCode.toLowerCase()) {
+          converted = amount;
+        } else {
+          try {
+            converted = await _exchangeRates.convert(
               amount,
               t.currencyCode,
               sourceWallet.currencyCode,
               onDate: t.date,
             );
+          } catch (_) {
+            converted = amount;
+          }
+        }
+        balances[t.walletId] = balances[t.walletId]! - converted;
       } else if (t.type == 'income' && sourceWallet != null) {
-        balances[t.walletId] =
-            balances[t.walletId]! +
-            await _exchangeRates.convert(
+        int converted;
+        if (t.currencyCode.toLowerCase() ==
+            sourceWallet.currencyCode.toLowerCase()) {
+          converted = amount;
+        } else {
+          try {
+            converted = await _exchangeRates.convert(
               amount,
               t.currencyCode,
               sourceWallet.currencyCode,
               onDate: t.date,
             );
+          } catch (_) {
+            converted = amount;
+          }
+        }
+        balances[t.walletId] = balances[t.walletId]! + converted;
       }
 
       final destinationWalletId = t.transferWalletId;
@@ -171,14 +205,24 @@ class WalletRepository {
       if (t.type == 'transfer' &&
           destinationWalletId != null &&
           destinationWallet != null) {
-        balances[destinationWalletId] =
-            balances[destinationWalletId]! +
-            await _exchangeRates.convert(
+        int converted;
+        if (t.currencyCode.toLowerCase() ==
+            destinationWallet.currencyCode.toLowerCase()) {
+          converted = amount;
+        } else {
+          try {
+            converted = await _exchangeRates.convert(
               amount,
               t.currencyCode,
               destinationWallet.currencyCode,
               onDate: t.date,
             );
+          } catch (_) {
+            converted = amount;
+          }
+        }
+        balances[destinationWalletId] =
+            balances[destinationWalletId]! + converted;
       }
     }
 
@@ -204,38 +248,76 @@ class WalletRepository {
     for (final t in txns) {
       final int amount = t.amountMinor;
       if (t.type == 'expense' && t.walletId == walletId) {
-        final converted = await _exchangeRates.convert(
-          amount,
-          t.currencyCode,
-          wallet.currencyCode,
-          onDate: t.date,
-        );
+        int converted;
+        if (t.currencyCode.toLowerCase() == wallet.currencyCode.toLowerCase()) {
+          converted = amount;
+        } else {
+          try {
+            converted = await _exchangeRates.convert(
+              amount,
+              t.currencyCode,
+              wallet.currencyCode,
+              onDate: t.date,
+            );
+          } catch (_) {
+            converted = amount;
+          }
+        }
         balance -= converted;
       } else if (t.type == 'income' && t.walletId == walletId) {
-        final converted = await _exchangeRates.convert(
-          amount,
-          t.currencyCode,
-          wallet.currencyCode,
-          onDate: t.date,
-        );
+        int converted;
+        if (t.currencyCode.toLowerCase() == wallet.currencyCode.toLowerCase()) {
+          converted = amount;
+        } else {
+          try {
+            converted = await _exchangeRates.convert(
+              amount,
+              t.currencyCode,
+              wallet.currencyCode,
+              onDate: t.date,
+            );
+          } catch (_) {
+            converted = amount;
+          }
+        }
         balance += converted;
       } else if (t.type == 'transfer') {
         if (t.walletId == walletId) {
-          final converted = await _exchangeRates.convert(
-            amount,
-            t.currencyCode,
-            wallet.currencyCode,
-            onDate: t.date,
-          );
+          int converted;
+          if (t.currencyCode.toLowerCase() ==
+              wallet.currencyCode.toLowerCase()) {
+            converted = amount;
+          } else {
+            try {
+              converted = await _exchangeRates.convert(
+                amount,
+                t.currencyCode,
+                wallet.currencyCode,
+                onDate: t.date,
+              );
+            } catch (_) {
+              converted = amount;
+            }
+          }
           balance -= converted;
         }
         if (t.transferWalletId == walletId) {
-          final converted = await _exchangeRates.convert(
-            amount,
-            t.currencyCode,
-            wallet.currencyCode,
-            onDate: t.date,
-          );
+          int converted;
+          if (t.currencyCode.toLowerCase() ==
+              wallet.currencyCode.toLowerCase()) {
+            converted = amount;
+          } else {
+            try {
+              converted = await _exchangeRates.convert(
+                amount,
+                t.currencyCode,
+                wallet.currencyCode,
+                onDate: t.date,
+              );
+            } catch (_) {
+              converted = amount;
+            }
+          }
           balance += converted;
         }
       }

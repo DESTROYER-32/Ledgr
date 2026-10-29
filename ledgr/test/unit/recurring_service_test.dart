@@ -56,7 +56,9 @@ void main() {
         ),
       );
 
-      final processed = await service.processDueRecurrings();
+      final processed = await service.processDueRecurrings(
+        asOf: DateTime(2024, 1, 15),
+      );
       final transactions = await transactionRepo.search();
 
       expect(processed, 1);
@@ -64,6 +66,56 @@ void main() {
       expect(transactions.single.currencyCode, 'EUR');
       expect(transactions.single.specialType, 'scheduled');
       expect(transactions.single.transferWalletId, transferWalletId);
+    },
+  );
+
+  test(
+    'processDueRecurrings catches up multiple missed periods during offline absence',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final settingsRepo = SettingsRepository(db);
+      final exchangeRates = ExchangeRateService(settingsRepo);
+      final walletRepo = WalletRepository(db, exchangeRates);
+      final recurringRepo = RecurringRepository(db);
+      final transactionRepo = TransactionRepository(db);
+      final service = RecurringService(db, recurringRepo, transactionRepo);
+
+      final walletId = await walletRepo.insert(
+        WalletsCompanion.insert(
+          name: 'Main Checking',
+          type: 'checking',
+          currencyCode: 'USD',
+          initialBalanceMinor: 0,
+        ),
+      );
+
+      await recurringRepo.insert(
+        RecurringTransactionsCompanion.insert(
+          transactionType: 'expense',
+          specialType: const Value('scheduled'),
+          amountMinor: 1500,
+          currencyCode: const Value('USD'),
+          walletId: walletId,
+          title: const Value('Streaming Subscription'),
+          scheduleRule: 'monthly',
+          startDate: DateTime(2024, 1, 1),
+          nextDueDate: Value(DateTime(2024, 1, 1)),
+        ),
+      );
+
+      // User opens app after 3 months (March 15, 2024)
+      final processed = await service.processDueRecurrings(
+        asOf: DateTime(2024, 3, 15),
+      );
+      final transactions = await transactionRepo.search();
+
+      expect(processed, 3);
+      expect(transactions, hasLength(3));
+      final updatedRecurring = await recurringRepo.getById(1);
+      expect(updatedRecurring?.nextDueDate, DateTime(2024, 4, 1));
+      expect(updatedRecurring?.active, isTrue);
     },
   );
 }

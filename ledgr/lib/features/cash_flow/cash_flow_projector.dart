@@ -1,5 +1,6 @@
 import '../../core/database/app_database.dart';
 import '../../core/services/exchange_rate_service.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/recurring_utils.dart';
 
 class CashFlowPoint {
@@ -68,11 +69,25 @@ class CashFlowProjector {
         .toSet();
 
     for (final wallet in includedWallets) {
-      runningBalance += await _exchangeRates.convert(
-        walletBalances[wallet.id] ?? wallet.initialBalanceMinor,
-        wallet.currencyCode,
-        displayCurrency,
-      );
+      final balance = walletBalances[wallet.id] ?? wallet.initialBalanceMinor;
+      if (wallet.currencyCode.toLowerCase() == displayCurrency.toLowerCase()) {
+        runningBalance += balance;
+      } else {
+        try {
+          runningBalance += await _exchangeRates.convert(
+            balance,
+            wallet.currencyCode,
+            displayCurrency,
+          );
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Failed to convert cash flow balance offline: $error',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          runningBalance += balance;
+        }
+      }
     }
 
     final eventsByDay = <DateTime, List<CashFlowEvent>>{};
@@ -186,11 +201,25 @@ class CashFlowProjector {
     required bool sourceIncluded,
     required bool destinationIncluded,
   }) async {
-    final converted = await _exchangeRates.convert(
-      amountMinor.abs(),
-      fromCurrency,
-      toCurrency,
-    );
+    int converted;
+    if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
+      converted = amountMinor.abs();
+    } else {
+      try {
+        converted = await _exchangeRates.convert(
+          amountMinor.abs(),
+          fromCurrency,
+          toCurrency,
+        );
+      } catch (error, stackTrace) {
+        AppLogger.warning(
+          'Failed to convert transaction amount for cash flow offline',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        converted = amountMinor.abs();
+      }
+    }
     if (type == 'transfer') {
       if (sourceIncluded && destinationIncluded) return 0;
       if (destinationIncluded) return converted;

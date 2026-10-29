@@ -41,32 +41,15 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
         await _createIndexes();
       },
-      // Development safety valve: if an existing test database has a pre-release version,
-      // recreate clean tables rather than carrying legacy migration code into production.
-      onUpgrade: (m, from, to) async {
-        await customStatement('PRAGMA foreign_keys = OFF;');
-        for (final table in const [
-          'delete_logs',
-          'net_worth_snapshots',
-          'portfolio_transactions',
-          'investment_holdings',
-          'associated_titles',
-          'recurring_transactions',
-          'budget_wallets',
-          'budget_category_limits',
-          'transaction_budgets',
-          'transactions',
-          'objectives',
-          'budgets',
-          'settings',
-          'categories',
-          'wallets',
-        ]) {
-          await customStatement('DROP TABLE IF EXISTS $table;');
-        }
-        await m.createAll();
-        await _createIndexes();
+      beforeOpen: (details) async {
         await customStatement('PRAGMA foreign_keys = ON;');
+        await customStatement('PRAGMA busy_timeout = 5000;');
+        await customStatement('PRAGMA journal_mode = WAL;');
+        await customStatement('PRAGMA synchronous = NORMAL;');
+      },
+      onUpgrade: (m, from, to) async {
+        // Safe non-destructive upgrade strategy
+        await _createIndexes();
       },
     );
   }
@@ -74,6 +57,12 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _createIndexes() async {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_wallet_date ON transactions(wallet_id, date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_transfer_wallet_date ON transactions(transfer_wallet_id, date)',
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id)',

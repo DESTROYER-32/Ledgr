@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -e
+
+# Pre-commit hook for Ledgr
+# Formats staged Dart files, checks formatting, and runs flutter analyze
+
+echo "🔍 Running pre-commit checks..."
+
+# 1. Format staged Dart files and re-stage them
+STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.dart$' || true)
+
+if [ -n "$STAGED_DART_FILES" ]; then
+  echo "Formatting staged Dart files..."
+  for file in $STAGED_DART_FILES; do
+    if [ -f "$file" ]; then
+      dart format "$file"
+      git add "$file"
+    fi
+  done
+fi
+
+# 2. Check that all Dart code in ledgr is formatted
+if [ -d "ledgr" ]; then
+  cd ledgr
+  echo "Verifying dart format in ledgr/..."
+  dart format --output=none --set-exit-if-changed .
+  
+  echo "Verifying flutter analyze in ledgr/..."
+  flutter analyze --no-fatal-infos
+  cd ..
+fi
+
+echo "✅ Pre-commit checks passed!"

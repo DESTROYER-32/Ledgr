@@ -1,5 +1,6 @@
 import '../../core/database/app_database.dart';
 import '../../core/services/exchange_rate_service.dart';
+import '../../core/utils/app_logger.dart';
 
 class NetWorthSummary {
   const NetWorthSummary({
@@ -49,11 +50,25 @@ class NetWorthCalculator {
 
     for (final wallet in wallets.where((wallet) => !wallet.archived)) {
       final balance = walletBalances[wallet.id] ?? wallet.initialBalanceMinor;
-      final converted = await _exchangeRates.convert(
-        balance.abs(),
-        wallet.currencyCode,
-        displayCurrency,
-      );
+      int converted;
+      if (wallet.currencyCode.toLowerCase() == displayCurrency.toLowerCase()) {
+        converted = balance.abs();
+      } else {
+        try {
+          converted = await _exchangeRates.convert(
+            balance.abs(),
+            wallet.currencyCode,
+            displayCurrency,
+          );
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Failed to convert wallet balance for net worth calculation offline',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          converted = balance.abs();
+        }
+      }
       final normalizedType = wallet.type.toLowerCase().replaceAll(' ', '_');
       final isCredit =
           normalizedType == 'credit_card' ||
@@ -87,11 +102,26 @@ class NetWorthCalculator {
       (objective) =>
           objective.type.toLowerCase() == 'loan' && !objective.archived,
     )) {
-      final converted = await _exchangeRates.convert(
-        objective.amountMinor.abs(),
-        objective.currencyCode,
-        displayCurrency,
-      );
+      int converted;
+      if (objective.currencyCode.toLowerCase() ==
+          displayCurrency.toLowerCase()) {
+        converted = objective.amountMinor.abs();
+      } else {
+        try {
+          converted = await _exchangeRates.convert(
+            objective.amountMinor.abs(),
+            objective.currencyCode,
+            displayCurrency,
+          );
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Failed to convert objective amount for net worth calculation offline',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          converted = objective.amountMinor.abs();
+        }
+      }
       liabilities += converted;
       liabilityItems.add(
         NetWorthBreakdownItem(
